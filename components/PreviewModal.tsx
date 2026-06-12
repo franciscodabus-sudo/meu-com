@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import ImagePicker from '@/components/ImagePicker';
 
 export type PreviewPost = {
   id: string; channel: string; title: string; caption: string;
@@ -98,10 +99,22 @@ export default function PreviewModal({ post, onClose, onDone }: {
   const [dataHora, setDataHora] = useState('');
   const [erroMsg, setErroMsg] = useState('');
   const [caption, setCaption] = useState(post.caption);
+  const [mediaUrl, setMediaUrl] = useState(post.mediaUrl);
   const [corrigindo, setCorrigindo] = useState(false);
+  const [mostrarPicker, setMostrarPicker] = useState(false);
 
   const temVerificar = caption.includes('[verificar]');
-  const postAtual = { ...post, caption };
+  const postAtual = { ...post, caption, mediaUrl };
+
+  async function trocarImagem(url: string) {
+    setMediaUrl(url);
+    setMostrarPicker(false);
+    await fetch('/api/posts', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: post.id, action: 'updateMedia', mediaUrl: url }),
+    });
+  }
 
   const minDataHora = new Date(Date.now() + 5 * 60 * 1000).toISOString().slice(0, 16);
 
@@ -146,6 +159,14 @@ export default function PreviewModal({ post, onClose, onDone }: {
     : '';
 
   return (
+    <>
+    {mostrarPicker && (
+      <ImagePicker
+        queryInicial={post.title}
+        onSelect={trocarImagem}
+        onClose={() => setMostrarPicker(false)}
+      />
+    )}
     <div
       className="fixed inset-0 z-50 flex items-end justify-center"
       style={{ background: 'rgba(23,38,44,.5)' }}
@@ -174,6 +195,15 @@ export default function PreviewModal({ post, onClose, onDone }: {
           {fase === 'preview' && (
             <>
               {post.channel === 'linkedin' ? <LiMockup post={postAtual} /> : <IgMockup post={postAtual} />}
+
+              {/* Trocar imagem */}
+              <button
+                onClick={() => setMostrarPicker(true)}
+                className="w-full py-2.5 rounded-xl text-[13px] font-semibold mb-3 transition active:scale-95"
+                style={{ background: '#F0F4F5', color: '#37575D' }}
+              >
+                🖼 Trocar imagem
+              </button>
 
               {/* Aviso [verificar] */}
               {temVerificar && (
@@ -311,5 +341,6 @@ export default function PreviewModal({ post, onClose, onDone }: {
         </div>
       </div>
     </div>
+    </>
   );
 }

@@ -14,6 +14,8 @@
 - [ ] Arquitetura multi-tenant: workspaces isolados por cliente, Postgres, autenticação (login/cadastro)
 - [ ] Modo agência: uma empresa de marketing gerencia N clientes, cada um com suas contas e filas de aprovação
 - [ ] Conectores plug-and-play dentro da plataforma: usuário final conecta as próprias redes sem sair do app (Ayrshare Business com perfis de usuário; avaliar migração para APIs nativas)
+- [ ] White-label completo da conexão de contas (Ayrshare Business com user profiles) — cliente final conecta redes com a NOSSA marca
+- [ ] Avaliar migração para APIs nativas Meta/LinkedIn para independência total
 - [ ] Planos e cobrança integrada (Stripe): Free (2 posts/mês), Pro $20 (10 posts/mês), Business $50 (até 60 posts/mês — "ilimitado com fair use")
 - [ ] Site institucional com página de preços
 - [ ] Chat de suporte ao cliente dentro da plataforma

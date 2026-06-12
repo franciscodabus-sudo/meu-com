@@ -27,6 +27,15 @@ npm install && npx prisma db push && npm run db:seed && npm run dev
 ## Regras de qualidade
 - Ao final de qualquer mudança, SEMPRE verificar que http://localhost:3000 carrega sem erro (HTTP 200, sem crash no terminal) antes de declarar a tarefa concluída.
 
+## Princípio de produto — tela única
+A plataforma é o ÚNICO front do usuário. Serviços de terceiros (Ayrshare, Pexels,
+Anthropic, etc.) são infraestrutura invisível: nenhum fluxo pode exigir sair do app,
+nenhuma marca de terceiro aparece na interface, e toda capacidade deles que o usuário
+precise deve ser trazida para dentro como funcionalidade nativa.
+Conceito de tela única: o usuário pilota tudo daqui.
+- Erros de APIs externas sempre traduzidos para PT-BR sem mencionar o nome do serviço.
+- OAuth/popups de terceiros são a única exceção temporária (ver BACKLOG Fase 3 white-label).
+
 ## Backlog e planejamento
 Consulte sempre o BACKLOG.md antes de planejar ou implementar qualquer fase nova — ele é a fonte de verdade sobre prioridades, fases e regras permanentes do produto.
 

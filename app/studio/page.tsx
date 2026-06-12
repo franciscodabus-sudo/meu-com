@@ -1,102 +1,284 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 
-type Canal = { id: string; name: string; active: boolean };
-
-const CANAL_INFO: Record<string, { emoji: string; cor: string; descricao: string }> = {
-  instagram: { emoji: '📸', cor: '#E4405F', descricao: 'Feed e Stories' },
-  facebook:  { emoji: '👥', cor: '#1877F2', descricao: 'Feed e Reels' },
-  linkedin:  { emoji: '💼', cor: '#0A66C2', descricao: 'Artigos e posts' },
-  tiktok:    { emoji: '🎵', cor: '#010101', descricao: 'Vídeos curtos' },
+type PexelsPhoto = {
+  id: number;
+  src: { large: string; medium: string; tiny: string };
+  alt: string;
+  photographer: string;
 };
 
-function GerenciarCanais() {
-  const [canais, setCanais] = useState<Canal[]>([]);
-  const [salvando, setSalvando] = useState<string | null>(null);
+type MediaAsset = {
+  id: string;
+  url: string;
+  source: string;
+  tags: string | null;
+  createdAt: string;
+};
+
+async function salvarNoBanco(url: string, tags: string) {
+  await fetch('/api/imagens/salvar', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url, tags, source: 'pexels' }),
+  });
+}
+
+type Aba = 'buscar' | 'salvos';
+
+export default function Studio() {
+  const [aba, setAba] = useState<Aba>('buscar');
+  const [query, setQuery] = useState('');
+  const [fotos, setFotos] = useState<PexelsPhoto[]>([]);
+  const [buscando, setBuscando] = useState(false);
+  const [erroBusca, setErroBusca] = useState<string | null>(null);
+  const [salvos, setSalvos] = useState<MediaAsset[]>([]);
+  const [carregandoSalvos, setCarregandoSalvos] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [erroUpload, setErroUpload] = useState<string | null>(null);
+  const [salvandoFoto, setSalvandoFoto] = useState<number | null>(null);
+  const [salvoSucesso, setSalvoSucesso] = useState<number | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    fetch('/api/canais').then(r => r.ok ? r.json() : []).then(setCanais);
-  }, []);
+    if (aba === 'salvos') carregarSalvos();
+  }, [aba]);
 
-  async function toggle(canal: Canal) {
-    setSalvando(canal.id);
+  async function buscar() {
+    const termo = query.trim();
+    if (!termo) return;
+    setBuscando(true);
+    setErroBusca(null);
     try {
-      const r = await fetch('/api/canais', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: canal.id, active: !canal.active })
-      });
-      if (r.ok) {
-        setCanais(prev => prev.map(c => c.id === canal.id ? { ...c, active: !c.active } : c));
+      const r = await fetch(`/api/imagens?q=${encodeURIComponent(termo)}&page=1`);
+      if (!r.ok) {
+        const d = await r.json();
+        setErroBusca(d.error ?? 'Erro ao buscar imagens');
+        setFotos([]);
+      } else {
+        const d = await r.json();
+        setFotos(d.photos ?? []);
+        if (d.photos?.length === 0) setErroBusca('Nenhuma imagem para esse termo');
       }
+    } catch {
+      setErroBusca('Falha de conexão');
     } finally {
-      setSalvando(null);
+      setBuscando(false);
+    }
+  }
+
+  async function carregarSalvos() {
+    setCarregandoSalvos(true);
+    try {
+      const r = await fetch('/api/imagens/salvar');
+      if (r.ok) setSalvos(await r.json());
+    } finally {
+      setCarregandoSalvos(false);
+    }
+  }
+
+  async function salvarFoto(foto: PexelsPhoto) {
+    setSalvandoFoto(foto.id);
+    await salvarNoBanco(foto.src.large, foto.alt);
+    setSalvandoFoto(null);
+    setSalvoSucesso(foto.id);
+    setTimeout(() => setSalvoSucesso(null), 2000);
+  }
+
+  async function fazerUpload(file: File) {
+    setUploading(true);
+    setErroUpload(null);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const r = await fetch('/api/imagens/upload', { method: 'POST', body: fd });
+      const d = await r.json();
+      if (!r.ok) { setErroUpload(d.error ?? 'Erro ao enviar'); return; }
+      // Refresh saved list
+      if (aba === 'salvos') carregarSalvos();
+      else {
+        setAba('salvos');
+      }
+    } catch {
+      setErroUpload('Falha ao enviar. Tente novamente.');
+    } finally {
+      setUploading(false);
     }
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm overflow-hidden mb-6">
-      <div className="px-4 pt-4 pb-2 border-b border-gray-50">
-        <p className="text-[14px] font-bold text-ink">Canais ativos</p>
-        <p className="text-[12px] text-soft">Canais desativados não recebem novos posts da IA</p>
-      </div>
-      {canais.map(canal => {
-        const info = CANAL_INFO[canal.name] ?? { emoji: '🔗', cor: '#9CA3AF', descricao: '' };
-        const loading = salvando === canal.id;
-        return (
-          <div key={canal.id} className="flex items-center gap-3 px-4 py-3.5 border-b border-gray-50 last:border-0">
-            <span className="text-[22px]">{info.emoji}</span>
-            <div className="flex-1">
-              <p className="text-[14px] font-semibold capitalize text-ink">{canal.name}</p>
-              <p className="text-[12px] text-soft">{info.descricao}</p>
-            </div>
-            {/* Toggle */}
-            <button
-              onClick={() => toggle(canal)}
-              disabled={loading}
-              className="relative w-[46px] h-[26px] rounded-full transition-colors duration-200 flex-shrink-0 disabled:opacity-60"
-              style={{ background: canal.active ? info.cor : '#D1D5DB' }}
-              aria-label={canal.active ? 'Desativar' : 'Ativar'}
-            >
-              <span
-                className="absolute top-[3px] w-[20px] h-[20px] rounded-full bg-white shadow transition-all duration-200"
-                style={{ left: canal.active ? 'calc(100% - 23px)' : '3px' }}
-              />
-            </button>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-export default function Studio() {
-  return (
     <main className="px-4 pb-8">
-      <header className="pt-6 pb-4">
-        <p className="text-xs text-soft">Configurações e canais</p>
-        <h1 className="font-disp text-[23px] font-bold">Studio</h1>
+      {/* Header */}
+      <header className="pt-6 pb-4 flex items-center justify-between">
+        <div>
+          <p className="text-xs text-soft">Banco de imagens</p>
+          <h1 className="font-disp text-[23px] font-bold">Studio</h1>
+        </div>
+        <Link
+          href="/canais"
+          className="text-[13px] font-semibold px-3.5 py-1.5 rounded-full transition active:scale-95"
+          style={{ background: '#E5F1F0', color: '#0E5F66' }}
+        >
+          📡 Canais →
+        </Link>
       </header>
 
-      <GerenciarCanais />
-
-      {/* Próximas funcionalidades */}
-      <div className="rounded-2xl p-4" style={{ background: '#F6F8F8' }}>
-        <p className="text-[13px] font-bold text-ink mb-3">Em breve no Studio</p>
-        {[
-          { emoji: '📁', title: 'Banco de mídia', desc: 'Upload de fotos e vídeos do celular ou Google Drive' },
-          { emoji: '🎨', title: 'Integração Canva', desc: 'Seus templates viram fundos automáticos nos posts' },
-          { emoji: '♻️', title: 'Arquivo e reciclagem', desc: 'Posts de alto desempenho prontos para repostar' },
-        ].map(item => (
-          <div key={item.title} className="flex gap-3 mb-3 last:mb-0">
-            <span className="text-[20px]">{item.emoji}</span>
-            <div>
-              <p className="text-[13px] font-semibold text-ink">{item.title}</p>
-              <p className="text-[12px] text-soft">{item.desc}</p>
-            </div>
-          </div>
+      {/* Abas */}
+      <div className="flex gap-1.5 mb-4">
+        {([['buscar', '🔍 Buscar'], ['salvos', '📁 Salvos']] as [Aba, string][]).map(([a, label]) => (
+          <button
+            key={a}
+            onClick={() => setAba(a)}
+            className="flex-1 py-2.5 rounded-2xl text-[13.5px] font-semibold transition"
+            style={{
+              background: aba === a ? '#0E5F66' : '#F0F4F5',
+              color: aba === a ? '#fff' : '#6B7E85',
+            }}
+          >
+            {label}
+          </button>
         ))}
+        <button
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+          className="px-4 py-2.5 rounded-2xl text-[13.5px] font-semibold transition active:scale-95 disabled:opacity-60"
+          style={{ background: '#F0F4F5', color: '#6B7E85' }}
+        >
+          {uploading ? '⏫…' : '⬆ Enviar'}
+        </button>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={e => { const f = e.target.files?.[0]; if (f) fazerUpload(f); }}
+        />
       </div>
+
+      {/* Erro upload */}
+      {erroUpload && (
+        <div className="rounded-xl px-4 py-3 mb-3 text-[13px]" style={{ background: '#FEF2F2', color: '#B91C1C' }}>
+          {erroUpload}
+        </div>
+      )}
+
+      {/* ── BUSCAR ── */}
+      {aba === 'buscar' && (
+        <>
+          <div className="flex gap-2 mb-4">
+            <input
+              type="search"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && buscar()}
+              placeholder="Ex: seguro, família, casa, carro..."
+              className="flex-1 border border-[#E0E8EA] rounded-xl px-3.5 py-2.5 text-[13.5px] outline-none focus:border-brand"
+              style={{ background: '#F6F8F8' }}
+            />
+            <button
+              onClick={buscar}
+              disabled={buscando || !query.trim()}
+              className="px-5 rounded-xl text-white text-[13px] font-semibold disabled:opacity-50 active:scale-95 transition"
+              style={{ background: '#0E5F66' }}
+            >
+              {buscando ? '…' : 'Buscar'}
+            </button>
+          </div>
+
+          {erroBusca && (
+            <p className="text-center text-[13px] py-4" style={{ color: '#B91C1C' }}>{erroBusca}</p>
+          )}
+
+          {buscando && (
+            <p className="text-center text-mut text-[13px] py-12 animate-pulse">Buscando imagens…</p>
+          )}
+
+          {!buscando && fotos.length === 0 && !erroBusca && (
+            <div className="text-center py-12">
+              <p className="text-[36px] mb-2">🔍</p>
+              <p className="text-[13px] text-mut">Busque imagens pelo tema do post</p>
+              <p className="text-[12px] text-soft mt-1">Todas as imagens são de uso livre</p>
+            </div>
+          )}
+
+          {!buscando && fotos.length > 0 && (
+            <div className="grid grid-cols-2 gap-2">
+              {fotos.map(foto => {
+                const salvo = salvoSucesso === foto.id;
+                const salvando = salvandoFoto === foto.id;
+                return (
+                  <div key={foto.id} className="rounded-xl overflow-hidden relative">
+                    <img
+                      src={foto.src.medium}
+                      alt={foto.alt}
+                      className="w-full aspect-video object-cover"
+                      loading="lazy"
+                    />
+                    <button
+                      onClick={() => salvarFoto(foto)}
+                      disabled={salvando || salvo}
+                      className="absolute bottom-1.5 right-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full transition active:scale-95 disabled:opacity-70"
+                      style={{
+                        background: salvo ? '#17996B' : '#0E5F66',
+                        color: '#fff',
+                      }}
+                    >
+                      {salvo ? '✓ Salvo' : salvando ? '…' : '+ Salvar'}
+                    </button>
+                    <p className="absolute bottom-1.5 left-1.5 text-[9px] text-white/70 leading-tight">
+                      {foto.photographer}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ── SALVOS ── */}
+      {aba === 'salvos' && (
+        <>
+          {carregandoSalvos && (
+            <p className="text-center text-mut text-[13px] py-12 animate-pulse">Carregando…</p>
+          )}
+
+          {!carregandoSalvos && salvos.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-[36px] mb-2">📁</p>
+              <p className="text-[13px] font-semibold text-ink mb-1">Banco de mídia vazio</p>
+              <p className="text-[12px] text-mut max-w-[240px] mx-auto">
+                Busque imagens na aba Buscar e salve as que gostar — elas ficam aqui para reuso.
+              </p>
+            </div>
+          )}
+
+          {!carregandoSalvos && salvos.length > 0 && (
+            <>
+              <p className="text-[12px] text-mut mb-3">{salvos.length} {salvos.length === 1 ? 'imagem salva' : 'imagens salvas'}</p>
+              <div className="grid grid-cols-2 gap-2">
+                {salvos.map(asset => (
+                  <div key={asset.id} className="rounded-xl overflow-hidden relative">
+                    <img
+                      src={asset.url}
+                      alt={asset.tags ?? ''}
+                      className="w-full aspect-video object-cover"
+                      loading="lazy"
+                    />
+                    <span
+                      className="absolute top-1.5 left-1.5 text-[9px] font-bold px-2 py-0.5 rounded-full"
+                      style={{ background: 'rgba(0,0,0,.45)', color: '#fff' }}
+                    >
+                      {asset.source}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </>
+      )}
     </main>
   );
 }

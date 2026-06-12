@@ -40,10 +40,10 @@ model Post {
 
 model MediaAsset {
   id        String   @id @default(cuid())
-  url       String
+  url       String   @unique
   kind      String   @default("foto") // foto | video | arte
   tags      String?  // "casa,clima,furacao"
-  source    String   @default("upload") // upload | canva | unsplash | drive
+  source    String   @default("upload") // upload | pexels | canva | drive
   createdAt DateTime @default(now())
 }
 

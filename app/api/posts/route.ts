@@ -13,11 +13,15 @@ export async function GET(req: Request) {
   return NextResponse.json(posts);
 }
 
-// PATCH /api/posts  { id, action: 'approve' | 'skip' | 'caption', caption? }
+// PATCH /api/posts  { id, action: 'approve' | 'skip' | 'caption' | 'updateMedia', caption?, mediaUrl? }
 export async function PATCH(req: Request) {
-  const { id, action, caption } = await req.json();
+  const { id, action, caption, mediaUrl } = await req.json();
   if (action === 'caption') {
     const post = await db.post.update({ where: { id }, data: { caption } });
+    return NextResponse.json(post);
+  }
+  if (action === 'updateMedia') {
+    const post = await db.post.update({ where: { id }, data: { mediaUrl: mediaUrl ?? null } });
     return NextResponse.json(post);
   }
   const status = action === 'approve' ? 'approved' : 'skipped';
