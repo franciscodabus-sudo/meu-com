@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Meu CMO · v3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#17262C; --mut:#6B7E85; --soft:#9DAFB5;
+  --bg:#F6F8F8; --card:#FFFFFF;
+  --brand:#0E5F66; --brand-soft:#E5F1F0;
+  --ok:#17996B; --ok-soft:#E6F4EE;
+  --warn:#C97F16; --warn-soft:#FBF1DE;
+  --ig:#C13584; --fb:#1877F2; --li:#0A66C2;
+  --sh:0 1px 3px rgba(23,38,44,.06),0 4px 14px rgba(23,38,44,.05);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;overflow-x:hidden}
+body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.5}
+.phone{width:100%;max-width:430px;margin:0 auto;min-height:100vh;position:relative}
+h1,h2,h3,.disp{font-family:'Bricolage Grotesque',sans-serif}
+button{font-family:'Instrument Sans',sans-serif;cursor:pointer;border:none;background:none}
+
+header{padding:22px 20px 6px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.hello small{display:block;color:var(--soft);font-size:12px}
+.hello h1{font-size:23px;font-weight:700;letter-spacing:-.02em}
+.av-top{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#0E5F66,#17996B);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;font-family:'Bricolage Grotesque',sans-serif}
+
+.brief-pill{margin:14px 16px 4px;display:flex;align-items:center;gap:10px;background:var(--card);border-radius:99px;padding:14px 18px;box-shadow:var(--sh);width:calc(100% - 32px);text-align:left}
+.brief-pill span{color:var(--soft);font-size:14px}
+.brief-pill .spark{color:var(--brand);font-size:16px}
+
+main{padding:4px 16px 100px}
+.tab{display:none}
+.tab.on{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.sec{font-size:13px;font-weight:600;color:var(--mut);margin:20px 4px 10px;display:flex;justify-content:space-between;align-items:center}
+.sec b{color:var(--ink)}
+
+.card{background:var(--card);border-radius:22px;padding:14px;margin-bottom:14px;box-shadow:var(--sh);transition:transform .35s ease,opacity .35s ease,max-height .4s ease,margin .4s ease,padding .4s ease}
+.card.gone{transform:translateX(110%);opacity:0;max-height:0;margin:0;padding:0;overflow:hidden}
+
+.art{border-radius:16px;padding:50px 18px 16px;color:#fff;position:relative;cursor:pointer;min-height:150px;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden}
+.art h3{font-size:17.5px;font-weight:600;line-height:1.3;position:relative}
+.art .meta{position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:center}
+.tag{font-size:11px;font-weight:600;padding:4px 10px;border-radius:99px;background:rgba(255,255,255,.92);color:var(--ink)}
+.tag i{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:5px}
+.art .hr{font-size:11.5px;color:rgba(255,255,255,.85);font-weight:500}
+.why-t{display:block;width:100%;text-align:left;font-size:12.5px;color:var(--mut);padding:10px 4px 2px}
+.why-t b{color:var(--brand);font-weight:600}
+.why-x{display:none;font-size:12.5px;color:var(--mut);padding:4px 4px 2px;line-height:1.55}
+.why-x.on{display:block}
+.acts{display:flex;gap:8px;margin-top:10px}
+.btn{border-radius:14px;padding:13px 0;font-size:14px;font-weight:600;transition:transform .12s ease}
+.btn:active{transform:scale(.96)}
+.btn.ok{background:var(--ok);color:#fff;flex:2.4}
+.btn.ic{background:var(--bg);color:var(--mut);flex:1;font-size:13px}
+
+.seg{display:flex;background:#E8EDEE;border-radius:14px;padding:4px;margin:6px 0 16px}
+.seg button{flex:1;font-size:13px;font-weight:600;color:var(--mut);padding:9px 0;border-radius:11px}
+.seg button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(23,38,44,.12)}
+
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:14px}
+.day{background:var(--card);border-radius:14px;padding:10px 0 8px;text-align:center;box-shadow:var(--sh)}
+.day.today{background:var(--brand);color:#fff}
+.day.today .d{color:rgba(255,255,255,.7)}
+.day .d{font-size:10.5px;color:var(--soft)} .day .n{font-family:'Bricolage Grotesque',sans-serif;font-weight:600;font-size:15px;margin:2px 0 5px;display:block}
+.dots{display:flex;justify-content:center;gap:3px;min-height:6px}
+.pdot{width:6px;height:6px;border-radius:50%}
+.pdot.ig{background:var(--ig)}.pdot.fb{background:var(--fb)}.pdot.li{background:var(--li)}
+.pdot.w{background:rgba(255,255,255,.9)}
+.note{background:var(--brand-soft);border-radius:16px;padding:13px 16px;font-size:13px;color:var(--brand);margin-top:6px}
+
+.camp{background:linear-gradient(135deg,#0E5F66,#123A42);color:#fff;border-radius:22px;padding:18px;margin-bottom:16px}
+.camp small{font-size:11px;opacity:.7}
+.camp h3{font-size:18px;margin:2px 0 12px}
+.camp .bar{height:7px;background:rgba(255,255,255,.2);border-radius:99px;overflow:hidden;margin-bottom:7px}
+.camp .bar i{display:block;height:100%;width:38%;background:#7FD8C4;border-radius:99px}
+.camp p{font-size:12px;opacity:.85}
+.jr{position:relative;padding-left:22px;margin-left:10px}
+.jr:before{content:'';position:absolute;left:5px;top:10px;bottom:14px;width:2px;background:#DDE5E7}
+.jn{position:relative;background:var(--card);border-radius:16px;padding:13px 15px;margin-bottom:10px;box-shadow:var(--sh)}
+.jn:before{content:'';position:absolute;left:-22px;top:18px;width:12px;height:12px;border-radius:50%;background:var(--card);border:3px solid var(--soft)}
+.jn.done:before{background:var(--ok);border-color:var(--ok)}
+.jn.now:before{border-color:var(--brand);background:#fff}
+.jn .jt{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.jn .jt b{font-size:13.5px}
+.jn .jd{font-size:12px;color:var(--mut);margin-top:2px}
+.stage{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:3px 9px;border-radius:99px;white-space:nowrap}
+.stage.atrair{background:var(--warn-soft);color:var(--warn)}
+.stage.educar{background:var(--brand-soft);color:var(--brand)}
+.stage.conectar{background:#FAEAF3;color:var(--ig)}
+.stage.converter{background:var(--ok-soft);color:var(--ok)}
+.jn .st{font-size:12px;font-weight:600;margin-top:3px}
+.jn .st.done{color:var(--ok)} .jn .st.wait{color:var(--warn)} .jn .st.next{color:var(--soft)}
+
+.theme{display:flex;align-items:center;gap:12px}
+.heat{font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:13px;color:var(--warn);background:var(--warn-soft);border-radius:12px;padding:10px;white-space:nowrap}
+.theme-body{flex:1;min-width:0}
+.theme-body b{font-size:14.5px;display:block}
+.theme-body p{font-size:12.5px;color:var(--mut)}
+.go{width:38px;height:38px;border-radius:50%;background:var(--brand-soft);color:var(--brand);font-size:17px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.src{font-size:11.5px;color:var(--soft);margin-top:8px}
+
+.filters{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:10px}
+.filters button{background:var(--card);color:var(--mut);font-size:12.5px;font-weight:600;padding:8px 16px;border-radius:99px;white-space:nowrap;box-shadow:var(--sh)}
+.filters button.on{background:var(--ink);color:#fff}
+.mgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.mtile{aspect-ratio:1;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px;position:relative;cursor:pointer;color:#fff}
+.mtile .dur{position:absolute;bottom:7px;right:7px;background:rgba(23,38,44,.7);color:#fff;font-size:10px;font-weight:600;padding:2px 7px;border-radius:7px}
+.mtile.add{background:var(--card);border:1.5px dashed var(--soft);color:var(--soft);font-size:28px;box-shadow:none}
+.canva{display:flex;align-items:center;gap:12px}
+.clogo{width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,#7D2AE8,#00C4CC);display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:20px;flex-shrink:0}
+.canva b{font-size:14px;display:block}
+.canva p{font-size:12px;color:var(--mut)}
+.arc{display:flex;gap:12px;align-items:center}
+.arc .thumb{width:54px;height:54px;border-radius:14px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:21px;color:#fff}
+.arc-body{flex:1;min-width:0}
+.arc-body b{font-size:13.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.arc-body p{font-size:12px;color:var(--mut)}
+.arc-body .m{font-size:12px;color:var(--ok);font-weight:600}
+.rep{border:1.5px solid var(--brand);color:var(--brand);border-radius:12px;padding:9px 13px;font-size:12.5px;font-weight:700;flex-shrink:0}
+
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.kpi{background:var(--card);border-radius:18px;padding:14px 12px;box-shadow:var(--sh)}
+.kpi small{font-size:10.5px;color:var(--soft);text-transform:uppercase;letter-spacing:.04em}
+.kpi b{font-family:'Bricolage Grotesque',sans-serif;font-size:20px;display:block;margin:2px 0}
+.kpi .up{color:var(--ok);font-size:12px;font-weight:600}
+.split .row{display:flex;align-items:center;gap:10px;margin-bottom:9px;font-size:13px}
+.split .row span{min-width:78px;color:var(--mut)}
+.split .row .tr{flex:1;height:7px;background:var(--bg);border-radius:99px;overflow:hidden}
+.split .row .tr i{display:block;height:100%;border-radius:99px}
+.split .row b{min-width:38px;text-align:right;font-family:'Bricolage Grotesque',sans-serif;font-size:13px}
+.flag{display:flex;gap:10px;background:var(--warn-soft);border-radius:16px;padding:13px 15px;font-size:13px;color:#7A5210}
+.flag b{display:block;color:var(--warn)}
+.ask{display:flex;gap:8px;margin-top:4px}
+.ask input{flex:1;min-width:0;border:none;border-radius:14px;padding:13px 16px;font-family:'Instrument Sans',sans-serif;font-size:14px;background:var(--card);color:var(--ink);box-shadow:var(--sh)}
+.ask input:focus{outline:2px solid var(--brand)}
+.ask button{background:var(--ink);color:#fff;border-radius:14px;padding:0 18px;font-weight:600}
+.answer{background:var(--card);border-left:3px solid var(--brand);border-radius:14px;padding:14px;font-size:13.5px;margin-top:10px;display:none;box-shadow:var(--sh)}
+.answer.on{display:block;animation:fade .25s ease}
+.answer .tagx{font-size:11px;color:var(--brand);font-weight:600;display:block;margin-bottom:5px}
+.big-num{font-family:'Bricolage Grotesque',sans-serif;font-size:29px;font-weight:700}
+.big-num small{font-size:14px;color:var(--mut);font-weight:500}
+.bar{height:9px;background:var(--bg);border-radius:99px;overflow:hidden;margin:10px 0 6px}
+.bar i{display:block;height:100%;background:var(--brand);border-radius:99px;transition:width .3s ease}
+.lim{display:flex;justify-content:space-between;font-size:12px;color:var(--mut)}
+.slider-row{margin:14px 0 2px}
+.slider-row label{font-size:13px;font-weight:600;display:flex;justify-content:space-between;margin-bottom:6px}
+.slider-row output{color:var(--brand);font-family:'Bricolage Grotesque',sans-serif}
+input[type=range]{width:100%;accent-color:var(--brand);height:26px}
+.switch-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px}
+.switch-row p{font-size:13px;flex:1}
+.switch-row small{color:var(--mut);font-size:12px;display:block}
+.sw{position:relative;width:48px;height:28px;flex-shrink:0}
+.sw input{opacity:0;width:0;height:0}
+.sw i{position:absolute;inset:0;background:#CDD8DB;border-radius:99px;transition:.2s;cursor:pointer}
+.sw i:before{content:'';position:absolute;width:22px;height:22px;border-radius:50%;background:#fff;top:3px;left:3px;transition:.2s}
+.sw input:checked+i{background:var(--ok)}
+.sw input:checked+i:before{left:23px}
+
+nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:rgba(255,255,255,.94);backdrop-filter:blur(12px);border-top:1px solid #E8EDEE;display:grid;grid-template-columns:repeat(5,1fr);padding:8px 4px calc(10px + env(safe-area-inset-bottom));z-index:30}
+nav button{font-size:10px;font-weight:600;color:var(--soft);display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 0;position:relative}
+nav button.on{color:var(--brand)}
+nav button svg{width:21px;height:21px}
+nav .pin{position:absolute;top:-2px;right:18%;background:#E35B43;color:#fff;font-size:9.5px;min-width:16px;height:16px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+
+#toast{position:fixed;bottom:94px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;font-size:13px;font-weight:500;padding:11px 18px;border-radius:99px;opacity:0;pointer-events:none;transition:.3s;z-index:90;max-width:88%;text-align:center}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.ovl{position:fixed;inset:0;background:rgba(23,38,44,.5);display:none;align-items:flex-end;justify-content:center;z-index:60}
+.ovl.on{display:flex}
+.sheet{background:var(--bg);border-radius:26px 26px 0 0;padding:12px 16px calc(22px + env(safe-area-inset-bottom));max-width:430px;width:100%;max-height:90vh;overflow-y:auto}
+.handle{width:42px;height:5px;background:#CDD8DB;border-radius:99px;margin:0 auto 14px}
+.pv-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding:0 2px}
+.pv-head h2{font-size:17px}
+.when{font-size:12px;color:var(--mut)}
+.vars{display:flex;gap:8px;margin-bottom:12px}
+.vars button{flex:1;background:var(--card);border-radius:12px;padding:9px 0;font-size:12px;font-weight:600;color:var(--mut);box-shadow:var(--sh)}
+.vars button.on{color:var(--brand);outline:2px solid var(--brand)}
+.media-pick{font-size:12px;color:var(--mut);margin:0 2px 10px}
+.media-pick a{color:var(--brand);font-weight:700;text-decoration:none}
+.pv-acts{display:flex;gap:8px;margin-top:2px}
+.pv-acts .btn.ok{flex:2}
+.pv-acts .btn.ic{flex:1}
+
+.igpost{background:#fff;border-radius:18px;overflow:hidden;margin-bottom:14px;box-shadow:var(--sh)}
+.ig-h{display:flex;align-items:center;gap:10px;padding:11px 13px}
+.avx{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#0E5F66,#17996B);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12.5px;flex-shrink:0;font-family:'Bricolage Grotesque',sans-serif}
+.ig-h b{font-size:13px;display:block;line-height:1.2}
+.ig-h small{font-size:11px;color:var(--mut)}
+.ig-h .dots3{margin-left:auto;color:var(--mut);font-weight:700;letter-spacing:2px}
+.ig-art{aspect-ratio:1;display:flex;flex-direction:column;justify-content:center;padding:26px 22px;color:#fff;font-family:'Bricolage Grotesque',sans-serif;font-weight:600;font-size:21px;line-height:1.3;position:relative}
+.ig-art small{font-family:'Instrument Sans',sans-serif;font-weight:500;font-size:12.5px;opacity:.9;margin-top:14px}
+.ig-art .brandtag{position:absolute;bottom:18px;left:22px;font-size:10.5px;font-family:'Instrument Sans',sans-serif;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.75}
+.ig-art .pgn{position:absolute;top:14px;right:14px;background:rgba(23,38,44,.55);color:#fff;font-family:'Instrument Sans',sans-serif;font-size:11px;font-weight:600;padding:3px 9px;border-radius:99px}
+.cdots{display:flex;justify-content:center;gap:4px;padding:9px 0 2px}
+.cdots i{width:6px;height:6px;border-radius:50%;background:#CDD8DB}
+.cdots i:first-child{background:var(--fb)}
+.ig-acts{display:flex;gap:14px;padding:8px 13px 2px;align-items:center}
+.ig-acts svg{width:23px;height:23px;stroke:var(--ink);fill:none;stroke-width:1.8}
+.ig-acts .save{margin-left:auto}
+.ig-likes{padding:2px 13px;font-size:12.5px;font-weight:600}
+.ig-cap{padding:2px 13px 13px;font-size:12.5px}
+.ig-cap b{font-weight:600}
+.ig-cap .tags{color:var(--li)}
+.lipost{background:#fff;border-radius:18px;overflow:hidden;margin-bottom:14px;box-shadow:var(--sh)}
+.li-h{display:flex;gap:10px;padding:13px 13px 8px}
+.li-h b{font-size:13.5px;display:block}
+.li-h small{font-size:11px;color:var(--mut);display:block;line-height:1.35}
+.li-txt{padding:0 13px 10px;font-size:13px;white-space:pre-line}
+.li-txt .more{color:var(--mut)}
+.li-doc{margin:0 13px 12px;border-radius:12px;padding:16px;background:#F2F6F8;font-family:'Bricolage Grotesque',sans-serif;font-weight:600;font-size:15px;color:#0A3552}
+.li-doc small{display:block;font-family:'Instrument Sans',sans-serif;font-weight:500;font-size:11px;color:var(--mut);margin-top:6px}
+.li-meta{padding:0 13px 9px;font-size:11.5px;color:var(--mut);display:flex;justify-content:space-between}
+.li-bar{display:flex;border-top:1px solid #EDF1F2}
+.li-bar span{flex:1;text-align:center;padding:10px 0;font-size:12px;font-weight:600;color:var(--mut)}
+
+#brief .sheet{background:var(--card)}
+#brief h2{font-size:19px;margin-bottom:4px}
+#brief .sub{font-size:13px;color:var(--mut);margin-bottom:14px}
+.chips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}
+.chips button{background:var(--bg);color:var(--mut);font-size:12.5px;font-weight:600;padding:9px 14px;border-radius:99px}
+.chips button.on{background:var(--brand-soft);color:var(--brand)}
+#brief textarea{width:100%;min-height:110px;border:1.5px solid #E0E8EA;border-radius:16px;padding:14px;font-family:'Instrument Sans',sans-serif;font-size:14px;resize:vertical;color:var(--ink);background:var(--bg)}
+#brief textarea:focus{outline:none;border-color:var(--brand)}
+.gen{width:100%;margin-top:12px;background:var(--brand);color:#fff;border-radius:14px;padding:15px 0;font-size:15px;font-weight:600}
+.thinking{display:none;text-align:center;padding:26px 0 10px;color:var(--mut);font-size:13.5px}
+.thinking.on{display:block}
+.tdots{display:inline-flex;gap:5px;margin-left:6px}
+.tdots i{width:7px;height:7px;border-radius:50%;background:var(--brand);animation:bl 1s infinite}
+.tdots i:nth-child(2){animation-delay:.18s}.tdots i:nth-child(3){animation-delay:.36s}
+@keyframes bl{0%,100%{opacity:.25}50%{opacity:1}}
+#plan{display:none}
+#plan.on{display:block;animation:fade .3s ease}
+.plan-h{background:linear-gradient(135deg,#0E5F66,#123A42);color:#fff;border-radius:18px;padding:16px;margin:14px 0 10px}
+.plan-h small{font-size:11px;opacity:.7}
+.plan-h h3{font-size:17px;margin:2px 0 6px}
+.plan-h p{font-size:12.5px;opacity:.9}
+.plan-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:10px}
+.pg{background:var(--bg);border-radius:14px;padding:11px 8px;text-align:center}
+.pg b{font-family:'Bricolage Grotesque',sans-serif;font-size:16px;display:block}
+.pg span{font-size:10.5px;color:var(--mut)}
+.flow{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;justify-content:center;margin-bottom:14px;flex-wrap:wrap}
+.flow .stage{font-size:10px}
+.flow em{color:var(--soft);font-style:normal}
+.sheet *{min-width:0}
+.plan-h h3{word-break:break-word}
+.srow{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:14px;padding:10px 12px;margin-bottom:8px;box-shadow:var(--sh)}
+.srow .sd{font-family:'Bricolage Grotesque',sans-serif;font-weight:600;font-size:11.5px;color:var(--mut);min-width:48px;text-align:center;background:var(--bg);border-radius:10px;padding:7px 4px;line-height:1.25}
+.srow .si{flex:1;font-size:13px;font-weight:500}
+.srow .si small{display:block;font-weight:400;font-size:11.5px;color:var(--mut)}
+.srow input[type=time]{border:1.5px solid #E0E8EA;border-radius:10px;padding:6px 8px;font-family:'Instrument Sans',sans-serif;font-size:13px;color:var(--brand);font-weight:600;background:var(--bg)}
+.crow{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:16px;padding:13px 14px;margin-bottom:9px;box-shadow:var(--sh)}
+.cic{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-family:'Bricolage Grotesque',sans-serif;flex-shrink:0;font-size:15px}
+.crow .cb{flex:1;min-width:0}
+.crow b{font-size:14px;display:block}
+.crow small{font-size:11.5px;color:var(--mut);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cst{font-size:11px;font-weight:700;padding:6px 11px;border-radius:99px;flex-shrink:0}
+.cst.ok{background:var(--ok-soft);color:var(--ok)}
+.cbt{border:1.5px solid var(--brand);color:var(--brand);border-radius:10px;padding:8px 14px;font-size:12px;font-weight:700;flex-shrink:0}
+#login-x input{width:100%;border:1.5px solid #E0E8EA;border-radius:14px;padding:13px 14px;font-size:14px;margin-bottom:9px;background:var(--bg);font-family:'Instrument Sans',sans-serif;color:var(--ink)}
+#login-x input:focus{outline:none;border-color:var(--brand)}
+.backlink{font-size:13px;font-weight:600;color:var(--mut);padding:2px 0 12px;display:inline-block}
+
+.empty{text-align:center;padding:36px 20px;color:var(--mut);display:none}
+.empty .big{font-size:40px;margin-bottom:8px}
+</style>
+</head>
+<body>
+<div class="phone">
+
+<header>
+  <div class="hello">
+    <small>Quinta, 11 de junho</small>
+    <h1>Bom dia, Francisco</h1>
+  </div>
+  <button class="av-top" onclick="openConn()">FD</button>
+</header>
+
+<button class="brief-pill" onclick="openBrief()">
+  <span class="spark">✦</span>
+  <span>Diga ao seu CMO o que você precisa…</span>
+</button>
+
+<main>
+
+<!-- ============ HOJE ============ -->
+<section class="tab on" id="tab-hoje">
+  <div class="sec"><span><b>Para aprovar</b> · 1 toque</span><span id="qcount">3 posts</span></div>
+
+  <div class="card" id="p1">
+    <div class="art" style="background:linear-gradient(160deg,#175E68,#0E2E35)" onclick="openPv('p1')">
+      <img src="https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=900&q=80" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" onerror="this.nextElementSibling.remove();this.remove()"><span style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,24,28,.18) 20%,rgba(10,24,28,.86))"></span>
+      <div class="meta"><span class="tag"><i style="background:var(--ig)"></i>Instagram</span><span class="hr">hoje · 18h05</span></div>
+      <h3>Temporada de furacões começou. Seu seguro está pronto?</h3>
+    </div>
+    <button class="why-t" onclick="tg('w1')"><b>Por que este post?</b> <span style="color:var(--soft)">toque para ver ⌄</span></button>
+    <div class="why-x" id="w1">NOAA elevou a previsão ontem — buscas por "hurricane insurance Orlando" subiram 41% em 7 dias. Checklists engajam 2,3× mais com seu público.</div>
+    <div class="acts">
+      <button class="btn ok" onclick="approve('p1')">✓ Aprovar</button>
+      <button class="btn ic" onclick="openPv('p1')">Prévia</button>
+      <button class="btn ic" onclick="skip('p1')">Pular</button>
+    </div>
+  </div>
+
+  <div class="card" id="p2">
+    <div class="art" style="background:linear-gradient(160deg,#1265B5,#0A2F55)" onclick="openPv('p2')">
+      <div class="meta"><span class="tag"><i style="background:var(--li)"></i>LinkedIn</span><span class="hr">amanhã · 8h30</span></div>
+      <h3>Citizens vai despejar 200 mil apólices. O que muda?</h3>
+    </div>
+    <button class="why-t" onclick="tg('w2')"><b>Por que este post?</b> <span style="color:var(--soft)">toque para ver ⌄</span></button>
+    <div class="why-x" id="w2">Concorrente postou ontem e gerou 87 comentários. A versão em português está vaga — ninguém ocupou.</div>
+    <div class="acts">
+      <button class="btn ok" onclick="approve('p2')">✓ Aprovar</button>
+      <button class="btn ic" onclick="openPv('p2')">Prévia</button>
+      <button class="btn ic" onclick="skip('p2')">Pular</button>
+    </div>
+  </div>
+
+  <div class="card" id="p3">
+    <div class="art" style="background:linear-gradient(160deg,#B4682E,#6E3B16)" onclick="openPv('p3')">
+      <img src="https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?auto=format&fit=crop&w=900&q=80" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" onerror="this.nextElementSibling.remove();this.remove()"><span style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(35,18,6,.15) 20%,rgba(35,18,6,.85))"></span>
+      <div class="meta"><span class="tag"><i style="background:var(--fb)"></i>Facebook</span><span class="hr">sábado · 11h00</span></div>
+      <h3>Sábado de testes: gelato de pistache na versão final 🍨</h3>
+    </div>
+    <button class="why-t" onclick="tg('w3')"><b>Por que este post?</b> <span style="color:var(--soft)">toque para ver ⌄</span></button>
+    <div class="why-x" id="w3">Seus posts pessoais de fim de semana têm 3,1× mais comentários. Bastidores constroem a confiança que vende seguro na segunda.</div>
+    <div class="acts">
+      <button class="btn ok" onclick="approve('p3')">✓ Aprovar</button>
+      <button class="btn ic" onclick="openPv('p3')">Prévia</button>
+      <button class="btn ic" onclick="skip('p3')">Pular</button>
+    </div>
+  </div>
+
+  <div class="empty" id="empty-q">
+    <div class="big">🎉</div>
+    <b class="disp">Tudo aprovado!</b>
+    <p style="font-size:13px;margin-top:6px">Seu CMO segue trabalhando e te chama quando houver novidade.</p>
+  </div>
+</section>
+
+<!-- ============ AGENDA ============ -->
+<section class="tab" id="tab-agenda">
+  <div class="seg">
+    <button class="on" onclick="seg(this,'v-cal')">Calendário</button>
+    <button id="seg-jor" onclick="seg(this,'v-jor')">Jornada</button>
+  </div>
+
+  <div id="v-cal">
+    <div class="week">
+      <div class="day"><span class="d">Seg</span><span class="n">8</span><div class="dots"><span class="pdot ig"></span></div></div>
+      <div class="day"><span class="d">Ter</span><span class="n">9</span><div class="dots"><span class="pdot li"></span><span class="pdot fb"></span></div></div>
+      <div class="day"><span class="d">Qua</span><span class="n">10</span><div class="dots"><span class="pdot ig"></span></div></div>
+      <div class="day today"><span class="d">Qui</span><span class="n">11</span><div class="dots"><span class="pdot w"></span><span class="pdot w"></span></div></div>
+      <div class="day"><span class="d">Sex</span><span class="n">12</span><div class="dots"><span class="pdot li"></span></div></div>
+      <div class="day"><span class="d">Sáb</span><span class="n">13</span><div class="dots"><span class="pdot fb"></span><span class="pdot ig"></span></div></div>
+      <div class="day"><span class="d">Dom</span><span class="n">14</span><div class="dots"></div></div>
+    </div>
+    <div class="note">🧠 Ritmo desta semana: IG 4× · FB 3× · LinkedIn 2×. Ajustado pelo seu CMO — posts de quarta no LinkedIn tinham 60% menos alcance.</div>
+  </div>
+
+  <div id="v-jor" style="display:none">
+    <div id="camp-new" style="display:none">
+      <div class="camp" style="background:linear-gradient(135deg,#54306E,#2A1840)">
+        <small>Nova campanha · criada do seu brief</small>
+        <h3 id="camp-new-title">Lançamento</h3>
+        <div class="bar"><i style="width:5%"></i></div>
+        <p>Começa segunda · 3 semanas · 9 posts · verba sugerida $180</p>
+      </div>
+    </div>
+    <div class="camp">
+      <small>Campanha ativa</small>
+      <h3>Temporada de Furacões 2026</h3>
+      <div class="bar"><i></i></div>
+      <p>Semana 2 de 4 · objetivo: 12 revisões de apólice · 5 já chegaram</p>
+    </div>
+
+    <div class="jr">
+      <div class="jn done">
+        <div class="jt"><b>Reel: "Por que junho importa"</b><span class="stage atrair">Atrair</span></div>
+        <div class="jd">Seg 8 · Instagram</div>
+        <div class="st done">✓ Publicado · 4.200 alcançadas</div>
+      </div>
+      <div class="jn now">
+        <div class="jt"><b>Carrossel: checklist do furacão</b><span class="stage educar">Educar</span></div>
+        <div class="jd">Hoje 18h05 · Instagram</div>
+        <div class="st wait">● Aguardando aprovação</div>
+      </div>
+      <div class="jn">
+        <div class="jt"><b>Artigo: Citizens takeout</b><span class="stage educar">Educar</span></div>
+        <div class="jd">Sex 12 · LinkedIn</div>
+        <div class="st next">Programado</div>
+      </div>
+      <div class="jn">
+        <div class="jt"><b>Bastidores: gelato de pistache</b><span class="stage conectar">Conectar</span></div>
+        <div class="jd">Sáb 13 · Facebook</div>
+        <div class="st next">Programado</div>
+      </div>
+      <div class="jn">
+        <div class="jt"><b>Oferta: revisão grátis de apólice</b><span class="stage converter">Converter</span></div>
+        <div class="jd">Qui 18 · Instagram + anúncio</div>
+        <div class="st next">Programado · verba reservada $60</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ RADAR ============ -->
+<section class="tab" id="tab-radar">
+  <div class="sec"><b>Concorrentes</b><span>temas em alta</span></div>
+  <div class="card">
+    <div class="theme">
+      <span class="heat">🔥 87</span>
+      <div class="theme-body"><b>Citizens despejando apólices</b><p>2 concorrentes postaram. Nenhum em português.</p></div>
+      <button class="go" onclick="genPost('r1')">✦</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="theme">
+      <span class="heat">🔥 54</span>
+      <div class="theme-body"><b>Custo do seguro auto na Flórida</b><p>Vídeos de "3 formas de baixar o prêmio" dominam.</p></div>
+      <button class="go" onclick="genPost('r2')">✦</button>
+    </div>
+  </div>
+
+  <div class="sec"><b>Notícias</b><span>pautas detectadas</span></div>
+  <div class="card">
+    <div class="theme">
+      <div class="theme-body"><b>NOAA eleva previsão de furacões 2026</b><p>Já virou a pauta da sua fila de hoje ✓</p><p class="src">Orlando Sentinel · há 14h</p></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="theme">
+      <div class="theme-body"><b>Taxas de financiamento caem pela 3ª semana</b><p>Gancho cruzado: imóvel + seguro no fechamento.</p><p class="src">Florida Realtors · há 6h</p></div>
+      <button class="go" onclick="genPost('r3')">✦</button>
+    </div>
+  </div>
+  <div class="note">✦ Toque no botão para gerar sua versão — você vê a prévia real antes de qualquer coisa ir ao ar.</div>
+</section>
+
+<!-- ============ STUDIO ============ -->
+<section class="tab" id="tab-studio">
+  <div class="card canva">
+    <div class="clogo">C</div>
+    <div style="flex:1">
+      <b>Canva conectado ✓</b>
+      <p>12 templates de marca viram fundos automáticos.</p>
+    </div>
+    <button class="rep" onclick="toast('Abrindo seus templates no Canva…')">Abrir</button>
+  </div>
+
+  <div class="sec"><b>Banco de mídia</b><span>38 itens</span></div>
+  <div class="filters">
+    <button class="on" onclick="filt(this,'all')">Tudo</button>
+    <button onclick="filt(this,'foto')">Fotos</button>
+    <button onclick="filt(this,'video')">Vídeos</button>
+    <button onclick="filt(this,'arte')">Artes</button>
+  </div>
+  <div class="mgrid" id="mgrid">
+    <div class="mtile add" onclick="toast('Enviar do celular ou importar do Drive')">+</div>
+    <div class="mtile" data-k="foto" style="background:linear-gradient(135deg,#2E86AB,#174E66)">🏠</div>
+    <div class="mtile" data-k="video" style="background:linear-gradient(135deg,#17262C,#33616C)">🎥<span class="dur">0:42</span></div>
+    <div class="mtile" data-k="arte" style="background:linear-gradient(135deg,#175E68,#0E2E35)">📋</div>
+    <div class="mtile" data-k="foto" style="background:linear-gradient(135deg,#B4682E,#6E3B16)">🍨</div>
+    <div class="mtile" data-k="foto" style="background:linear-gradient(135deg,#3E7C59,#1F4634)">🌴</div>
+    <div class="mtile" data-k="video" style="background:linear-gradient(135deg,#54306E,#2A1840)">🎥<span class="dur">1:15</span></div>
+    <div class="mtile" data-k="arte" style="background:linear-gradient(135deg,#1265B5,#0A2F55)">📊</div>
+    <div class="mtile" data-k="foto" style="background:linear-gradient(135deg,#7A8B99,#42505C)">🌀</div>
+  </div>
+
+  <div class="sec"><b>Arquivo</b><span>prontos para repostar</span></div>
+  <div class="card arc">
+    <div class="thumb" style="background:linear-gradient(135deg,#175E68,#0E2E35)">📋</div>
+    <div class="arc-body">
+      <b>Checklist: documentos da apólice</b>
+      <p>março · IG</p>
+      <span class="m">melhor alcance do trimestre · 6.8k</span>
+    </div>
+    <button class="rep" onclick="repost('Checklist de documentos')">↻</button>
+  </div>
+  <div class="card arc">
+    <div class="thumb" style="background:linear-gradient(135deg,#2E86AB,#174E66)">🏠</div>
+    <div class="arc-body">
+      <b>Guia: primeiro imóvel na Flórida</b>
+      <p>janeiro · FB + IG</p>
+      <span class="m">42 leads · evergreen</span>
+    </div>
+    <button class="rep" onclick="repost('Guia do primeiro imóvel')">↻</button>
+  </div>
+  <div class="card arc">
+    <div class="thumb" style="background:linear-gradient(135deg,#54306E,#2A1840)">🎙</div>
+    <div class="arc-body">
+      <b>Vídeo: "seguro não é gasto"</b>
+      <p>abril · Reels</p>
+      <span class="m">12k views · pico de salvamentos</span>
+    </div>
+    <button class="rep" onclick="repost('Vídeo seguro não é gasto')">↻</button>
+  </div>
+  <div class="note">♻️ Ao repostar, a IA renova dados, arte e horário — nunca repete idêntico.</div>
+  <div class="card" style="display:flex;align-items:center;gap:12px;cursor:pointer" onclick="openConn()">
+    <div class="cic" style="background:var(--ink)">⚙</div>
+    <div style="flex:1"><b style="font-size:14px">Canais & Integrações</b><small style="font-size:12px;color:var(--mut);display:block">3 redes conectadas · Canva ativo</small></div>
+    <span style="color:var(--soft);font-size:18px">›</span>
+  </div>
+</section>
+
+<!-- ============ PAINEL ============ -->
+<section class="tab" id="tab-painel">
+  <div class="sec"><b>Indicadores</b><span>30 dias</span></div>
+  <div class="kpis">
+    <div class="kpi"><small>ROAS</small><b>3.4×</b><span class="up">↑ 21%</span></div>
+    <div class="kpi"><small>Custo/lead</small><b>$11</b><span class="up">↓ 18%</span></div>
+    <div class="kpi"><small>Leads</small><b>17</b><span class="up">↑ 6</span></div>
+  </div>
+
+  <div class="card">
+    <div class="sec" style="margin:0 0 12px"><b>De onde vêm seus leads</b></div>
+    <div class="split">
+      <div class="row"><span>Instagram</span><div class="tr"><i style="width:46%;background:var(--ig)"></i></div><b>46%</b></div>
+      <div class="row"><span>Facebook</span><div class="tr"><i style="width:31%;background:var(--fb)"></i></div><b>31%</b></div>
+      <div class="row"><span>LinkedIn</span><div class="tr"><i style="width:23%;background:var(--li)"></i></div><b>23%</b></div>
+    </div>
+  </div>
+
+  <div class="flag">⚠️ <span><b>Verificar antes de decidir</b>O pixel da Meta não registra "Lead" desde terça. Quer que eu corrija?</span></div>
+
+  <div class="sec"><b>Verba · Meta Ads</b><span>junho</span></div>
+  <div class="card">
+    <span class="big-num">$182<small> de $<span id="cap-show">400</span></small></span>
+    <div class="bar"><i id="spend-bar" style="width:45%"></i></div>
+    <div class="lim"><span>Gasto no mês</span><span>ritmo saudável ✓</span></div>
+    <div class="slider-row">
+      <label>Teto mensal <output id="cap-out">$400</output></label>
+      <input type="range" min="100" max="2000" step="50" value="400" oninput="updCap(this.value)">
+    </div>
+    <div class="slider-row">
+      <label>CPC máximo <output id="cpc-out">$1.80</output></label>
+      <input type="range" min="0.5" max="6" step="0.1" value="1.8" oninput="updCpc(this.value)">
+    </div>
+    <div class="switch-row">
+      <p><b>Freio automático</b><small>Pausa campanhas acima do CPC máximo.</small></p>
+      <label class="sw"><input type="checkbox" checked onchange="toast(this.checked?'Freio ligado 🛡️':'Freio desligado — cuidado')"><i></i></label>
+    </div>
+  </div>
+
+  <div class="sec"><b>Pergunte ao seu CMO</b></div>
+  <div class="ask">
+    <input type="text" id="q" placeholder="Por que o custo por lead caiu?" onkeydown="if(event.key==='Enter')ask()">
+    <button onclick="ask()">→</button>
+  </div>
+  <div class="answer" id="ans">
+    <span class="tagx">Resposta em 4s · base: Meta + IG + LI</span>
+    O custo por lead caiu 18% porque o carrossel de furacões teve CTR 2,7× acima da média — e o freio automático pausou 2 anúncios caros. Sugestão: repetir o formato checklist 1× por semana.
+  </div>
+</section>
+
+</main>
+
+<!-- NAV -->
+<nav>
+  <button class="on" data-t="hoje" onclick="go('hoje',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-5"/><circle cx="12" cy="12" r="9"/></svg>Hoje<span class="pin" id="pin">3</span></button>
+  <button data-t="agenda" onclick="go('agenda',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Agenda</button>
+  <button data-t="radar" onclick="go('radar',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 12l6-6"/></svg>Radar</button>
+  <button data-t="studio" onclick="go('studio',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><path d="M17 14v6M14 17h6"/></svg>Studio</button>
+  <button data-t="painel" onclick="go('painel',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Painel</button>
+</nav>
+
+<div id="toast"></div>
+
+<!-- PREVIEW -->
+<div class="ovl" id="pv" onclick="if(event.target===this)closeOv('pv')">
+  <div class="sheet">
+    <div class="handle"></div>
+    <div class="pv-head"><h2 id="pv-title">Prévia real</h2><span class="when" id="pv-when"></span></div>
+    <div class="vars" id="pv-vars">
+      <button class="on" onclick="setVar(0,this)">Marca</button>
+      <button onclick="setVar(1,this)">Com foto</button>
+      <button onclick="setVar(2,this)">Minimal</button>
+    </div>
+    <p class="media-pick">Fundo: <span id="pv-media"></span> · <a href="#" onclick="toast('Escolha outro fundo no Studio');return false">trocar</a></p>
+    <div id="pv-mock"></div>
+    <div class="pv-acts">
+      <button class="btn ok" onclick="approveFromPv()">✓ Aprovar e agendar</button>
+      <button class="btn ic" onclick="toast('✦ Gerando outra versão…')">Outra versão</button>
+    </div>
+  </div>
+</div>
+
+<!-- BRIEF -->
+<div class="ovl" id="brief" onclick="if(event.target===this)closeOv('brief')">
+  <div class="sheet">
+    <div class="handle"></div>
+    <div id="brief-form">
+      <h2>O que você precisa?</h2>
+      <p class="sub">Conte como contaria a um diretor de marketing: produto, objetivo, público, verba, prazo… ele monta a campanha ideal.</p>
+      <div class="chips">
+        <button onclick="chip(this,'Lançamento')">🚀 Lançamento</button>
+        <button onclick="chip(this,'Promoção')">🏷 Promoção</button>
+        <button onclick="chip(this,'Autoridade')">🎙 Autoridade</button>
+        <button onclick="chip(this,'Evento')">📅 Evento</button>
+      </div>
+      <textarea id="brief-txt" placeholder="Ex.: Quero divulgar revisão gratuita de apólices para brasileiros em Orlando durante julho, verba de $200, objetivo de 15 agendamentos."></textarea>
+      <button class="gen" onclick="genPlan()">✦ Criar plano de campanha</button>
+    </div>
+    <div class="thinking" id="thinking">Seu CMO está montando a estratégia<span class="tdots"><i></i><i></i><i></i></span></div>
+    <div id="plan">
+      <div class="plan-h">
+        <small>Plano do seu CMO</small>
+        <h3 id="plan-title">Campanha</h3>
+        <p id="plan-goal"></p>
+      </div>
+
+      <div class="seg" style="margin:0 0 12px">
+        <button class="on" onclick="pmode(this,'m-now')">⚡ Postar agora</button>
+        <button onclick="pmode(this,'m-camp')">📅 Campanha completa</button>
+      </div>
+
+      <div id="m-now">
+        <div class="chips" style="margin:0 0 10px">
+          <button class="on" onclick="setNet(this,'Instagram')">Instagram</button>
+          <button onclick="setNet(this,'Facebook')">Facebook</button>
+          <button onclick="setNet(this,'LinkedIn')">LinkedIn</button>
+        </div>
+        <div class="igpost">
+          <div class="ig-h"><div class="avx">FD</div><div><b>francisco.dabus</b><small>Orlando, Florida</small></div><span class="dots3">···</span></div>
+          <div class="ig-art" style="background:linear-gradient(160deg,#54306E,#2A1840);color:#fff;font-size:19px"><span style="position:relative" id="now-title"></span><span class="brandtag" style="color:#fff">@francisco.dabus · zyon</span></div>
+          <div class="ig-cap" style="padding-top:10px"><b>francisco.dabus</b> <span id="now-cap"></span></div>
+        </div>
+        <div class="pv-acts">
+          <button class="btn ok" onclick="pubNow()">🚀 Publicar agora</button>
+          <button class="btn ic" onclick="toast('✦ Gerando outra versão…')">Outra versão</button>
+        </div>
+      </div>
+
+      <div id="m-camp" style="display:none">
+        <div class="plan-grid">
+          <div class="pg"><b>3 sem</b><span>duração</span></div>
+          <div class="pg"><b>9 posts</b><span>IG 5 · FB 2 · LI 2</span></div>
+          <div class="pg"><b>$180</b><span>verba sugerida</span></div>
+        </div>
+        <div class="flow">
+          <span class="stage atrair">Atrair</span><em>→</em>
+          <span class="stage educar">Educar</span><em>→</em>
+          <span class="stage conectar">Conectar</span><em>→</em>
+          <span class="stage converter">Converter</span>
+        </div>
+        <div class="srow"><span class="sd">Seg<br>15/6</span><span class="si">Reel de abertura · IG<small>Atrair</small></span><input type="time" value="18:00"></div>
+        <div class="srow"><span class="sd">Qua<br>17/6</span><span class="si">Post educativo · FB<small>Educar</small></span><input type="time" value="12:00"></div>
+        <div class="srow"><span class="sd">Sex<br>19/6</span><span class="si">Artigo de autoridade · LI<small>Educar</small></span><input type="time" value="08:30"></div>
+        <div class="srow"><span class="sd">Seg<br>22/6</span><span class="si">Bastidores · IG<small>Conectar</small></span><input type="time" value="18:00"></div>
+        <div class="srow"><span class="sd">Qui<br>25/6</span><span class="si">Oferta + anúncio · IG<small>Converter · $60</small></span><input type="time" value="17:00"></div>
+        <div class="note" style="margin:4px 0 12px">⏰ Horários sugeridos pelos seus picos de engajamento — toque para ajustar qualquer um.</div>
+        <div class="pv-acts">
+          <button class="btn ok" onclick="approvePlan()">✓ Programar campanha</button>
+          <button class="btn ic" onclick="backBrief()">Ajustar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONEXÕES -->
+<div class="ovl" id="conn" onclick="if(event.target===this)closeOv('conn')">
+  <div class="sheet">
+    <div class="handle"></div>
+
+    <div id="conn-list">
+      <h2 class="disp" style="font-size:19px">Canais & Integrações</h2>
+      <p style="font-size:13px;color:var(--mut);margin:2px 0 14px">Conecte uma vez — seu CMO cuida do resto.</p>
+
+      <div class="sec" style="margin-top:4px"><b>Canais de publicação</b></div>
+      <div class="crow">
+        <div class="cic" style="background:linear-gradient(135deg,#C13584,#7B2667)">IG</div>
+        <div class="cb"><b>Instagram</b><small>@francisco.dabus · renovação automática</small></div>
+        <span class="cst ok">Conectado ✓</span>
+      </div>
+      <div class="crow">
+        <div class="cic" style="background:#1877F2">f</div>
+        <div class="cb"><b>Facebook</b><small>Página Francisco Dabus + Meta Ads</small></div>
+        <span class="cst ok">Conectado ✓</span>
+      </div>
+      <div class="crow">
+        <div class="cic" style="background:#0A66C2">in</div>
+        <div class="cb"><b>LinkedIn</b><small>Perfil pessoal · Francisco Dabus</small></div>
+        <span class="cst ok">Conectado ✓</span>
+      </div>
+      <div class="crow">
+        <div class="cic" style="background:#17262C">𝕏</div>
+        <div class="cb"><b>X (Twitter)</b><small>Não conectado</small></div>
+        <span id="x-slot"><button class="cbt" onclick="openLoginX()">Conectar</button></span>
+      </div>
+      <div class="crow">
+        <div class="cic" style="background:linear-gradient(135deg,#4285F4,#34A853)">G</div>
+        <div class="cb"><b>Google Business</b><small>Posts no perfil da empresa</small></div>
+        <span id="g-slot"><button class="cbt" onclick="quickConn('g-slot','Google Business')">Conectar</button></span>
+      </div>
+
+      <div class="sec"><b>Integrações</b></div>
+      <div class="crow">
+        <div class="cic" style="background:linear-gradient(135deg,#7D2AE8,#00C4CC)">C</div>
+        <div class="cb"><b>Canva</b><small>12 templates de marca sincronizados</small></div>
+        <span class="cst ok">Conectado ✓</span>
+      </div>
+      <div class="crow">
+        <div class="cic" style="background:linear-gradient(135deg,#FBBC04,#34A853)">▲</div>
+        <div class="cb"><b>Google Drive</b><small>Importar fotos e vídeos das suas pastas</small></div>
+        <span id="d-slot"><button class="cbt" onclick="quickConn('d-slot','Google Drive')">Conectar</button></span>
+      </div>
+      <div class="crow">
+        <div class="cic" style="background:#17262C">📷</div>
+        <div class="cb"><b>Unsplash + Pexels</b><small>Banco de fotos profissionais grátis</small></div>
+        <span class="cst ok">Conectado ✓</span>
+      </div>
+      <div class="crow">
+        <div class="cic" style="background:linear-gradient(135deg,#F9AB00,#E37400)">📈</div>
+        <div class="cb"><b>Google Analytics</b><small>Medir cliques que viram visita no site</small></div>
+        <span id="a-slot"><button class="cbt" onclick="quickConn('a-slot','Google Analytics')">Conectar</button></span>
+      </div>
+      <div class="crow">
+        <div class="cic" style="background:#25D366">✆</div>
+        <div class="cb"><b>WhatsApp Business</b><small>Leads dos posts caem direto no seu WhatsApp</small></div>
+        <span id="w-slot"><button class="cbt" onclick="quickConn('w-slot','WhatsApp Business')">Conectar</button></span>
+      </div>
+      <div class="note">🔐 As conexões usam o login oficial de cada rede (OAuth). Sua senha nunca fica guardada aqui — e a renovação é automática.</div>
+    </div>
+
+    <div id="login-x" style="display:none">
+      <a class="backlink" href="#" onclick="backConn();return false">← Voltar</a>
+      <div style="text-align:center;margin-bottom:16px">
+        <div class="cic" style="background:#17262C;width:56px;height:56px;border-radius:16px;font-size:22px;margin:0 auto 10px">𝕏</div>
+        <h2 class="disp" style="font-size:19px">Conectar X</h2>
+        <p style="font-size:12.5px;color:var(--mut);margin-top:4px">Login oficial do X — sua senha vai direto pra eles, nunca fica no app.</p>
+      </div>
+      <input type="text" id="x-user" placeholder="Usuário ou e-mail" autocomplete="off">
+      <input type="password" id="x-pass" placeholder="Senha">
+      <button class="gen" id="x-go" onclick="doLoginX()">Autorizar e conectar</button>
+    </div>
+
+  </div>
+</div>
+
+</div>
+<script>
+const POSTS={
+ p1:{net:'ig',title:'Temporada de furacões começou.',sub:'Seu seguro residencial está pronto? Arrasta pro lado →',when:'hoje · 18h05',media:'template Canva "Checklist"',photo:'https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=900&q=80',cap:'3 coberturas que muitos vizinhos em Orlando descobrem que não têm só depois da tempestade. Salva esse post e me chama na DM — leva 15 min. 🌀',tags:'#OrlandoFL #SeguroResidencial',likes:'Curtido por maria.orl e outras 113 pessoas',art:['linear-gradient(160deg,#175E68,#0E2E35)','linear-gradient(160deg,#2E86AB,#17262C)','#F2EFE6'],pgn:'1/5'},
+ p2:{net:'li',title:'Citizens vai transferir 200 mil apólices.',sub:'Guia em português · 4 min de leitura',when:'amanhã · 8h30',media:'arte Canva "Artigo"',cap:'A Citizens vai despejar 200 mil apólices no mercado privado este ano. Se você tem imóvel na Flórida, três coisas mudam — e a terceira pega muita gente de surpresa.\n\n1. Você pode receber uma oferta de takeout sem entender o que é…'},
+ p3:{net:'ig',title:'Sábado de testes 🍨',sub:'Gelato de pistache: versão final aprovada',when:'sábado · 11h00',media:'foto do banco (gelato_14.jpg)',photo:'https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?auto=format&fit=crop&w=900&q=80',cap:'Empreender é isso: errar 14 receitas até acertar uma. Quem vem provar quando a gelateria abrir? 😄',tags:'#Orlando #Gelato',likes:'Curtido por giselle.bdabus e outras 89 pessoas',art:['linear-gradient(160deg,#B4682E,#6E3B16)','linear-gradient(160deg,#C98A4B,#5C3514)','#FAF3E6'],pgn:''},
+ r1:{net:'li',title:'Citizens: o guia em português que faltava.',sub:'Gerado do radar · pronto em segundos',when:'sugestão · sex 9h',media:'arte Canva "Artigo"',cap:'Dois colegas de mercado falaram disso em inglês esta semana. Mas 1 em cada 4 segurados da Citizens na região fala português — e ninguém explicou para eles.\n\n1. O que é o takeout e por que você recebeu essa carta…'},
+ r2:{net:'ig',title:'3 formas reais de baixar seu seguro auto',sub:'Reel de 30s · roteiro pronto',when:'sugestão · ter 18h',media:'vídeo do banco (carro_orlando.mp4)',photo:'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=900&q=80',cap:'A 3ª quase ninguém usa — e é a que mais desconta. Salva e manda pra quem reclama do seguro do carro. 🚗',tags:'#SeguroAuto #Florida',likes:'Prévia · ainda não publicado',art:['linear-gradient(160deg,#54306E,#2A1840)','linear-gradient(160deg,#7A4A92,#3A1F52)','#F2EDF7'],pgn:'▶'},
+ r3:{net:'ig',title:'Taxas caindo: hora de comprar?',sub:'O que ninguém conta sobre o seguro no fechamento',when:'sugestão · qua 12h',media:'template Canva "Imóveis"',photo:'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=900&q=80',cap:'3ª semana de queda nas taxas. Mas o financiamento aprovado não é o fim — o seguro certo no fechamento evita custo extra. Falo de imóvel E de seguro: me chama. 🏠',tags:'#Orlando #RealEstate',likes:'Prévia · ainda não publicado',art:['linear-gradient(160deg,#2E86AB,#174E66)','linear-gradient(160deg,#3E7C59,#1F4634)','#EAF2F0'],pgn:'1/3'}
+};
+let q=3,curPost=null,curVar=0,briefType='Campanha';
+const NETN={ig:'Instagram',li:'LinkedIn',fb:'Facebook'};
+
+function go(t,btn){
+  document.querySelectorAll('.tab').forEach(s=>s.classList.remove('on'));
+  document.getElementById('tab-'+t).classList.add('on');
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  window.scrollTo({top:0});
+}
+function seg(btn,view){
+  btn.parentNode.querySelectorAll('button').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('v-cal').style.display=view==='v-cal'?'block':'none';
+  document.getElementById('v-jor').style.display=view==='v-jor'?'block':'none';
+}
+function tg(id){document.getElementById(id).classList.toggle('on')}
+function toast(m){
+  const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');
+  clearTimeout(t._x);t._x=setTimeout(()=>t.classList.remove('on'),2200);
+}
+function dec(){
+  q=Math.max(0,q-1);
+  document.getElementById('qcount').textContent=q+(q===1?' post':' posts');
+  const pin=document.getElementById('pin');
+  if(q===0){pin.style.display='none';document.getElementById('empty-q').style.display='block'}
+  else pin.textContent=q;
+}
+function approve(id){
+  const el=document.getElementById(id);
+  if(el){el.classList.add('gone');dec()}
+  toast('Aprovado ✓ Agendado para publicar');
+}
+function skip(id){
+  document.getElementById(id).classList.add('gone');dec();
+  toast('Pulado — preferência anotada');
+}
+function repost(t){toast('♻️ '+t+' entrou na fila renovado')}
+function filt(btn,k){
+  btn.parentNode.querySelectorAll('button').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.querySelectorAll('#mgrid .mtile').forEach(t=>{
+    if(t.classList.contains('add'))return;
+    t.style.display=(k==='all'||t.dataset.k===k)?'flex':'none';
+  });
+}
+function genPost(id){openPv(id);toast('✦ Versão gerada — confira a prévia')}
+function openPv(id){
+  curPost=id;
+  const p=POSTS[id];
+  curVar=p.photo?1:0;
+  document.getElementById('pv-title').textContent='Prévia · '+NETN[p.net];
+  document.getElementById('pv-when').textContent=p.when;
+  document.getElementById('pv-media').textContent=p.media;
+  document.getElementById('pv-vars').style.display=p.net==='li'?'none':'flex';
+  document.querySelectorAll('#pv-vars button').forEach((b,i)=>b.classList.toggle('on',i===curVar));
+  renderPv();
+  openOv('pv');
+}
+function setVar(n,btn){
+  curVar=n;
+  document.querySelectorAll('#pv-vars button').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderPv();
+}
+function renderPv(){
+  const p=POSTS[curPost],m=document.getElementById('pv-mock');
+  if(p.net==='li'){
+    m.innerHTML=`<div class="lipost">
+      <div class="li-h"><div class="avx">FD</div><div><b>Francisco Dabus</b><small>Corretor licenciado 2-15 · ZYON Group · Orlando, FL</small><small>Agendado · 🌐</small></div></div>
+      <div class="li-txt">${p.cap.split('\n\n')[0]} <span class="more">…ver mais</span></div>
+      <div class="li-doc">${p.title}<small>${p.sub}</small></div>
+      <div class="li-meta"><span>👍💡❤️ 87</span><span>14 comentários</span></div>
+      <div class="li-bar"><span>👍 Gostei</span><span>💬 Comentar</span><span>↗ Compartilhar</span></div>
+    </div>`;
+  }else{
+    const bg=p.art[curVar];
+    const fg=curVar===2?'#17262C':'#fff';
+    const foto=(curVar===1&&p.photo)?`<img src="${p.photo}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" onerror="this.nextElementSibling.remove();this.remove()"><span style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,24,28,.10) 30%,rgba(10,24,28,.84))"></span>`:'';
+    m.innerHTML=`<div class="igpost">
+      <div class="ig-h"><div class="avx">FD</div><div><b>francisco.dabus</b><small>Orlando, Florida</small></div><span class="dots3">···</span></div>
+      <div class="ig-art" style="background:${bg};color:${fg}" onclick="cycleVar()">${foto}${p.pgn?`<span class="pgn">${p.pgn}</span>`:''}<span style="position:relative">${p.title}<small style="color:${fg};display:block">${p.sub}</small></span><span class="brandtag" style="color:${fg}">@francisco.dabus · zyon</span></div>
+      ${p.pgn&&p.pgn!=='▶'?'<div class="cdots"><i></i><i></i><i></i><i></i><i></i></div>':''}
+      <div class="ig-acts">
+        <svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.8-9C.7 8.6 2.6 4.9 6.2 4.5c2-.2 3.9.8 5.8 3 1.9-2.2 3.8-3.2 5.8-3 3.6.4 5.5 4.1 4 7.5-2.3 4.4-9.8 9-9.8 9z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.3 8.6 8.6 0 0 1-3.7-.8L3 21l2.1-5.4A8.1 8.1 0 0 1 4 11.5 8.4 8.4 0 0 1 12.5 3.2 8.4 8.4 0 0 1 21 11.5z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        <svg class="save" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V4a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1z"/></svg>
+      </div>
+      <div class="ig-likes">${p.likes||''}</div>
+      <div class="ig-cap"><b>francisco.dabus</b> ${p.cap} <span class="tags">${p.tags||''}</span></div>
+    </div>`;
+  }
+}
+function cycleVar(){
+  const p=POSTS[curPost];
+  if(!p||p.net==='li')return;
+  curVar=(curVar+1)%3;
+  document.querySelectorAll('#pv-vars button').forEach((b,i)=>b.classList.toggle('on',i===curVar));
+  renderPv();
+  toast(curVar===0?'Estilo: arte da marca':curVar===1?'Estilo: com foto real':'Estilo: minimal');
+}
+function approveFromPv(){
+  closeOv('pv');
+  if(['p1','p2','p3'].includes(curPost)){approve(curPost)}
+  else toast('Aprovado ✓ Entrou na agenda');
+}
+function openBrief(){
+  document.getElementById('brief-form').style.display='block';
+  document.getElementById('thinking').classList.remove('on');
+  document.getElementById('plan').classList.remove('on');
+  openOv('brief');
+}
+function chip(btn,t){
+  briefType=t;
+  btn.parentNode.querySelectorAll('button').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+}
+let planName='Nova campanha',nowNet='Instagram';
+function cleanName(t){
+  let s=t.replace(/^(quero|preciso|gostaria de|criar|fazer|montar)\s+/i,'')
+         .replace(/^(uma|um)\s+/i,'')
+         .replace(/^(campanha|post|anúncio|divulgação|publicação)\s+/i,'')
+         .replace(/^(para|de|do|da|que)\s+/i,'');
+  s=s.trim();
+  if(!s)return briefType;
+  s=s.charAt(0).toUpperCase()+s.slice(1);
+  return s.length>44?s.slice(0,44)+'…':s;
+}
+function genPlan(){
+  const txt=document.getElementById('brief-txt').value.trim();
+  document.getElementById('brief-form').style.display='none';
+  document.getElementById('thinking').classList.add('on');
+  setTimeout(()=>{
+    document.getElementById('thinking').classList.remove('on');
+    planName=cleanName(txt);
+    document.getElementById('plan-title').textContent=planName;
+    document.getElementById('plan-goal').textContent=txt?'Brief: "'+txt.slice(0,90)+(txt.length>90?'…':'')+'"':'Tipo: '+briefType;
+    document.getElementById('now-title').textContent=planName;
+    document.getElementById('now-cap').textContent='Legenda pronta, gerada do seu brief — com CTA para DM e hashtags locais. Toque em "Outra versão" para variar o texto ou a arte.';
+    document.getElementById('plan').classList.add('on');
+  },1500);
+}
+function pmode(btn,id){
+  btn.parentNode.querySelectorAll('button').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('m-now').style.display=id==='m-now'?'block':'none';
+  document.getElementById('m-camp').style.display=id==='m-camp'?'block':'none';
+}
+function setNet(btn,n){
+  nowNet=n;
+  btn.parentNode.querySelectorAll('button').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+}
+function pubNow(){
+  closeOv('brief');
+  toast('🚀 Publicado agora no '+nowNet+' ✓');
+}
+function backBrief(){
+  document.getElementById('plan').classList.remove('on');
+  document.getElementById('brief-form').style.display='block';
+}
+function approvePlan(){
+  closeOv('brief');
+  document.getElementById('camp-new').style.display='block';
+  document.getElementById('camp-new-title').textContent=planName;
+  toast('✓ Campanha programada — veja na Jornada');
+  go('agenda',document.querySelector('nav button[data-t="agenda"]'));
+  document.getElementById('seg-jor').click();
+}
+function updCap(v){
+  document.getElementById('cap-out').textContent='$'+v;
+  document.getElementById('cap-show').textContent=v;
+  document.getElementById('spend-bar').style.width=Math.min(100,Math.round(182/v*100))+'%';
+}
+function updCpc(v){document.getElementById('cpc-out').textContent='$'+Number(v).toFixed(2)}
+function ask(){
+  const i=document.getElementById('q');
+  if(!i.value.trim()){i.value='Por que o custo por lead caiu?'}
+  document.getElementById('ans').classList.add('on');
+}
+function openConn(){
+  document.getElementById('conn-list').style.display='block';
+  document.getElementById('login-x').style.display='none';
+  openOv('conn');
+}
+function openLoginX(){
+  document.getElementById('conn-list').style.display='none';
+  document.getElementById('login-x').style.display='block';
+}
+function backConn(){
+  document.getElementById('login-x').style.display='none';
+  document.getElementById('conn-list').style.display='block';
+}
+function doLoginX(){
+  const b=document.getElementById('x-go');
+  b.textContent='Autorizando…';
+  setTimeout(()=>{
+    document.getElementById('x-slot').innerHTML='<span class="cst ok">Conectado ✓</span>';
+    document.querySelector('#login-x #x-user').value='';
+    document.querySelector('#login-x #x-pass').value='';
+    b.textContent='Autorizar e conectar';
+    backConn();
+    toast('X conectado ✓ Seu CMO já pode postar lá');
+  },1400);
+}
+function quickConn(slot,name){
+  document.getElementById(slot).innerHTML='<span class="cst ok">Conectado ✓</span>';
+  toast(name+' conectado ✓');
+}
+function openOv(id){document.getElementById(id).classList.add('on')}
+function closeOv(id){document.getElementById(id).classList.remove('on')}
+</script>
+</body>
+</html>

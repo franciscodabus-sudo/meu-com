@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Campaign {
+  id        String   @id @default(cuid())
+  name      String
+  brief     String
+  objective String?
+  stageFlow String   @default("atrair,educar,conectar,converter")
+  status    String   @default("ativa") // ativa | pausada | concluida
+  startsAt  DateTime?
+  posts     Post[]
+  createdAt DateTime @default(now())
+}
+
+model Post {
+  id          String    @id @default(cuid())
+  campaign    Campaign? @relation(fields: [campaignId], references: [id])
+  campaignId  String?
+  channel     String    // instagram | facebook | linkedin | x
+  format      String    @default("post") // post | carrossel | reel | artigo
+  stage       String?   // atrair | educar | conectar | converter
+  title       String
+  caption     String
+  hashtags    String?
+  mediaUrl    String?
+  whyNow      String?   // a justificativa do CMO ("Por que agora?")
+  status      String    @default("pending") // pending | approved | scheduled | published | skipped
+  scheduledAt DateTime?
+  publishedAt DateTime?
+  ayrshareId  String?
+  createdAt   DateTime  @default(now())
+}
+
+model MediaAsset {
+  id        String   @id @default(cuid())
+  url       String
+  kind      String   @default("foto") // foto | video | arte
+  tags      String?  // "casa,clima,furacao"
+  source    String   @default("upload") // upload | canva | unsplash | drive
+  createdAt DateTime @default(now())
+}
+
+model RadarItem {
+  id         String   @id @default(cuid())
+  kind       String   // noticia | concorrente
+  title      String
+  summary    String?
+  sourceUrl  String?
+  sourceName String?
+  heat       Int      @default(0)
+  usedAt     DateTime?
+  createdAt  DateTime @default(now())
+}
+
+model RadarSource {
+  id        String   @id @default(cuid())
+  url       String   @unique
+  kind      String   @default("rss") // rss | website | instagram
+  name      String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model Channel {
+  id        String   @id @default(cuid())
+  name      String   @unique // instagram | facebook | linkedin | tiktok
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
