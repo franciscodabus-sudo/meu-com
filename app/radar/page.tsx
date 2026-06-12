@@ -14,8 +14,150 @@ type RadarSource = {
   name: string; active: boolean; createdAt: string;
 };
 
+type AutoStatus = {
+  lastAt: string;
+  resultado: { novosItens: number; postsGerados: number; erros: string[] } | null;
+  intervalHoras: string;
+  maxPosts: string;
+  proximaRodada: string | null;
+};
+
 function isNovo(createdAt: string) {
   return Date.now() - new Date(createdAt).getTime() < 48 * 60 * 60 * 1000;
+}
+
+function tempoAtras(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const min  = Math.floor(diff / 60_000);
+  if (min < 1)   return 'agora mesmo';
+  if (min < 60)  return `há ${min} min`;
+  const h = Math.floor(min / 60);
+  if (h < 24)    return `há ${h}h`;
+  return `há ${Math.floor(h / 24)}d`;
+}
+
+const INTERVALOS = [
+  { label: 'A cada 4h',  value: '4'  },
+  { label: 'A cada 6h',  value: '6'  },
+  { label: 'A cada 12h', value: '12' },
+  { label: 'Diário',     value: '24' },
+  { label: 'Desligado',  value: '0'  },
+];
+
+// ---------- sub-componente: Automação ----------
+function AutoRadar({ onPostsGerados }: { onPostsGerados: () => void }) {
+  const [status, setStatus] = useState<AutoStatus | null>(null);
+  const [rodando, setRodando] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+  const [aberto, setAberto] = useState(false);
+
+  async function carregar() {
+    const r = await fetch('/api/radar/auto');
+    if (r.ok) setStatus(await r.json());
+  }
+
+  useEffect(() => { carregar(); }, []);
+
+  async function rodarAgora() {
+    setRodando(true);
+    const r = await fetch('/api/radar/auto', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rodar: true }) });
+    const data = await r.json();
+    setRodando(false);
+    if (r.ok && data.postsGerados > 0) onPostsGerados();
+    carregar();
+  }
+
+  async function salvarIntervalo(valor: string) {
+    setSalvando(true);
+    await fetch('/api/radar/auto', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ intervalHoras: valor }),
+    });
+    setSalvando(false);
+    carregar();
+  }
+
+  const intervaloAtual = status?.intervalHoras ?? '6';
+  const ligado = intervaloAtual !== '0';
+
+  return (
+    <div className="mb-5">
+      <button
+        onClick={() => setAberto(!aberto)}
+        className="w-full flex items-center justify-between px-4 py-3 rounded-2xl text-[14px] font-semibold"
+        style={{ background: ligado ? '#E5F1F0' : '#F6F8F8', color: ligado ? '#0E5F66' : '#6B7E85' }}
+      >
+        <span>
+          {ligado ? '🤖 Radar automático · ' : '⏸ Radar automático · '}
+          {ligado
+            ? (INTERVALOS.find(i => i.value === intervaloAtual)?.label ?? `a cada ${intervaloAtual}h`)
+            : 'desligado'}
+        </span>
+        <span className="text-soft">{aberto ? '▲' : '▼'}</span>
+      </button>
+
+      {aberto && (
+        <div className="mt-2 bg-white rounded-2xl overflow-hidden" style={{ boxShadow: '0 1px 3px rgba(23,38,44,.06),0 4px 14px rgba(23,38,44,.05)' }}>
+          {/* Último resultado */}
+          {status?.lastAt && (
+            <div className="px-4 pt-4 pb-3 border-b border-[#F0F4F5]">
+              <p className="text-[12.5px] text-mut">
+                Última varredura: <b className="text-ink">{tempoAtras(status.lastAt)}</b>
+                {status.resultado && (
+                  <> · <span style={{ color: '#17996B', fontWeight: 600 }}>
+                    {status.resultado.postsGerados} post{status.resultado.postsGerados !== 1 ? 's' : ''} gerado{status.resultado.postsGerados !== 1 ? 's' : ''}
+                  </span></>
+                )}
+              </p>
+              {status.proximaRodada && ligado && (
+                <p className="text-[12px] text-soft mt-0.5">
+                  Próxima: {new Date(status.proximaRodada).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                  {' '}({tempoAtras(status.proximaRodada).replace('há ', 'em ')})
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Frequência */}
+          <div className="px-4 py-3 border-b border-[#F0F4F5]">
+            <p className="text-[12px] font-semibold text-mut mb-2">Frequência de varredura</p>
+            <div className="flex gap-1.5 flex-wrap">
+              {INTERVALOS.map(op => (
+                <button
+                  key={op.value}
+                  disabled={salvando}
+                  onClick={() => salvarIntervalo(op.value)}
+                  className="px-3 py-1.5 rounded-full text-[12px] font-semibold transition"
+                  style={{
+                    background: intervaloAtual === op.value ? '#0E5F66' : '#F0F4F5',
+                    color: intervaloAtual === op.value ? '#fff' : '#6B7E85',
+                  }}
+                >
+                  {op.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Rodar agora */}
+          <div className="px-4 py-3">
+            <button
+              onClick={rodarAgora}
+              disabled={rodando}
+              className="w-full py-2.5 rounded-xl text-[13px] font-semibold text-white transition active:scale-95 disabled:opacity-60"
+              style={{ background: '#0E5F66' }}
+            >
+              {rodando ? '✦ Varrendo e gerando posts…' : '▶ Rodar agora'}
+            </button>
+            <p className="text-[11.5px] text-soft mt-2 text-center">
+              Busca notícias novas e gera até {status?.maxPosts ?? '2'} posts automaticamente — vão para a fila de aprovação.
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ---------- sub-componente: Gerenciar fontes ----------
@@ -231,7 +373,9 @@ export default function Radar() {
           style={{ background: '#E6F4EE' }}>
           <span className="text-[18px]">✓</span>
           <div className="flex-1">
-            <p className="text-[13px] font-semibold" style={{ color: '#17996B' }}>Post gerado e na fila!</p>
+            <p className="text-[13px] font-semibold" style={{ color: '#17996B' }}>
+              {sucesso === 'auto' ? 'Posts gerados automaticamente e na fila!' : 'Post gerado e na fila!'}
+            </p>
             <button onClick={() => router.push('/')}
               className="text-[12px] underline font-semibold" style={{ color: '#17996B' }}>
               Aprovar em Hoje →
@@ -249,6 +393,9 @@ export default function Radar() {
           <p style={{ color: '#B91C1C' }}>{erroGerar}</p>
         </div>
       )}
+
+      {/* Automação */}
+      <AutoRadar onPostsGerados={() => { setSucesso('auto'); buscar(true); }} />
 
       {/* Gerenciar fontes */}
       <GerenciarFontes />
