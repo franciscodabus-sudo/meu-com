@@ -1,17 +1,13 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 type RadarItem = {
   id: string; kind: string; title: string;
   summary: string | null; sourceUrl: string | null;
   sourceName: string | null; heat: number;
   usedAt: string | null; createdAt: string;
-};
-
-type RadarSource = {
-  id: string; url: string; kind: string;
-  name: string; active: boolean; createdAt: string;
 };
 
 type AutoStatus = {
@@ -160,145 +156,6 @@ function AutoRadar({ onPostsGerados }: { onPostsGerados: () => void }) {
   );
 }
 
-// ---------- sub-componente: Gerenciar fontes ----------
-function GerenciarFontes() {
-  const [fontes, setFontes] = useState<RadarSource[]>([]);
-  const [aberto, setAberto] = useState(false);
-  const [url, setUrl] = useState('');
-  const [name, setName] = useState('');
-  const [kind, setKind] = useState<'rss' | 'website' | 'instagram'>('website');
-  const [salvando, setSalvando] = useState(false);
-  const [erro, setErro] = useState('');
-
-  useEffect(() => {
-    fetch('/api/radar/fontes').then(r => r.ok ? r.json() : []).then(setFontes);
-  }, []);
-
-  // auto-detecta tipo pelo URL
-  function handleUrl(val: string) {
-    setUrl(val);
-    if (val.includes('instagram.com')) setKind('instagram');
-    else if (val.endsWith('.xml') || val.endsWith('/rss') || val.endsWith('/feed')) setKind('rss');
-    else setKind('website');
-  }
-
-  async function salvar() {
-    if (!url.trim() || !name.trim()) { setErro('Preencha URL e nome'); return; }
-    setSalvando(true); setErro('');
-    try {
-      const r = await fetch('/api/radar/fontes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: url.trim(), name: name.trim(), kind })
-      });
-      const data = await r.json();
-      if (!r.ok) { setErro(data.error ?? 'Erro'); return; }
-      setFontes(prev => [...prev.filter(f => f.url !== data.url), data]);
-      setUrl(''); setName(''); setKind('website');
-    } catch { setErro('Falha de conexão'); }
-    finally { setSalvando(false); }
-  }
-
-  async function remover(id: string) {
-    await fetch('/api/radar/fontes', {
-      method: 'DELETE', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id })
-    });
-    setFontes(prev => prev.filter(f => f.id !== id));
-  }
-
-  const kindLabel = { rss: '📰 RSS', website: '🌐 Site', instagram: '📸 Instagram' };
-  const kindColor = { rss: '#E5F1F0', website: '#EEF2FF', instagram: '#FDF2FA' };
-  const kindText  = { rss: '#0E5F66', website: '#4338CA', instagram: '#A21CAF' };
-
-  return (
-    <div className="mt-5 mb-6">
-      <button
-        onClick={() => setAberto(!aberto)}
-        className="w-full flex items-center justify-between px-4 py-3 rounded-2xl text-[14px] font-semibold"
-        style={{ background: '#F6F8F8', color: '#3D4451' }}
-      >
-        <span>⚙️ Fontes monitoradas · {fontes.length}</span>
-        <span className="text-soft">{aberto ? '▲' : '▼'}</span>
-      </button>
-
-      {aberto && (
-        <div className="mt-2 bg-white rounded-2xl shadow-sm overflow-hidden">
-          {/* Lista existente */}
-          {fontes.length > 0 && (
-            <div className="divide-y divide-gray-50">
-              {fontes.map(f => (
-                <div key={f.id} className="flex items-center gap-3 px-4 py-3">
-                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full flex-shrink-0"
-                    style={{ background: kindColor[f.kind as keyof typeof kindColor] ?? '#F6F8F8',
-                             color: kindText[f.kind as keyof typeof kindText] ?? '#555' }}>
-                    {kindLabel[f.kind as keyof typeof kindLabel] ?? f.kind}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-semibold text-ink truncate">{f.name}</p>
-                    <p className="text-[11.5px] text-soft truncate">{f.url}</p>
-                  </div>
-                  <button
-                    onClick={() => remover(f.id)}
-                    className="text-soft text-[18px] hover:text-red-400 transition flex-shrink-0"
-                    title="Remover"
-                  >×</button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Aviso Instagram */}
-          {kind === 'instagram' && (
-            <div className="mx-4 mt-3 mb-1 rounded-xl p-3 text-[12px]"
-              style={{ background: '#FDF2FA', color: '#831843' }}>
-              <p className="font-semibold mb-0.5">Instagram não tem RSS nativo.</p>
-              <p>Use o <b>RSS.app</b> (rss.app) para criar um feed do perfil gratuitamente, e adicione a URL gerada como tipo <b>RSS</b>.</p>
-            </div>
-          )}
-
-          {/* Formulário adicionar */}
-          <div className="px-4 pb-4 pt-3 border-t border-gray-50">
-            <p className="text-[12px] font-semibold text-soft mb-2">+ Adicionar fonte</p>
-            <input
-              value={name} onChange={e => setName(e.target.value)}
-              placeholder="Nome (ex: Blog Seguro de Auto Florida)"
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-[13px] mb-2 outline-none focus:border-[#0E5F66]"
-            />
-            <input
-              value={url} onChange={e => handleUrl(e.target.value)}
-              placeholder="URL do site, feed RSS ou perfil Instagram"
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-[13px] mb-2 outline-none focus:border-[#0E5F66]"
-            />
-            <div className="flex gap-2 mb-3">
-              {(['website', 'rss', 'instagram'] as const).map(k => (
-                <button key={k}
-                  onClick={() => setKind(k)}
-                  className="flex-1 py-1.5 rounded-xl text-[12px] font-semibold transition"
-                  style={{
-                    background: kind === k ? kindColor[k] : '#F6F8F8',
-                    color: kind === k ? kindText[k] : '#9CA3AF'
-                  }}
-                >
-                  {kindLabel[k]}
-                </button>
-              ))}
-            </div>
-            {erro && <p className="text-[12px] text-red-500 mb-2">{erro}</p>}
-            <button
-              onClick={salvar} disabled={salvando}
-              className="w-full py-2.5 rounded-xl text-[13px] font-semibold text-white transition active:scale-95 disabled:opacity-60"
-              style={{ background: '#0E5F66' }}
-            >
-              {salvando ? 'Salvando…' : 'Salvar fonte'}
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ---------- componente principal ----------
 export default function Radar() {
   const [itens, setItens] = useState<RadarItem[]>([]);
@@ -352,19 +209,29 @@ export default function Radar() {
   return (
     <main className="px-4 pb-8">
       {/* Header */}
-      <header className="pt-6 pb-4 flex items-center justify-between">
+      <header className="pt-6 pb-4 flex items-center justify-between gap-2">
         <div>
           <p className="text-xs text-soft">Monitoramento em tempo real</p>
           <h1 className="font-disp text-[23px] font-bold">Radar</h1>
         </div>
-        <button
-          onClick={() => buscar(true)}
-          disabled={atualizando}
-          className="text-[13px] font-semibold px-3.5 py-1.5 rounded-full transition active:scale-95"
-          style={{ background: '#E5F1F0', color: '#0E5F66' }}
-        >
-          {atualizando ? '…' : '↻ Atualizar'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => buscar(true)}
+            disabled={atualizando}
+            className="text-[13px] font-semibold px-3.5 py-1.5 rounded-full transition active:scale-95"
+            style={{ background: '#E5F1F0', color: '#0E5F66' }}
+          >
+            {atualizando ? '…' : '↻ Atualizar'}
+          </button>
+          <Link
+            href="/configuracoes"
+            className="w-9 h-9 flex items-center justify-center rounded-full text-mut hover:text-brand transition"
+            style={{ background: '#F0F4F5' }}
+            title="Configurações"
+          >
+            ⚙️
+          </Link>
+        </div>
       </header>
 
       {/* Banner sucesso */}
@@ -396,9 +263,6 @@ export default function Radar() {
 
       {/* Automação */}
       <AutoRadar onPostsGerados={() => { setSucesso('auto'); buscar(true); }} />
-
-      {/* Gerenciar fontes */}
-      <GerenciarFontes />
 
       {/* Loading */}
       {carregando && (

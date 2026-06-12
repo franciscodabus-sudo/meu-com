@@ -25,6 +25,18 @@ export async function POST(req: Request) {
   }
 }
 
+export async function PATCH(req: Request) {
+  try {
+    const { id, active } = await req.json() as { id: string; active: boolean };
+    if (!id || active === undefined) return NextResponse.json({ error: 'id e active obrigatórios' }, { status: 400 });
+    const fonte = await db.radarSource.update({ where: { id }, data: { active } });
+    return NextResponse.json(fonte);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Erro';
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
+}
+
 export async function DELETE(req: Request) {
   try {
     const { id } = await req.json() as { id: string };

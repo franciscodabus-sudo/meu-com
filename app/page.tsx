@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import PostCard, { type Post } from '@/components/PostCard';
 import PreviewModal from '@/components/PreviewModal';
 
@@ -87,10 +88,12 @@ export default function Hoje() {
             <p className="text-xs text-soft">{new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
             <h1 className="font-disp text-[23px] font-bold">Bom dia, Francisco</h1>
           </div>
-          <div
+          <Link
+            href="/configuracoes"
             className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-[14px] font-disp flex-shrink-0"
             style={{ background: 'linear-gradient(135deg,#0E5F66,#17996B)' }}
-          >FD</div>
+            title="Configurações"
+          >FD</Link>
         </header>
 
         <div className="bg-white rounded-full flex items-center gap-2 px-4 py-1.5 mb-4" style={{ boxShadow: '0 1px 3px rgba(23,38,44,.06),0 4px 14px rgba(23,38,44,.05)' }}>

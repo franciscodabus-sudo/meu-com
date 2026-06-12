@@ -1,6 +1,14 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { getSetting } from './radar-auto';
 
 const anthropic = new Anthropic(); // usa ANTHROPIC_API_KEY do .env
+
+async function getSystemPrompt(): Promise<string> {
+  const extra = await getSetting('perfilContexto', '');
+  return extra
+    ? `${SYSTEM_CMO}\n\nCONTEXTO ADICIONAL DO NEGÓCIO:\n${extra}`
+    : SYSTEM_CMO;
+}
 
 const SYSTEM_CMO = `Você é o CMO pessoal de Francisco Dabus, com base em Orlando, FL.
 Francisco atua em múltiplas frentes: seguros (licença 2-15), real estate, consultoria (ZYON Group)
@@ -50,10 +58,11 @@ export async function gerarPostDoRadar(item: {
   title: string; summary?: string | null;
   sourceName?: string | null; sourceUrl?: string | null;
 }): Promise<GeneratedPost> {
+  const system = await getSystemPrompt();
   const msg = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 1200,
-    system: SYSTEM_CMO,
+    system,
     messages: [{
       role: 'user',
       content: `Notícia detectada pelo Radar:
@@ -71,10 +80,11 @@ ${FORMATO_JSON}`
 }
 
 export async function gerarPostsDoBrief(brief: string, quantidade = 3): Promise<GeneratedPost[]> {
+  const system = await getSystemPrompt();
   const msg = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 2500,
-    system: SYSTEM_CMO,
+    system,
     messages: [{
       role: 'user',
       content: `Brief do cliente: """${brief}"""

@@ -8,7 +8,7 @@ type RadarEntry = {
   sourceUrl?: string; sourceName?: string;
 };
 
-async function lerFeedRSS(url: string): Promise<RadarEntry[]> {
+export async function lerFeedRSS(url: string): Promise<RadarEntry[]> {
   const feed = await parser.parseURL(url);
   return feed.items.slice(0, 5).map(item => ({
     title: item.title ?? '(sem título)',
@@ -18,7 +18,7 @@ async function lerFeedRSS(url: string): Promise<RadarEntry[]> {
   }));
 }
 
-async function detectarRSSDoSite(pageUrl: string): Promise<string | null> {
+export async function detectarRSSDoSite(pageUrl: string): Promise<string | null> {
   const res = await fetch(pageUrl, { headers: { 'User-Agent': 'MeuCMO/1.0' }, signal: AbortSignal.timeout(8000) });
   const html = await res.text();
   const match = html.match(/<link[^>]+type=["']application\/(rss|atom)\+xml["'][^>]*href=["']([^"']+)["']/i)
@@ -63,6 +63,37 @@ async function lerWebsite(url: string, name: string): Promise<RadarEntry[]> {
     return headlines.map(title => ({ title, sourceName: name, sourceUrl: url }));
   } catch {
     return [];
+  }
+}
+
+export type ResultadoTeste = {
+  ok: boolean;
+  count: number;
+  rssUrl?: string;   // URL do feed descoberto quando kind === 'website'
+  erro?: string;
+};
+
+export async function testarFonte(url: string, kind: string, name: string): Promise<ResultadoTeste> {
+  if (kind === 'instagram') {
+    return { ok: false, count: 0, erro: 'Instagram não tem RSS nativo. Use rss.app para criar um feed do perfil e adicione como tipo RSS.' };
+  }
+  try {
+    if (kind === 'rss') {
+      const items = await lerFeedRSS(url);
+      return { ok: true, count: items.length };
+    }
+    // kind === 'website' — tenta descobrir RSS primeiro
+    const rssUrl = await detectarRSSDoSite(url);
+    if (rssUrl) {
+      const items = await lerFeedRSS(rssUrl);
+      return { ok: true, count: items.length, rssUrl };
+    }
+    // sem RSS — extrai headlines
+    const items = await lerWebsite(url, name);
+    return { ok: true, count: items.length };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { ok: false, count: 0, erro: msg.slice(0, 120) };
   }
 }
 
