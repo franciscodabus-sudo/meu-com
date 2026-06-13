@@ -10,6 +10,8 @@ type Publicado = {
   ayrshareId: string | null;
 };
 
+type Perfil = { id: string; name: string; displayName: string; ativo: boolean };
+
 const CANAL_COR: Record<string, string> = {
   instagram: '#C13584', facebook: '#1877F2', linkedin: '#0A66C2'
 };
@@ -17,6 +19,7 @@ const CANAL_COR: Record<string, string> = {
 export default function Hoje() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [publicados, setPublicados] = useState<Publicado[]>([]);
+  const [perfis, setPerfis] = useState<Perfil[]>([]);
   const [brief, setBrief] = useState('');
   const [gerando, setGerando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -24,6 +27,20 @@ export default function Hoje() {
   const [previewPost, setPreviewPost] = useState<Post | null>(null);
   const [excluindo, setExcluindo] = useState<string | null>(null);
   const [confirmarExcluir, setConfirmarExcluir] = useState<Publicado | null>(null);
+
+  async function carregarPerfis() {
+    const r = await fetch('/api/perfis');
+    if (r.ok) setPerfis(await r.json());
+  }
+
+  async function trocarPerfil(id: string) {
+    await fetch('/api/perfis', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    setPerfis(prev => prev.map(p => ({ ...p, ativo: p.id === id })));
+  }
 
   async function carregar() {
     const r = await fetch('/api/posts?status=pending');
@@ -35,7 +52,7 @@ export default function Hoje() {
     setPublicados(await r.json());
   }
 
-  useEffect(() => { carregar(); }, []);
+  useEffect(() => { carregar(); carregarPerfis(); }, []);
 
   useEffect(() => {
     if (aba === 'publicados') carregarPublicados();
@@ -95,6 +112,25 @@ export default function Hoje() {
             title="Configurações"
           >FD</Link>
         </header>
+
+        {/* Seletor de perfil de marca */}
+        {perfis.length > 0 && (
+          <div className="flex gap-1.5 mb-3 overflow-x-auto pb-0.5">
+            {perfis.map(p => (
+              <button
+                key={p.id}
+                onClick={() => trocarPerfil(p.id)}
+                className="flex-shrink-0 px-3.5 py-1.5 rounded-full text-[12px] font-semibold transition active:scale-95"
+                style={{
+                  background: p.ativo ? '#0E5F66' : '#F0F4F5',
+                  color: p.ativo ? '#fff' : '#6B7E85',
+                }}
+              >
+                {p.name}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="bg-white rounded-full flex items-center gap-2 px-4 py-1.5 mb-4" style={{ boxShadow: '0 1px 3px rgba(23,38,44,.06),0 4px 14px rgba(23,38,44,.05)' }}>
           <span className="text-brand">✦</span>

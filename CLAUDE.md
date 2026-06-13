@@ -5,7 +5,7 @@ App que substitui uma agência de marketing: um "CMO de bolso" que cria posts co
 monta campanhas a partir de um brief, monitora notícias/concorrentes, publica em
 IG/FB/LinkedIn via Ayrshare e controla verba de Meta Ads. O dono aprova tudo com 1 toque.
 
-Usuário-cobaia: Francisco Dabus (corretor de seguros 2-15 em Orlando, ZYON Group).
+Usuário-cobaia: Francisco Dabus (corretor de seguros 2-15 em Orlando, FL). Empresa: Vip Insurance.
 Idioma do produto: PT-BR. Design de referência: design/prototipo-v3.html (abrir no navegador).
 
 ## Stack
@@ -35,6 +35,9 @@ precise deve ser trazida para dentro como funcionalidade nativa.
 Conceito de tela única: o usuário pilota tudo daqui.
 - Erros de APIs externas sempre traduzidos para PT-BR sem mencionar o nome do serviço.
 - OAuth/popups de terceiros são a única exceção temporária (ver BACKLOG Fase 3 white-label).
+
+## Marca e perfis
+A marca do usuário é **Vip Insurance** (além do perfil pessoal Francisco Dabus). **ZYON não existe** e nunca existiu — remova qualquer ocorrência se encontrar. A IA nunca inventa fatos sobre a empresa (slogan, anos de mercado, equipe etc.) — usa somente o que está no BrandProfile preenchido pelo usuário. Campos em branco do perfil simplesmente não entram no prompt.
 
 ## Backlog e planejamento
 Consulte sempre o BACKLOG.md antes de planejar ou implementar qualquer fase nova — ele é a fonte de verdade sobre prioridades, fases e regras permanentes do produto.

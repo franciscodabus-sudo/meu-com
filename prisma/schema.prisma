@@ -82,3 +82,16 @@ model Setting {
   value     String
   updatedAt DateTime @updatedAt
 }
+
+model BrandProfile {
+  id          String   @id @default(cuid())
+  name        String   @unique  // "Pessoal — Francisco Dabus" | "Vip Insurance"
+  displayName String            // nome a exibir nos posts
+  descricao   String?           // descrição do negócio
+  publicoAlvo String?           // público-alvo detalhado
+  tomDeVoz    String?           // palavras a usar / evitar
+  idioma      String   @default("pt-BR")
+  contato     String?           // site ou link de contato (opcional)
+  ativo       Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}

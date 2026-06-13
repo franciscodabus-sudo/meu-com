@@ -24,7 +24,9 @@
       "Bash(node *)",
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f'{len\\(d\\)} itens no radar:', [x['title'] for x in d]\\)\")",
       "Bash(python3 -c \"import sys,json; [print\\(x['title']\\) for x in json.load\\(sys.stdin\\)]\")",
-      "Bash(python3 -c \"import sys,json; items=json.load\\(sys.stdin\\); print\\(f'{len\\(items\\)} pautas válidas:'\\); [print\\(f'  ✓ {x[\\\\\"title\\\\\"][:80]}'\\) for x in items]\")"
+      "Bash(python3 -c \"import sys,json; items=json.load\\(sys.stdin\\); print\\(f'{len\\(items\\)} pautas válidas:'\\); [print\\(f'  ✓ {x[\\\\\"title\\\\\"][:80]}'\\) for x in items]\")",
+      "Bash(python3 -c \"import sys,json; [print\\(f'{x[\\\\\"name\\\\\"]}: warning={x.get\\(\\\\\"warning\\\\\",\\\\\"none\\\\\"\\)}'\\) for x in json.load\\(sys.stdin\\)]\")",
+      "Bash(python3 -c \"import sys,json; [print\\(f'{p[\\\\\"name\\\\\"]} | ativo={p[\\\\\"ativo\\\\\"]}'\\) for p in json.load\\(sys.stdin\\)]\")"
     ]
   }
 }

@@ -33,7 +33,7 @@ function IgMockup({ post }: { post: PreviewPost }) {
           {post.title}
         </div>
         <span className="absolute bottom-[18px] left-5 text-[10.5px] text-white/75 font-bold tracking-[.08em] uppercase z-10">
-          @francisco.dabus · zyon
+          @francisco.dabus
         </span>
       </div>
       {/* Ações */}
