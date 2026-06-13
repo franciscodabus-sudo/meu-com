@@ -16,7 +16,10 @@ export async function POST(req: Request) {
       );
     }
 
-    const posts = await gerarPostsDoBrief(brief);
+    // Busca perfil ativo para associar ao post
+    const perfilAtivo = await db.brandProfile.findFirst({ where: { ativo: true } });
+
+    const posts = await gerarPostsDoBrief(brief, 3, perfilAtivo as Parameters<typeof gerarPostsDoBrief>[2]);
 
     // Busca fotos no Pexels em paralelo; retorna null se não houver chave ou resultado
     const photos = await Promise.all(posts.map(p => buscarFotoPexels(p.imageQuery ?? '')));
@@ -35,6 +38,7 @@ export async function POST(req: Request) {
         const hashtags = Array.isArray(p.hashtags) ? p.hashtags.join(' ') : p.hashtags;
         return {
           campaignId: campaign.id,
+          profileId:  perfilAtivo?.id ?? null,
           channel, format: p.format, stage,
           title: p.title, caption: p.caption, hashtags,
           whyNow: p.whyNow, mediaUrl: photos[i] ?? null, status: 'pending'

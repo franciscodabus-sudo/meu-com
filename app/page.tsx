@@ -3,23 +3,33 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import PostCard, { type Post } from '@/components/PostCard';
 import PreviewModal from '@/components/PreviewModal';
+import CenarioSelector from '@/components/CenarioSelector';
 
 type Publicado = {
   id: string; channel: string; title: string;
   status: string; publishedAt: string | null; scheduledAt: string | null;
   ayrshareId: string | null;
+  profileId: string | null;
 };
 
-type Perfil = { id: string; name: string; displayName: string; ativo: boolean };
+type Perfil = {
+  id: string; name: string; displayName: string;
+  avatarColor: string; ativo: boolean; pausado: boolean;
+};
 
 const CANAL_COR: Record<string, string> = {
   instagram: '#C13584', facebook: '#1877F2', linkedin: '#0A66C2'
 };
 
+function initials(name: string) {
+  return name.split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+}
+
 export default function Hoje() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [publicados, setPublicados] = useState<Publicado[]>([]);
   const [perfis, setPerfis] = useState<Perfil[]>([]);
+  const [filtroPerfil, setFiltroPerfil] = useState<string>('todos');
   const [brief, setBrief] = useState('');
   const [gerando, setGerando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -33,15 +43,6 @@ export default function Hoje() {
     if (r.ok) setPerfis(await r.json());
   }
 
-  async function trocarPerfil(id: string) {
-    await fetch('/api/perfis', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id }),
-    });
-    setPerfis(prev => prev.map(p => ({ ...p, ativo: p.id === id })));
-  }
-
   async function carregar() {
     const r = await fetch('/api/posts?status=pending');
     setPosts(await r.json());
@@ -52,7 +53,15 @@ export default function Hoje() {
     setPublicados(await r.json());
   }
 
-  useEffect(() => { carregar(); carregarPerfis(); }, []);
+  useEffect(() => {
+    carregar();
+    carregarPerfis();
+
+    // Atualiza perfis quando cenário muda via CenarioSelector
+    function onCenarioChange() { carregarPerfis(); }
+    window.addEventListener('cenario-changed', onCenarioChange);
+    return () => window.removeEventListener('cenario-changed', onCenarioChange);
+  }, []);
 
   useEffect(() => {
     if (aba === 'publicados') carregarPublicados();
@@ -97,41 +106,77 @@ export default function Hoje() {
     }
   }
 
+  // Filtro de posts por perfil
+  const perfilMapa = Object.fromEntries(perfis.map(p => [p.id, p]));
+  const postsVisiveis = filtroPerfil === 'todos'
+    ? posts
+    : posts.filter(p => (p as Post & { profileId?: string }).profileId === filtroPerfil);
+  const publicadosVisiveis = filtroPerfil === 'todos'
+    ? publicados
+    : publicados.filter(p => p.profileId === filtroPerfil);
+
+  const perfilAtivo = perfis.find(p => p.ativo);
+
   return (
     <>
       <main className="px-4">
         <header className="pt-6 pb-3 flex items-center justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-soft">{new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+            <p className="text-xs text-soft">
+              {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
+            </p>
             <h1 className="font-disp text-[23px] font-bold">Bom dia, Francisco</h1>
-            {/* Seletor de perfil — compacto no subheading */}
-            {perfis.length > 1 && (
-              <div className="flex gap-1.5 mt-1.5 overflow-x-auto pb-0.5">
-                {perfis.map(p => (
-                  <button
-                    key={p.id}
-                    onClick={() => trocarPerfil(p.id)}
-                    className="flex-shrink-0 px-3 py-1 rounded-full text-[11px] font-semibold transition active:scale-95"
-                    style={{
-                      background: p.ativo ? '#0E5F66' : '#F0F4F5',
-                      color: p.ativo ? '#fff' : '#6B7E85',
-                    }}
-                  >
-                    {p.displayName}
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
-          <Link
-            href="/configuracoes"
-            className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-[14px] font-disp flex-shrink-0"
-            style={{ background: 'linear-gradient(135deg,#0E5F66,#17996B)' }}
-            title="Configurações"
-          >FD</Link>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <CenarioSelector />
+            <Link
+              href="/configuracoes"
+              className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-[14px] font-disp"
+              style={{ background: perfilAtivo ? perfilAtivo.avatarColor : 'linear-gradient(135deg,#0E5F66,#17996B)' }}
+              title="Configurações"
+            >
+              {perfilAtivo ? initials(perfilAtivo.displayName) : 'FD'}
+            </Link>
+          </div>
         </header>
 
-        <div className="bg-white rounded-full flex items-center gap-2 px-4 py-1.5 mb-4" style={{ boxShadow: '0 1px 3px rgba(23,38,44,.06),0 4px 14px rgba(23,38,44,.05)' }}>
+        {/* Filtro rápido por perfil */}
+        {perfis.length > 1 && (
+          <div className="flex gap-1.5 mb-3 overflow-x-auto pb-0.5 no-scrollbar">
+            <button
+              onClick={() => setFiltroPerfil('todos')}
+              className="flex-shrink-0 px-3 py-1 rounded-full text-[11.5px] font-semibold transition"
+              style={{
+                background: filtroPerfil === 'todos' ? '#17262C' : '#F0F4F5',
+                color:      filtroPerfil === 'todos' ? '#fff'    : '#6B7E85',
+              }}
+            >
+              Todos
+            </button>
+            {perfis.filter(p => !p.pausado).map(p => (
+              <button
+                key={p.id}
+                onClick={() => setFiltroPerfil(p.id)}
+                className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1 rounded-full text-[11.5px] font-semibold transition"
+                style={{
+                  background: filtroPerfil === p.id ? p.avatarColor : '#F0F4F5',
+                  color:      filtroPerfil === p.id ? '#fff'         : '#6B7E85',
+                }}
+              >
+                <span
+                  className="w-[14px] h-[14px] rounded-full flex items-center justify-center text-[7px] font-bold text-white"
+                  style={{ background: filtroPerfil === p.id ? 'rgba(255,255,255,.35)' : p.avatarColor }}
+                >
+                  {initials(p.displayName)}
+                </span>
+                {p.displayName}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div className="bg-white rounded-full flex items-center gap-2 px-4 py-1.5 mb-4"
+          style={{ boxShadow: '0 1px 3px rgba(23,38,44,.06),0 4px 14px rgba(23,38,44,.05)' }}>
           <span className="text-brand">✦</span>
           <input
             value={brief}
@@ -148,7 +193,8 @@ export default function Hoje() {
         </div>
 
         {erro && (
-          <div className="rounded-2xl px-4 py-3 mb-4 text-sm border" style={{ background: '#FEF2F2', borderColor: '#FECACA', color: '#991B1B' }}>
+          <div className="rounded-2xl px-4 py-3 mb-4 text-sm border"
+            style={{ background: '#FEF2F2', borderColor: '#FECACA', color: '#991B1B' }}>
             <p className="font-semibold mb-0.5">Não foi possível gerar os posts</p>
             <p style={{ color: '#B91C1C' }}>{erro}</p>
           </div>
@@ -172,24 +218,42 @@ export default function Hoje() {
         {/* ── ABA FILA ── */}
         {aba === 'fila' && (
           <>
-            {posts.length > 0 && !gerando && (
+            {postsVisiveis.length > 0 && !gerando && (
               <div className="flex justify-between items-center text-[13px] font-semibold text-mut mx-1 mt-1 mb-3">
                 <span><b className="text-ink">Para aprovar</b> · 1 toque</span>
-                <span>{posts.length} {posts.length === 1 ? 'post' : 'posts'}</span>
+                <span>{postsVisiveis.length} {postsVisiveis.length === 1 ? 'post' : 'posts'}</span>
               </div>
             )}
             {gerando && <p className="text-sm text-mut px-1 py-3 animate-pulse">✦ Seu CMO está criando os posts…</p>}
 
-            {posts.map(p => (
-              <PostCard
-                key={p.id}
-                post={p}
-                onAprovar={p => setPreviewPost(p)}
-                onDone={id => setPosts(ps => ps.filter(x => x.id !== id))}
-              />
-            ))}
+            {postsVisiveis.map(p => {
+              const pfid = (p as Post & { profileId?: string }).profileId;
+              const pf = pfid ? perfilMapa[pfid] : null;
+              return (
+                <div key={p.id}>
+                  {pf && perfis.length > 1 && (
+                    <div className="flex items-center gap-1.5 mb-1 px-1">
+                      <span
+                        className="w-[14px] h-[14px] rounded-full flex items-center justify-center text-[7px] font-bold text-white"
+                        style={{ background: pf.avatarColor }}
+                      >
+                        {initials(pf.displayName)}
+                      </span>
+                      <span className="text-[11px] font-semibold" style={{ color: pf.avatarColor }}>
+                        {pf.displayName}
+                      </span>
+                    </div>
+                  )}
+                  <PostCard
+                    post={p}
+                    onAprovar={p => setPreviewPost(p)}
+                    onDone={id => setPosts(ps => ps.filter(x => x.id !== id))}
+                  />
+                </div>
+              );
+            })}
 
-            {!gerando && posts.length === 0 && !erro && (
+            {!gerando && postsVisiveis.length === 0 && !erro && (
               <div className="text-center text-mut py-14">
                 <p className="text-4xl mb-2">🎉</p>
                 <p className="font-disp font-semibold text-ink">Fila zerada!</p>
@@ -202,43 +266,43 @@ export default function Hoje() {
         {/* ── ABA PUBLICADOS ── */}
         {aba === 'publicados' && (
           <>
-            {publicados.length === 0 ? (
+            {publicadosVisiveis.length === 0 ? (
               <div className="text-center text-mut py-14">
                 <p className="text-4xl mb-2">📭</p>
                 <p className="font-disp font-semibold text-ink">Nada publicado ainda</p>
                 <p className="text-[13px] mt-1">Aprove um post e publique ou agende — ele aparece aqui.</p>
               </div>
             ) : (
-              publicados.map(p => {
+              publicadosVisiveis.map(p => {
                 const data = p.publishedAt ?? p.scheduledAt;
                 const dataFmt = data
                   ? new Date(data).toLocaleString('pt-BR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
                   : '—';
+                const pf = p.profileId ? perfilMapa[p.profileId] : null;
                 return (
                   <div key={p.id} className="bg-white rounded-card shadow-sm p-3.5 mb-3 flex items-center gap-3">
-                    <span
-                      className="w-2 h-2 rounded-full flex-shrink-0"
-                      style={{ background: CANAL_COR[p.channel] ?? '#6B7E85' }}
-                    />
+                    <span className="w-2 h-2 rounded-full flex-shrink-0"
+                      style={{ background: CANAL_COR[p.channel] ?? '#6B7E85' }} />
                     <div className="flex-1 min-w-0">
                       <p className="text-[13.5px] font-semibold text-ink truncate">{p.title}</p>
                       <p className="text-[12px] text-mut mt-0.5 capitalize">
                         {p.channel} · {p.status === 'published' ? `Publicado ${dataFmt}` : `Agendado ${dataFmt}`}
+                        {pf && perfis.length > 1 && (
+                          <span className="ml-1.5 font-semibold" style={{ color: pf.avatarColor }}>
+                            · {pf.displayName}
+                          </span>
+                        )}
                       </p>
                     </div>
-                    <span
-                      className="text-[11px] font-bold px-2.5 py-1 rounded-full flex-shrink-0"
+                    <span className="text-[11px] font-bold px-2.5 py-1 rounded-full flex-shrink-0"
                       style={p.status === 'published'
                         ? { background: '#E6F4EE', color: '#17996B' }
-                        : { background: '#E5F1F0', color: '#0E5F66' }}
-                    >
+                        : { background: '#E5F1F0', color: '#0E5F66' }}>
                       {p.status === 'published' ? '✓ Publicado' : '⏰ Agendado'}
                     </span>
-                    <button
-                      onClick={() => setConfirmarExcluir(p)}
+                    <button onClick={() => setConfirmarExcluir(p)}
                       className="text-soft hover:text-red-400 transition text-[18px] leading-none flex-shrink-0"
-                      title="Excluir post"
-                    >🗑</button>
+                      title="Excluir post">🗑</button>
                   </div>
                 );
               })
@@ -274,17 +338,13 @@ export default function Hoje() {
               {confirmarExcluir.ayrshareId ? ' (via Ayrshare)' : ''} e arquivado aqui.
             </p>
             <div className="flex gap-2">
-              <button
-                onClick={() => setConfirmarExcluir(null)}
+              <button onClick={() => setConfirmarExcluir(null)}
                 className="flex-1 py-3.5 rounded-2xl font-semibold text-[14px] text-mut"
-                style={{ background: '#E8EDEE' }}
-              >Cancelar</button>
-              <button
-                onClick={() => excluirPost(confirmarExcluir)}
+                style={{ background: '#E8EDEE' }}>Cancelar</button>
+              <button onClick={() => excluirPost(confirmarExcluir)}
                 disabled={excluindo === confirmarExcluir.id}
                 className="flex-[2] py-3.5 rounded-2xl text-white font-semibold text-[14px] disabled:opacity-60"
-                style={{ background: '#DC2626' }}
-              >
+                style={{ background: '#DC2626' }}>
                 {excluindo === confirmarExcluir.id ? 'Excluindo…' : '🗑 Excluir'}
               </button>
             </div>

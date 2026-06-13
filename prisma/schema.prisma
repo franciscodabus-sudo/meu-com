@@ -20,22 +20,24 @@ model Campaign {
 }
 
 model Post {
-  id          String    @id @default(cuid())
-  campaign    Campaign? @relation(fields: [campaignId], references: [id])
+  id          String        @id @default(cuid())
+  campaign    Campaign?     @relation(fields: [campaignId], references: [id])
   campaignId  String?
-  channel     String    // instagram | facebook | linkedin | x
-  format      String    @default("post") // post | carrossel | reel | artigo
-  stage       String?   // atrair | educar | conectar | converter
+  profile     BrandProfile? @relation(fields: [profileId], references: [id])
+  profileId   String?
+  channel     String        // instagram | facebook | linkedin | x
+  format      String        @default("post") // post | carrossel | reel | artigo
+  stage       String?       // atrair | educar | conectar | converter
   title       String
   caption     String
   hashtags    String?
   mediaUrl    String?
-  whyNow      String?   // a justificativa do CMO ("Por que agora?")
-  status      String    @default("pending") // pending | approved | scheduled | published | skipped
+  whyNow      String?       // a justificativa do CMO ("Por que agora?")
+  status      String        @default("pending") // pending | approved | scheduled | published | skipped
   scheduledAt DateTime?
   publishedAt DateTime?
   ayrshareId  String?
-  createdAt   DateTime  @default(now())
+  createdAt   DateTime      @default(now())
 }
 
 model MediaAsset {
@@ -92,19 +94,24 @@ model User {
 }
 
 model BrandProfile {
-  id           String   @id @default(cuid())
-  name         String   @unique  // slug único do perfil
-  displayName  String            // nome a exibir nos posts
-  descricao    String?           // descrição do negócio
-  publicoAlvo  String?           // público-alvo detalhado
-  tomDeVoz     String?           // palavras a usar / evitar
-  idioma       String   @default("pt-BR")
-  contato      String?           // site ou link de contato (opcional)
-  produtos     String?           // produtos / serviços oferecidos
-  frequencia   String?           // frequência de postagem pretendida
-  objetivo     String?           // objetivo principal (ex: gerar leads, awareness)
-  notasLivres  String?           // notas livres para o CMO
-  ativo        Boolean  @default(false)
-  radarAtivo   Boolean  @default(false) // participa do ciclo automático do Radar
-  createdAt    DateTime @default(now())
+  id             String   @id @default(cuid())
+  name           String   @unique  // slug único do perfil
+  displayName    String            // nome a exibir nos posts
+  avatarColor    String   @default("#0E5F66") // cor do avatar no seletor
+  descricao      String?           // descrição/negócio
+  publicoAlvo    String?           // público-alvo (audience)
+  tomDeVoz       String?           // palavras a usar (toneWords)
+  tomEvitar      String?           // palavras a EVITAR (toneAvoid)
+  idioma         String   @default("pt-BR")
+  contato        String?           // site ou link de contato
+  produtos       String?           // produtos / serviços
+  frequencia     String?           // posts/semana (texto livre)
+  channelsActive String?           // JSON: ["instagram","linkedin"]
+  objetivo       String   @default("engajamento") // leads | autoridade | engajamento
+  notasLivres    String?           // notas livres para a IA
+  ativo          Boolean  @default(false)
+  pausado        Boolean  @default(false) // toggle ativo/pausado na UI
+  radarAtivo     Boolean  @default(false)
+  posts          Post[]
+  createdAt      DateTime @default(now())
 }

@@ -4,3 +4,14 @@
 @tailwind utilities;
 
 body { @apply bg-fundo text-ink font-sans; }
+
+@layer components {
+  .label-sm {
+    @apply block text-[11.5px] font-semibold text-mut uppercase tracking-wide mb-1;
+  }
+  .input-base {
+    @apply w-full border border-[#E0E8EA] rounded-xl px-3 py-2.5 text-[13px] outline-none bg-[#F6F8F8] transition focus:border-[#0E5F66];
+  }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+}

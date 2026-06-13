@@ -10,16 +10,20 @@ export type BrandProfile = {
   id: string;
   name: string;
   displayName: string;
+  avatarColor: string;
   descricao: string | null;
   publicoAlvo: string | null;
   tomDeVoz: string | null;
+  tomEvitar: string | null;
   idioma: string;
   contato: string | null;
   produtos: string | null;
   frequencia: string | null;
-  objetivo: string | null;
+  channelsActive: string | null;
+  objetivo: string;
   notasLivres: string | null;
   ativo: boolean;
+  pausado: boolean;
   radarAtivo: boolean;
 };
 
@@ -50,7 +54,10 @@ function montarPromptDoPerfil(perfil: BrandProfile | null): string {
     linhas.push(`Público-alvo: ${perfil.publicoAlvo.trim()}`);
 
   if (perfil.tomDeVoz?.trim())
-    linhas.push(`Tom de voz: ${perfil.tomDeVoz.trim()}`);
+    linhas.push(`Tom de voz (usar): ${perfil.tomDeVoz.trim()}`);
+
+  if (perfil.tomEvitar?.trim())
+    linhas.push(`Tom de voz (evitar): ${perfil.tomEvitar.trim()}`);
 
   if (perfil.produtos?.trim())
     linhas.push(`Produtos/serviços: ${perfil.produtos.trim()}`);

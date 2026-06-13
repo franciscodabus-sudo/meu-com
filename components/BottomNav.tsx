@@ -13,15 +13,6 @@ const tabs = [
     ),
   },
   {
-    href: '/agenda',
-    label: 'Agenda',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="21" height="21">
-        <rect x="3" y="5" width="18" height="16" rx="3" /><path d="M3 10h18M8 3v4M16 3v4" />
-      </svg>
-    ),
-  },
-  {
     href: '/radar',
     label: 'Radar',
     icon: (
@@ -31,12 +22,21 @@ const tabs = [
     ),
   },
   {
-    href: '/studio',
-    label: 'Studio',
+    href: '/cenarios',
+    label: 'Cenários',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="21" height="21">
-        <rect x="3" y="3" width="8" height="8" rx="2" /><rect x="13" y="3" width="8" height="8" rx="2" />
-        <rect x="3" y="13" width="8" height="8" rx="2" /><path d="M17 14v6M14 17h6" />
+        <circle cx="8" cy="8" r="4" /><circle cx="16" cy="16" r="4" />
+        <path d="M11.5 8H20M4 16h8.5" />
+      </svg>
+    ),
+  },
+  {
+    href: '/agenda',
+    label: 'Agenda',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="21" height="21">
+        <rect x="3" y="5" width="18" height="16" rx="3" /><path d="M3 10h18M8 3v4M16 3v4" />
       </svg>
     ),
   },

@@ -1,7 +1,8 @@
 import { db } from './db';
 import { lerRadar, isTituloLixo } from './rss';
-import { gerarPostDoRadar } from './claude';
+import { gerarPostDoRadar, BrandProfile } from './claude';
 import { buscarFotoPexels } from './pexels';
+import Anthropic from '@anthropic-ai/sdk';
 
 const VALID_CHANNELS = ['instagram', 'facebook', 'linkedin'];
 const VALID_STAGES   = ['atrair', 'educar', 'conectar', 'converter'];
@@ -25,13 +26,48 @@ export async function setSetting(key: string, value: string): Promise<void> {
   });
 }
 
+// ---------- avaliação de relevância por IA ----------
+
+async function avaliarRelevancia(
+  item: { title: string; summary?: string | null },
+  perfil: Pick<BrandProfile, 'displayName' | 'publicoAlvo' | 'produtos' | 'objetivo'>
+): Promise<number> {
+  try {
+    const anthropic = new Anthropic();
+    const msg = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001', // modelo rápido/barato para avaliação
+      max_tokens: 50,
+      messages: [{
+        role: 'user',
+        content: `Avalie a relevância desta notícia para o perfil a seguir. Responda APENAS com um número inteiro de 0 a 100.
+
+Perfil: ${perfil.displayName}
+${perfil.publicoAlvo ? `Público: ${perfil.publicoAlvo}` : ''}
+${perfil.produtos ? `Produtos: ${perfil.produtos}` : ''}
+${perfil.objetivo ? `Objetivo: ${perfil.objetivo}` : ''}
+
+Notícia: "${item.title}"
+${item.summary ? `Resumo: ${item.summary}` : ''}
+
+Relevância (0-100):`,
+      }],
+    });
+    const txt = msg.content.find(b => b.type === 'text');
+    if (!txt || txt.type !== 'text') return 50;
+    const num = parseInt(txt.text.trim().replace(/[^\d]/g, ''), 10);
+    return isNaN(num) ? 50 : Math.min(100, Math.max(0, num));
+  } catch {
+    return 50; // fallback: assume relevante
+  }
+}
+
 // ---------- lógica principal ----------
 
 export type AutoResult = {
   novosItens: number;
   postsGerados: number;
   erros: string[];
-  rodarEm: string | null; // ISO — próxima execução
+  rodarEm: string | null;
 };
 
 export async function executarRadarAuto(): Promise<AutoResult> {
@@ -55,7 +91,6 @@ export async function executarRadarAuto(): Promise<AutoResult> {
 
   for (const item of itens) {
     if (isTituloLixo(item.title)) continue;
-    // Não re-adiciona item já existente (mesmo deletado)
     const existe = await db.radarItem.findFirst({ where: { title: item.title } });
     if (!existe) {
       const criado = await db.radarItem.create({ data: { kind: 'noticia', ...item } });
@@ -65,20 +100,25 @@ export async function executarRadarAuto(): Promise<AutoResult> {
   }
 
   // 3. Busca perfis com radarAtivo = true (fallback: perfil ativo)
-  let perfisRadar = await db.brandProfile.findMany({ where: { radarAtivo: true } });
+  let perfisRadar = await db.brandProfile.findMany({
+    where: { radarAtivo: true, pausado: false },
+  });
   if (perfisRadar.length === 0) {
     const ativo = await db.brandProfile.findFirst({ where: { ativo: true } });
     if (ativo) perfisRadar = [ativo];
   }
 
-  // 4. Gera posts para os N melhores itens novos × perfis do radar
   const maxPosts = parseInt(await getSetting('radarMaxPostsPerRun', '2'), 10);
   let postsGerados = 0;
 
+  // 4. Para cada item novo × cada perfil, avalia relevância ≥ 60 antes de gerar
   for (const item of novos.slice(0, maxPosts)) {
     for (const perfil of perfisRadar) {
       try {
-        const post = await gerarPostDoRadar(item, perfil as Parameters<typeof gerarPostDoRadar>[1]);
+        const relevancia = await avaliarRelevancia(item, perfil as BrandProfile);
+        if (relevancia < 60) continue; // não relevante para este perfil
+
+        const post = await gerarPostDoRadar(item, perfil as BrandProfile);
         const mediaUrl = await buscarFotoPexels(post.imageQuery ?? '');
 
         const channel  = VALID_CHANNELS.find(c => post.channel?.toLowerCase().includes(c)) ?? 'instagram';
@@ -87,14 +127,15 @@ export async function executarRadarAuto(): Promise<AutoResult> {
 
         const campaign = await db.campaign.create({
           data: {
-            name: `Radar: ${item.title.slice(0, 40)}`,
-            brief: `Auto-gerado do radar: ${item.title} [perfil: ${perfil.displayName}]`,
+            name:  `Radar: ${item.title.slice(0, 40)}`,
+            brief: `Auto-gerado do radar: ${item.title} [${perfil.displayName}]`,
           },
         });
 
         await db.post.create({
           data: {
             campaignId: campaign.id,
+            profileId:  perfil.id,
             channel, format: post.format ?? 'post', stage,
             title: post.title, caption: post.caption, hashtags,
             whyNow: post.whyNow, mediaUrl, status: 'pending',
@@ -110,7 +151,6 @@ export async function executarRadarAuto(): Promise<AutoResult> {
     }
   }
 
-  // 4. Registra última execução e calcula próxima
   const agora = new Date();
   await setSetting('lastAutoRadarAt', agora.toISOString());
   await setSetting('lastAutoResult', JSON.stringify({ novosItens, postsGerados, erros }));
