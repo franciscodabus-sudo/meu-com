@@ -4,10 +4,23 @@ import { getSetting } from './radar-auto';
 const anthropic = new Anthropic(); // usa ANTHROPIC_API_KEY do .env
 
 async function getSystemPrompt(): Promise<string> {
-  const extra = await getSetting('perfilContexto', '');
-  return extra
-    ? `${SYSTEM_CMO}\n\nCONTEXTO ADICIONAL DO NEGÓCIO:\n${extra}`
-    : SYSTEM_CMO;
+  const [extra, waNumero] = await Promise.all([
+    getSetting('perfilContexto', ''),
+    getSetting('whatsappNumero', ''),
+  ]);
+
+  let prompt = SYSTEM_CMO;
+
+  if (waNumero) {
+    const waLink = `https://wa.me/${waNumero.replace(/\D/g, '')}`;
+    prompt += `\n\nCONFIGURAÇÃO DE CTA: o link de WhatsApp do usuário é ${waLink}. Quando o post tiver CTA de contato direto (ex: "fale comigo", "entre em contato", "tire suas dúvidas"), inclua esse link wa.me diretamente no caption. Não use o link em todo post — só quando o CTA pedir ação direta do leitor.`;
+  }
+
+  if (extra) {
+    prompt += `\n\nCONTEXTO ADICIONAL DO NEGÓCIO:\n${extra}`;
+  }
+
+  return prompt;
 }
 
 const SYSTEM_CMO = `Você é o CMO pessoal de Francisco Dabus, com base em Orlando, FL.

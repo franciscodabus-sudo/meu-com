@@ -17,10 +17,11 @@ async function garantirCanais() {
 export async function GET() {
   await garantirCanais();
 
-  const [perfil, intervalHoras, maxPostsPerRun, canais] = await Promise.all([
+  const [perfil, intervalHoras, maxPostsPerRun, whatsappNumero, canais] = await Promise.all([
     getSetting('perfilContexto', ''),
     getSetting('radarIntervalHoras', '6'),
     getSetting('radarMaxPostsPerRun', '2'),
+    getSetting('whatsappNumero', ''),
     db.channel.findMany({ orderBy: { name: 'asc' } }),
   ]);
 
@@ -30,7 +31,7 @@ export async function GET() {
     pexels:    !!process.env.PEXELS_API_KEY,
   };
 
-  return NextResponse.json({ perfil, intervalHoras, maxPostsPerRun, canais, chaves });
+  return NextResponse.json({ perfil, whatsappNumero, intervalHoras, maxPostsPerRun, canais, chaves });
 }
 
 export async function POST(req: Request) {
@@ -38,6 +39,7 @@ export async function POST(req: Request) {
     await garantirCanais();
     const body = await req.json() as {
       perfil?: string;
+      whatsappNumero?: string;
       intervalHoras?: string;
       maxPostsPerRun?: string;
       canais?: { name: string; active: boolean }[];
@@ -45,9 +47,10 @@ export async function POST(req: Request) {
 
     const saves: Promise<unknown>[] = [];
 
-    if (body.perfil !== undefined)        saves.push(setSetting('perfilContexto',    body.perfil));
-    if (body.intervalHoras !== undefined) saves.push(setSetting('radarIntervalHoras', body.intervalHoras));
-    if (body.maxPostsPerRun !== undefined) saves.push(setSetting('radarMaxPostsPerRun', body.maxPostsPerRun));
+    if (body.perfil !== undefined)          saves.push(setSetting('perfilContexto',    body.perfil));
+    if (body.whatsappNumero !== undefined)  saves.push(setSetting('whatsappNumero',    body.whatsappNumero));
+    if (body.intervalHoras !== undefined)   saves.push(setSetting('radarIntervalHoras', body.intervalHoras));
+    if (body.maxPostsPerRun !== undefined)  saves.push(setSetting('radarMaxPostsPerRun', body.maxPostsPerRun));
 
     if (body.canais) {
       for (const c of body.canais) {

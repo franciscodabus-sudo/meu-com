@@ -13,6 +13,7 @@ type Canal = { name: string; active: boolean };
 
 type Config = {
   perfil: string;
+  whatsappNumero: string;
   intervalHoras: string;
   maxPostsPerRun: string;
   canais: Canal[];
@@ -287,6 +288,7 @@ export default function Configuracoes() {
   }
 
   function setPerfil(v: string) { setConfig(c => c ? { ...c, perfil: v } : c); }
+  function setWhatsapp(v: string) { setConfig(c => c ? { ...c, whatsappNumero: v } : c); }
   function setIntervalHoras(v: string) {
     setConfig(c => c ? { ...c, intervalHoras: v } : c);
     salvarCampo({ intervalHoras: v });
@@ -487,6 +489,37 @@ export default function Configuracoes() {
 
       {/* ── SEÇÃO 4: Perfil e tom de voz ─────────────────────────────────── */}
       <SecHeader icon="🎙" title="Perfil e tom de voz" />
+
+      {/* WhatsApp */}
+      <div className="bg-white rounded-2xl px-4 py-4 mb-3" style={{ boxShadow: '0 1px 3px rgba(23,38,44,.06),0 4px 14px rgba(23,38,44,.05)' }}>
+        <p className="text-[13px] font-semibold text-ink mb-0.5">📲 Número do WhatsApp</p>
+        <p className="text-[12px] text-mut mb-3 leading-relaxed">
+          Quando configurado, a IA inclui seu link <code className="bg-[#F0F4F5] px-1 rounded">wa.me</code> automaticamente nos posts com CTA de contato direto.
+        </p>
+        <div className="flex gap-2">
+          <input
+            type="tel"
+            value={config.whatsappNumero}
+            onChange={e => setWhatsapp(e.target.value)}
+            placeholder="+1 (407) 000-0000"
+            className="flex-1 border border-[#E0E8EA] rounded-xl px-3 py-2.5 text-[13.5px] outline-none focus:border-[#0E5F66]"
+            style={{ background: '#F6F8F8' }}
+          />
+          <button
+            onClick={() => salvarCampo({ whatsappNumero: config.whatsappNumero })}
+            disabled={salvando}
+            className="px-5 rounded-xl text-[13px] font-semibold text-white transition active:scale-95 disabled:opacity-60"
+            style={{ background: '#0E5F66' }}
+          >
+            {salvando ? '…' : 'Salvar'}
+          </button>
+        </div>
+        {config.whatsappNumero && (
+          <p className="text-[11.5px] mt-2" style={{ color: '#17996B' }}>
+            ✓ Link: wa.me/{config.whatsappNumero.replace(/\D/g, '')}
+          </p>
+        )}
+      </div>
 
       <div className="bg-white rounded-2xl px-4 py-4" style={{ boxShadow: '0 1px 3px rgba(23,38,44,.06),0 4px 14px rgba(23,38,44,.05)' }}>
         <p className="text-[12px] text-mut mb-2 leading-relaxed">
