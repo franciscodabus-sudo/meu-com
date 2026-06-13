@@ -55,14 +55,16 @@ export default function PostCard({ post, onAprovar, onDone }: {
         <button
           disabled={busy}
           onClick={() => onAprovar(post)}
-          className="flex-[2] bg-ok text-white font-semibold rounded-xl py-3 text-sm active:scale-95 transition"
+          className="flex-[2] text-white font-semibold rounded-xl py-3 text-sm active:scale-95 transition"
+          style={{ background: 'var(--brand-gradient)' }}
         >
           ✓ Aprovar
         </button>
         <button
           disabled={busy}
           onClick={pular}
-          className="flex-1 bg-fundo text-mut font-semibold rounded-xl py-3 text-sm active:scale-95 transition"
+          className="flex-1 font-semibold rounded-xl py-3 text-sm active:scale-95 transition"
+          style={{ background: '#F0E8FA', color: '#7B6B8A' }}
         >
           Pular
         </button>

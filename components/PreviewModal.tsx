@@ -13,7 +13,7 @@ function IgMockup({ post }: { post: PreviewPost }) {
       {/* Header */}
       <div className="flex items-center gap-2.5 px-3 py-2.5">
         <div className="w-[34px] h-[34px] rounded-full flex items-center justify-center text-white font-bold text-[12.5px] font-disp flex-shrink-0"
-          style={{ background: 'linear-gradient(135deg,#0E5F66,#17996B)' }}>FD</div>
+          style={{ background: 'linear-gradient(135deg,#8B2FC9,#F04E3E)' }}>FD</div>
         <div>
           <b className="text-[13px] block leading-tight">francisco.dabus</b>
           <small className="text-[11px] text-mut">Orlando, Florida</small>
@@ -60,7 +60,7 @@ function LiMockup({ post }: { post: PreviewPost }) {
     <div className="bg-white rounded-[18px] overflow-hidden mb-4" style={{ boxShadow: '0 1px 3px rgba(23,38,44,.06),0 4px 14px rgba(23,38,44,.05)' }}>
       <div className="flex gap-2.5 px-3 pt-3 pb-2">
         <div className="w-[40px] h-[40px] rounded-full flex items-center justify-center text-white font-bold text-[13px] font-disp flex-shrink-0"
-          style={{ background: 'linear-gradient(135deg,#0E5F66,#17996B)' }}>FD</div>
+          style={{ background: 'linear-gradient(135deg,#8B2FC9,#F04E3E)' }}>FD</div>
         <div>
           <b className="text-[13.5px] block">Francisco Dabus</b>
           {process.env.NEXT_PUBLIC_USER_HEADLINE && (
@@ -177,7 +177,7 @@ export default function PreviewModal({ post, onClose, onDone }: {
         style={{ paddingBottom: 'calc(22px + env(safe-area-inset-bottom))' }}
       >
         {/* Handle */}
-        <div className="w-[42px] h-[5px] bg-[#CDD8DB] rounded-full mx-auto mt-3 mb-4" />
+        <div className="w-[42px] h-[5px] bg-[#D4B8EF] rounded-full mx-auto mt-3 mb-4" />
 
         {/* Cabeçalho */}
         {(fase === 'preview' || fase === 'agendar') && (
@@ -249,15 +249,15 @@ export default function PreviewModal({ post, onClose, onDone }: {
                   onClick={() => publicar()}
                   disabled={temVerificar}
                   className="flex-[2] py-3.5 rounded-2xl text-white font-semibold text-[14px] active:scale-95 transition disabled:opacity-40 disabled:cursor-not-allowed"
-                  style={{ background: '#17996B' }}
+                  style={{ background: 'var(--brand-gradient)' }}
                 >
                   🚀 Publicar agora
                 </button>
                 <button
                   onClick={() => setFase('agendar')}
                   disabled={temVerificar}
-                  className="flex-1 py-3.5 rounded-2xl text-ink font-semibold text-[14px] active:scale-95 transition disabled:opacity-40 disabled:cursor-not-allowed"
-                  style={{ background: '#E8EDEE' }}
+                  className="flex-1 py-3.5 rounded-2xl font-semibold text-[14px] active:scale-95 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{ background: '#F0E8FA', color: '#8B2FC9' }}
                 >
                   📅 Agendar
                 </button>
@@ -277,13 +277,13 @@ export default function PreviewModal({ post, onClose, onDone }: {
                 value={dataHora}
                 onChange={e => setDataHora(e.target.value)}
                 className="w-full border border-[#E0E8EA] rounded-2xl px-4 py-3.5 text-[14px] mb-4 font-sans font-semibold outline-none focus:border-brand"
-                style={{ background: '#F6F8F8', color: '#0E5F66' }}
+                style={{ background: '#FDF8FF', color: '#8B2FC9' }}
               />
               <div className="flex gap-2">
                 <button
                   onClick={() => setFase('preview')}
                   className="flex-1 py-3.5 rounded-2xl font-semibold text-[14px] text-mut"
-                  style={{ background: '#E8EDEE' }}
+                  style={{ background: '#EDE6F5' }}
                 >
                   ← Voltar
                 </button>
@@ -291,7 +291,7 @@ export default function PreviewModal({ post, onClose, onDone }: {
                   disabled={!dataHora}
                   onClick={() => publicar(new Date(dataHora).toISOString())}
                   className="flex-[2] py-3.5 rounded-2xl text-white font-semibold text-[14px] disabled:opacity-40 active:scale-95 transition"
-                  style={{ background: '#0E5F66' }}
+                  style={{ background: '#8B2FC9' }}
                 >
                   Confirmar agendamento
                 </button>
@@ -323,7 +323,7 @@ export default function PreviewModal({ post, onClose, onDone }: {
               <button
                 onClick={() => { onDone(post.id); onClose(); }}
                 className="w-full py-3.5 rounded-2xl text-white font-semibold text-[15px] active:scale-95 transition"
-                style={{ background: '#17996B' }}
+                style={{ background: '#F04E3E' }}
               >
                 Ótimo ✓
               </button>
@@ -341,14 +341,14 @@ export default function PreviewModal({ post, onClose, onDone }: {
                 <button
                   onClick={() => setFase('preview')}
                   className="flex-1 py-3.5 rounded-2xl font-semibold text-[14px] text-mut"
-                  style={{ background: '#E8EDEE' }}
+                  style={{ background: '#EDE6F5' }}
                 >
                   ← Voltar
                 </button>
                 <button
                   onClick={() => publicar(dataHora ? new Date(dataHora).toISOString() : undefined)}
                   className="flex-[2] py-3.5 rounded-2xl text-white font-semibold text-[14px] active:scale-95 transition"
-                  style={{ background: '#17996B' }}
+                  style={{ background: '#F04E3E' }}
                 >
                   Tentar novamente
                 </button>

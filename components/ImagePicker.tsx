@@ -121,7 +121,7 @@ export default function ImagePicker({
         style={{ paddingBottom: 'calc(16px + env(safe-area-inset-bottom))' }}
       >
         {/* Handle */}
-        <div className="w-[42px] h-[5px] bg-[#CDD8DB] rounded-full mx-auto mt-3 mb-3 flex-shrink-0" />
+        <div className="w-[42px] h-[5px] bg-[#D4B8EF] rounded-full mx-auto mt-3 mb-3 flex-shrink-0" />
 
         {/* Header */}
         <div className="flex items-center justify-between px-4 mb-3 flex-shrink-0">
@@ -137,8 +137,8 @@ export default function ImagePicker({
               onClick={() => setAba(a)}
               className="flex-1 py-2 rounded-xl text-[13px] font-semibold transition"
               style={{
-                background: aba === a ? '#0E5F66' : '#F0F4F5',
-                color: aba === a ? '#fff' : '#6B7E85',
+                background: aba === a ? '#8B2FC9' : '#F0F4F5',
+                color: aba === a ? '#fff' : '#7B6B8A',
               }}
             >
               {label}
@@ -160,13 +160,13 @@ export default function ImagePicker({
                   onKeyDown={e => e.key === 'Enter' && buscar()}
                   placeholder="Ex: seguro de vida, família, casa..."
                   className="flex-1 border border-[#E0E8EA] rounded-xl px-3.5 py-2.5 text-[13.5px] outline-none focus:border-brand"
-                  style={{ background: '#F6F8F8' }}
+                  style={{ background: '#FDF8FF' }}
                 />
                 <button
                   onClick={() => buscar()}
                   disabled={buscando || !query.trim()}
                   className="px-4 rounded-xl text-white text-[13px] font-semibold disabled:opacity-50 transition active:scale-95"
-                  style={{ background: '#0E5F66' }}
+                  style={{ background: '#8B2FC9' }}
                 >
                   {buscando ? '…' : 'Buscar'}
                 </button>
@@ -274,7 +274,7 @@ export default function ImagePicker({
                 onClick={() => inputRef.current?.click()}
                 disabled={uploading}
                 className="w-full border-2 border-dashed rounded-2xl py-12 flex flex-col items-center gap-2 text-mut transition active:scale-95 disabled:opacity-60"
-                style={{ borderColor: '#CDD8DB', background: '#F6F8F8' }}
+                style={{ borderColor: '#D4B8EF', background: '#FDF8FF' }}
               >
                 {uploading ? (
                   <>

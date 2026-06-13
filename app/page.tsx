@@ -132,7 +132,7 @@ export default function Hoje() {
             <Link
               href="/configuracoes"
               className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-[14px] font-disp"
-              style={{ background: perfilAtivo ? perfilAtivo.avatarColor : 'linear-gradient(135deg,#0E5F66,#17996B)' }}
+              style={{ background: perfilAtivo ? perfilAtivo.avatarColor : 'linear-gradient(135deg,#8B2FC9,#F04E3E)' }}
               title="Configurações"
             >
               {perfilAtivo ? initials(perfilAtivo.displayName) : 'FD'}
@@ -147,8 +147,8 @@ export default function Hoje() {
               onClick={() => setFiltroPerfil('todos')}
               className="flex-shrink-0 px-3 py-1 rounded-full text-[11.5px] font-semibold transition"
               style={{
-                background: filtroPerfil === 'todos' ? '#17262C' : '#F0F4F5',
-                color:      filtroPerfil === 'todos' ? '#fff'    : '#6B7E85',
+                background: filtroPerfil === 'todos' ? '#1A0A2E' : '#F0F4F5',
+                color:      filtroPerfil === 'todos' ? '#fff'    : '#7B6B8A',
               }}
             >
               Todos
@@ -160,7 +160,7 @@ export default function Hoje() {
                 className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1 rounded-full text-[11.5px] font-semibold transition"
                 style={{
                   background: filtroPerfil === p.id ? p.avatarColor : '#F0F4F5',
-                  color:      filtroPerfil === p.id ? '#fff'         : '#6B7E85',
+                  color:      filtroPerfil === p.id ? '#fff'         : '#7B6B8A',
                 }}
               >
                 <span
@@ -201,7 +201,7 @@ export default function Hoje() {
         )}
 
         {/* Segmented control */}
-        <div className="flex bg-[#E8EDEE] rounded-2xl p-1 mb-4">
+        <div className="flex bg-[#EDE6F5] rounded-2xl p-1 mb-4">
           {(['fila', 'publicados'] as const).map(tab => (
             <button
               key={tab}
@@ -282,7 +282,7 @@ export default function Hoje() {
                 return (
                   <div key={p.id} className="bg-white rounded-card shadow-sm p-3.5 mb-3 flex items-center gap-3">
                     <span className="w-2 h-2 rounded-full flex-shrink-0"
-                      style={{ background: CANAL_COR[p.channel] ?? '#6B7E85' }} />
+                      style={{ background: CANAL_COR[p.channel] ?? '#7B6B8A' }} />
                     <div className="flex-1 min-w-0">
                       <p className="text-[13.5px] font-semibold text-ink truncate">{p.title}</p>
                       <p className="text-[12px] text-mut mt-0.5 capitalize">
@@ -296,8 +296,8 @@ export default function Hoje() {
                     </div>
                     <span className="text-[11px] font-bold px-2.5 py-1 rounded-full flex-shrink-0"
                       style={p.status === 'published'
-                        ? { background: '#E6F4EE', color: '#17996B' }
-                        : { background: '#E5F1F0', color: '#0E5F66' }}>
+                        ? { background: '#E6F4EE', color: '#F04E3E' }
+                        : { background: '#F0E8FA', color: '#8B2FC9' }}>
                       {p.status === 'published' ? '✓ Publicado' : '⏰ Agendado'}
                     </span>
                     <button onClick={() => setConfirmarExcluir(p)}
@@ -331,7 +331,7 @@ export default function Hoje() {
           onClick={e => { if (e.target === e.currentTarget) setConfirmarExcluir(null); }}
         >
           <div className="bg-fundo rounded-t-[26px] w-full max-w-[430px] px-4 pt-4 pb-8">
-            <div className="w-[42px] h-[5px] bg-[#CDD8DB] rounded-full mx-auto mb-5" />
+            <div className="w-[42px] h-[5px] bg-[#D4B8EF] rounded-full mx-auto mb-5" />
             <p className="font-disp text-[17px] font-bold mb-1">Excluir publicação?</p>
             <p className="text-[13px] text-mut mb-5">
               O post <b className="text-ink">"{confirmarExcluir.title}"</b> será removido da rede social
@@ -340,7 +340,7 @@ export default function Hoje() {
             <div className="flex gap-2">
               <button onClick={() => setConfirmarExcluir(null)}
                 className="flex-1 py-3.5 rounded-2xl font-semibold text-[14px] text-mut"
-                style={{ background: '#E8EDEE' }}>Cancelar</button>
+                style={{ background: '#EDE6F5' }}>Cancelar</button>
               <button onClick={() => excluirPost(confirmarExcluir)}
                 disabled={excluindo === confirmarExcluir.id}
                 className="flex-[2] py-3.5 rounded-2xl text-white font-semibold text-[14px] disabled:opacity-60"

@@ -82,7 +82,7 @@ function AutoRadar({ onPostsGerados }: { onPostsGerados: () => void }) {
       <button
         onClick={() => setAberto(!aberto)}
         className="w-full flex items-center justify-between px-4 py-3 rounded-2xl text-[14px] font-semibold"
-        style={{ background: ligado ? '#E5F1F0' : '#F6F8F8', color: ligado ? '#0E5F66' : '#6B7E85' }}
+        style={{ background: ligado ? '#F0E8FA' : '#FDF8FF', color: ligado ? '#8B2FC9' : '#7B6B8A' }}
       >
         <span>
           {ligado ? '🤖 Radar automático · ' : '⏸ Radar automático · '}
@@ -101,7 +101,7 @@ function AutoRadar({ onPostsGerados }: { onPostsGerados: () => void }) {
               <p className="text-[12.5px] text-mut">
                 Última varredura: <b className="text-ink">{tempoAtras(status.lastAt)}</b>
                 {status.resultado && (
-                  <> · <span style={{ color: '#17996B', fontWeight: 600 }}>
+                  <> · <span style={{ color: '#F04E3E', fontWeight: 600 }}>
                     {status.resultado.postsGerados} post{status.resultado.postsGerados !== 1 ? 's' : ''} gerado{status.resultado.postsGerados !== 1 ? 's' : ''}
                   </span></>
                 )}
@@ -126,8 +126,8 @@ function AutoRadar({ onPostsGerados }: { onPostsGerados: () => void }) {
                   onClick={() => salvarIntervalo(op.value)}
                   className="px-3 py-1.5 rounded-full text-[12px] font-semibold transition"
                   style={{
-                    background: intervaloAtual === op.value ? '#0E5F66' : '#F0F4F5',
-                    color: intervaloAtual === op.value ? '#fff' : '#6B7E85',
+                    background: intervaloAtual === op.value ? '#8B2FC9' : '#F0F4F5',
+                    color: intervaloAtual === op.value ? '#fff' : '#7B6B8A',
                   }}
                 >
                   {op.label}
@@ -142,7 +142,7 @@ function AutoRadar({ onPostsGerados }: { onPostsGerados: () => void }) {
               onClick={rodarAgora}
               disabled={rodando}
               className="w-full py-2.5 rounded-xl text-[13px] font-semibold text-white transition active:scale-95 disabled:opacity-60"
-              style={{ background: '#0E5F66' }}
+              style={{ background: '#8B2FC9' }}
             >
               {rodando ? '✦ Varrendo e gerando posts…' : '▶ Rodar agora'}
             </button>
@@ -234,7 +234,7 @@ export default function Radar() {
             onClick={() => buscar(true)}
             disabled={atualizando}
             className="text-[13px] font-semibold px-3.5 py-1.5 rounded-full transition active:scale-95"
-            style={{ background: '#E5F1F0', color: '#0E5F66' }}
+            style={{ background: '#F0E8FA', color: '#8B2FC9' }}
           >
             {atualizando ? '…' : '↻ Atualizar'}
           </button>
@@ -255,11 +255,11 @@ export default function Radar() {
           style={{ background: '#E6F4EE' }}>
           <span className="text-[18px]">✓</span>
           <div className="flex-1">
-            <p className="text-[13px] font-semibold" style={{ color: '#17996B' }}>
+            <p className="text-[13px] font-semibold" style={{ color: '#F04E3E' }}>
               {sucesso === 'auto' ? 'Posts gerados automaticamente e na fila!' : 'Post gerado e na fila!'}
             </p>
             <button onClick={() => router.push('/')}
-              className="text-[12px] underline font-semibold" style={{ color: '#17996B' }}>
+              className="text-[12px] underline font-semibold" style={{ color: '#F04E3E' }}>
               Aprovar em Hoje →
             </button>
           </div>
@@ -312,7 +312,7 @@ export default function Radar() {
                   )}
                   {item.usedAt && (
                     <span className="text-[10.5px] font-bold px-2 py-1 rounded-full block"
-                      style={{ background: '#E6F4EE', color: '#17996B' }}>✓ Usado</span>
+                      style={{ background: '#E6F4EE', color: '#F04E3E' }}>✓ Usado</span>
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -337,14 +337,14 @@ export default function Radar() {
                   onClick={() => gerarPost(item)}
                   disabled={gerando === item.id}
                   className="flex-[2] text-white font-semibold rounded-xl py-2.5 text-[13px] active:scale-95 transition disabled:opacity-60"
-                  style={{ background: gerando === item.id ? '#9DAFB5' : '#0E5F66' }}
+                  style={{ background: gerando === item.id ? '#A89CB5' : '#8B2FC9' }}
                 >
                   {gerando === item.id ? '✦ Gerando…' : '✦ Gerar minha versão'}
                 </button>
                 {item.sourceUrl && (
                   <a href={item.sourceUrl} target="_blank" rel="noopener noreferrer"
                     className="flex-1 flex items-center justify-center text-mut font-semibold rounded-xl py-2.5 text-[13px]"
-                    style={{ background: '#F6F8F8' }}>
+                    style={{ background: '#FDF8FF' }}>
                     Ver fonte ↗
                   </a>
                 )}

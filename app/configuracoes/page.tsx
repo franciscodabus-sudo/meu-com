@@ -36,8 +36,8 @@ type TesteStatus = { ok: boolean; count: number; rssUrl?: string; erro?: string 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
 const KIND_LABEL: Record<string, string> = { rss: 'RSS', website: 'Site', instagram: 'Instagram' };
-const KIND_BG:    Record<string, string> = { rss: '#E5F1F0', website: '#EEF2FF', instagram: '#FDF2FA' };
-const KIND_TEXT:  Record<string, string> = { rss: '#0E5F66', website: '#4338CA', instagram: '#A21CAF' };
+const KIND_BG:    Record<string, string> = { rss: '#F0E8FA', website: '#EEF2FF', instagram: '#FDF2FA' };
+const KIND_TEXT:  Record<string, string> = { rss: '#8B2FC9', website: '#4338CA', instagram: '#A21CAF' };
 const CANAL_ICON: Record<string, string> = { instagram: '📷', facebook: '📘', linkedin: '💼', tiktok: '🎵' };
 const CANAL_NAME: Record<string, string> = { instagram: 'Instagram', facebook: 'Facebook', linkedin: 'LinkedIn', tiktok: 'TikTok' };
 
@@ -78,7 +78,7 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
     <button
       onClick={() => onChange(!on)}
       className="relative w-[48px] h-[28px] rounded-full transition-colors flex-shrink-0"
-      style={{ background: on ? '#0E5F66' : '#CDD8DB' }}
+      style={{ background: on ? '#8B2FC9' : '#D4B8EF' }}
       aria-pressed={on}
     >
       <span
@@ -114,7 +114,7 @@ function FonteCard({
         <div className="flex items-center gap-2 mb-0.5">
           <span
             className="text-[10.5px] font-bold px-2 py-0.5 rounded-full flex-shrink-0"
-            style={{ background: KIND_BG[fonte.kind] ?? '#F6F8F8', color: KIND_TEXT[fonte.kind] ?? '#555' }}
+            style={{ background: KIND_BG[fonte.kind] ?? '#FDF8FF', color: KIND_TEXT[fonte.kind] ?? '#555' }}
           >
             {KIND_LABEL[fonte.kind] ?? fonte.kind}
           </span>
@@ -132,7 +132,7 @@ function FonteCard({
         <button
           onClick={() => onTestar(fonte.id)}
           className="text-[11px] font-semibold px-2.5 py-1 rounded-full transition"
-          style={{ background: '#F0F4F5', color: '#6B7E85' }}
+          style={{ background: '#F0F4F5', color: '#7B6B8A' }}
           title="Testar conexão"
         >
           ↺
@@ -436,7 +436,7 @@ export default function Configuracoes() {
         onClick={sincronizarTudo}
         disabled={sincronizando || ativas === 0}
         className="w-full flex items-center justify-center gap-2 py-2.5 rounded-2xl text-[13px] font-semibold mb-3 transition active:scale-95 disabled:opacity-50"
-        style={{ background: '#E5F1F0', color: '#0E5F66' }}
+        style={{ background: '#F0E8FA', color: '#8B2FC9' }}
       >
         {sincronizando ? '↻ Sincronizando…' : '🔄 Sincronizar agora'}
       </button>
@@ -463,13 +463,13 @@ export default function Configuracoes() {
           value={novaName}
           onChange={e => setNovaName(e.target.value)}
           placeholder="Nome (ex: Insurance Journal)"
-          className="w-full border border-[#E0E8EA] rounded-xl px-3 py-2.5 text-[13px] mb-2 outline-none focus:border-[#0E5F66]"
+          className="w-full border border-[#E0E8EA] rounded-xl px-3 py-2.5 text-[13px] mb-2 outline-none focus:border-[#8B2FC9]"
         />
         <input
           value={novaUrl}
           onChange={e => handleNovaUrl(e.target.value)}
           placeholder="URL do site, feed RSS ou perfil Instagram"
-          className="w-full border border-[#E0E8EA] rounded-xl px-3 py-2.5 text-[13px] mb-2 outline-none focus:border-[#0E5F66]"
+          className="w-full border border-[#E0E8EA] rounded-xl px-3 py-2.5 text-[13px] mb-2 outline-none focus:border-[#8B2FC9]"
         />
 
         {/* seletor de tipo */}
@@ -503,7 +503,7 @@ export default function Configuracoes() {
             className="rounded-xl px-3 py-2.5 mb-3 text-[12.5px] font-semibold"
             style={{
               background: testeResult.ok ? '#E6F4EE' : '#FEF2F2',
-              color: testeResult.ok ? '#17996B' : '#991B1B',
+              color: testeResult.ok ? '#F04E3E' : '#991B1B',
             }}
           >
             {testeResult.ok
@@ -517,7 +517,7 @@ export default function Configuracoes() {
             onClick={testarNova}
             disabled={!novaUrl.trim() || testando === 'novo'}
             className="flex-1 py-2.5 rounded-xl text-[13px] font-semibold transition active:scale-95 disabled:opacity-50"
-            style={{ background: '#F0F4F5', color: '#6B7E85' }}
+            style={{ background: '#F0F4F5', color: '#7B6B8A' }}
           >
             {testando === 'novo' ? 'Testando…' : 'Testar'}
           </button>
@@ -525,7 +525,7 @@ export default function Configuracoes() {
             onClick={adicionarFonte}
             disabled={!novaUrl.trim() || !novaName.trim() || adicionando}
             className="flex-[2] py-2.5 rounded-xl text-[13px] font-semibold text-white transition active:scale-95 disabled:opacity-50"
-            style={{ background: '#0E5F66' }}
+            style={{ background: '#8B2FC9' }}
           >
             {adicionando ? 'Adicionando…' : '+ Adicionar'}
           </button>
@@ -544,8 +544,8 @@ export default function Configuracoes() {
               onClick={() => setIntervalHoras(op.value)}
               className="flex-1 py-2 rounded-xl text-[12px] font-semibold transition"
               style={{
-                background: config.intervalHoras === op.value ? '#0E5F66' : '#F0F4F5',
-                color: config.intervalHoras === op.value ? '#fff' : '#6B7E85',
+                background: config.intervalHoras === op.value ? '#8B2FC9' : '#F0F4F5',
+                color: config.intervalHoras === op.value ? '#fff' : '#7B6B8A',
               }}
             >
               {op.label}
@@ -561,8 +561,8 @@ export default function Configuracoes() {
               onClick={() => setMaxPosts(v)}
               className="flex-1 py-2 rounded-xl text-[12px] font-semibold transition"
               style={{
-                background: config.maxPostsPerRun === v ? '#0E5F66' : '#F0F4F5',
-                color: config.maxPostsPerRun === v ? '#fff' : '#6B7E85',
+                background: config.maxPostsPerRun === v ? '#8B2FC9' : '#F0F4F5',
+                color: config.maxPostsPerRun === v ? '#fff' : '#7B6B8A',
               }}
             >
               {v}
@@ -598,7 +598,7 @@ export default function Configuracoes() {
           <div className="flex items-center gap-2 mb-1">
             {p.ativo && (
               <span className="text-[10.5px] font-bold px-2 py-0.5 rounded-full"
-                style={{ background: '#E5F1F0', color: '#0E5F66' }}>✓ Ativo</span>
+                style={{ background: '#F0E8FA', color: '#8B2FC9' }}>✓ Ativo</span>
             )}
             {p.radarAtivo && (
               <span className="text-[10.5px] font-bold px-2 py-0.5 rounded-full"
@@ -607,11 +607,11 @@ export default function Configuracoes() {
             <p className="text-[14px] font-semibold text-ink flex-1 truncate">{p.displayName}</p>
             <button onClick={() => editarPerfil(p)}
               className="text-[12px] font-semibold px-2.5 py-1 rounded-full transition"
-              style={{ background: '#F0F4F5', color: '#6B7E85' }}>Editar</button>
+              style={{ background: '#F0F4F5', color: '#7B6B8A' }}>Editar</button>
             {!p.ativo && (
               <button onClick={() => ativarPerfil(p.id)}
                 className="text-[12px] font-semibold px-2.5 py-1 rounded-full transition"
-                style={{ background: '#E5F1F0', color: '#0E5F66' }}>Usar</button>
+                style={{ background: '#F0E8FA', color: '#8B2FC9' }}>Usar</button>
             )}
             <button onClick={() => excluirPerfil(p.id)}
               disabled={excluindoPerfil === p.id}
@@ -653,8 +653,8 @@ export default function Configuracoes() {
                 onChange={e => setPerfilForm(f => ({ ...f, [key]: e.target.value }))}
                 placeholder={placeholder}
                 rows={3}
-                className="w-full border border-[#E0E8EA] rounded-xl px-3 py-2.5 text-[13px] outline-none focus:border-[#0E5F66] resize-none font-sans leading-relaxed"
-                style={{ background: '#F6F8F8' }}
+                className="w-full border border-[#E0E8EA] rounded-xl px-3 py-2.5 text-[13px] outline-none focus:border-[#8B2FC9] resize-none font-sans leading-relaxed"
+                style={{ background: '#FDF8FF' }}
               />
             ) : (
               <input
@@ -662,8 +662,8 @@ export default function Configuracoes() {
                 value={perfilForm[key]}
                 onChange={e => setPerfilForm(f => ({ ...f, [key]: e.target.value }))}
                 placeholder={placeholder}
-                className="w-full border border-[#E0E8EA] rounded-xl px-3 py-2.5 text-[13px] outline-none focus:border-[#0E5F66]"
-                style={{ background: '#F6F8F8' }}
+                className="w-full border border-[#E0E8EA] rounded-xl px-3 py-2.5 text-[13px] outline-none focus:border-[#8B2FC9]"
+                style={{ background: '#FDF8FF' }}
               />
             )}
           </div>
@@ -673,7 +673,7 @@ export default function Configuracoes() {
           {perfilEditando && (
             <button onClick={() => { setPerfilEditando(null); setPerfilForm(PERFIL_VAZIO); }}
               className="flex-1 py-2.5 rounded-xl text-[13px] font-semibold transition"
-              style={{ background: '#F0F4F5', color: '#6B7E85' }}>
+              style={{ background: '#F0F4F5', color: '#7B6B8A' }}>
               Cancelar
             </button>
           )}
@@ -681,7 +681,7 @@ export default function Configuracoes() {
             onClick={salvarPerfil}
             disabled={salvandoPerfil || !perfilForm.displayName.trim()}
             className="flex-[2] py-2.5 rounded-xl text-[13px] font-semibold text-white transition active:scale-95 disabled:opacity-60"
-            style={{ background: '#0E5F66' }}>
+            style={{ background: '#8B2FC9' }}>
             {salvandoPerfil ? 'Salvando…' : perfilEditando ? 'Atualizar perfil' : 'Criar perfil'}
           </button>
         </div>
@@ -699,20 +699,20 @@ export default function Configuracoes() {
             value={config.whatsappNumero}
             onChange={e => setWhatsapp(e.target.value)}
             placeholder="+1 (407) 000-0000"
-            className="flex-1 border border-[#E0E8EA] rounded-xl px-3 py-2.5 text-[13.5px] outline-none focus:border-[#0E5F66]"
-            style={{ background: '#F6F8F8' }}
+            className="flex-1 border border-[#E0E8EA] rounded-xl px-3 py-2.5 text-[13.5px] outline-none focus:border-[#8B2FC9]"
+            style={{ background: '#FDF8FF' }}
           />
           <button
             onClick={() => salvarCampo({ whatsappNumero: config.whatsappNumero })}
             disabled={salvando}
             className="px-5 rounded-xl text-[13px] font-semibold text-white transition active:scale-95 disabled:opacity-60"
-            style={{ background: '#0E5F66' }}
+            style={{ background: '#8B2FC9' }}
           >
             {salvando ? '…' : 'Salvar'}
           </button>
         </div>
         {config.whatsappNumero && (
-          <p className="text-[11.5px] mt-2" style={{ color: '#17996B' }}>
+          <p className="text-[11.5px] mt-2" style={{ color: '#F04E3E' }}>
             ✓ Link: wa.me/{config.whatsappNumero.replace(/\D/g, '')}
           </p>
         )}
@@ -735,14 +735,14 @@ export default function Configuracoes() {
             <div className="flex-1 min-w-0">
               <p className="text-[13.5px] font-semibold text-ink">{item.label}</p>
               <p className="text-[11.5px] mt-0.5"
-                style={{ color: item.configured ? '#17996B' : '#C97F16' }}>
+                style={{ color: item.configured ? '#F04E3E' : '#C97F16' }}>
                 {item.configured ? '✓ Configurada no .env' : '⚠ Faltando no .env'}
               </p>
             </div>
             <span
               className="text-[11px] font-bold px-2.5 py-1 rounded-full flex-shrink-0"
               style={item.configured
-                ? { background: '#E6F4EE', color: '#17996B' }
+                ? { background: '#E6F4EE', color: '#F04E3E' }
                 : { background: '#FBF1DE', color: '#C97F16' }}
             >
               {item.configured ? '✓ OK' : '✗'}
@@ -756,7 +756,7 @@ export default function Configuracoes() {
       </p>
 
       {/* Botão Sair */}
-      <div className="mt-6 pt-5" style={{ borderTop: '1px solid #E8EDEE' }}>
+      <div className="mt-6 pt-5" style={{ borderTop: '1px solid #EDE6F5' }}>
         <button
           onClick={() => signOut({ callbackUrl: '/login' })}
           className="w-full py-3.5 rounded-2xl font-semibold text-[14px] transition active:scale-[.98]"
@@ -770,7 +770,7 @@ export default function Configuracoes() {
       {toast && (
         <div
           className="fixed bottom-24 left-1/2 -translate-x-1/2 px-5 py-3 rounded-full text-[13px] font-semibold text-white z-50 shadow-lg"
-          style={{ background: '#17262C', maxWidth: '90vw', whiteSpace: 'nowrap' }}
+          style={{ background: '#1A0A2E', maxWidth: '90vw', whiteSpace: 'nowrap' }}
         >
           {toast}
         </div>

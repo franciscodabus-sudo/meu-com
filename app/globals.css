@@ -3,6 +3,12 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --brand-gradient: linear-gradient(135deg, #8B2FC9, #D63AA0, #F04E3E);
+  --brand-gradient-v: linear-gradient(180deg, #8B2FC9, #D63AA0, #F04E3E);
+  --sidebar-bg: linear-gradient(180deg, #1A0A2E 0%, #120720 100%);
+}
+
 body { @apply bg-fundo text-ink font-sans; }
 
 @layer components {
@@ -10,8 +16,25 @@ body { @apply bg-fundo text-ink font-sans; }
     @apply block text-[11.5px] font-semibold text-mut uppercase tracking-wide mb-1;
   }
   .input-base {
-    @apply w-full border border-[#E0E8EA] rounded-xl px-3 py-2.5 text-[13px] outline-none bg-[#F6F8F8] transition focus:border-[#0E5F66];
+    @apply w-full border border-[#E4DCF0] rounded-xl px-3 py-2.5 text-[13px] outline-none bg-[#FAF7FF] transition focus:border-accent;
   }
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* Botão primário com gradiente da marca */
+  .btn-brand {
+    @apply text-white font-semibold transition active:scale-[.98] disabled:opacity-50;
+    background: var(--brand-gradient);
+  }
+  .btn-brand:hover { filter: brightness(1.05); }
+
+  /* Botão secundário */
+  .btn-accent {
+    @apply font-semibold transition active:scale-[.98] border;
+    color: #8B2FC9;
+    border-color: #8B2FC9;
+  }
+
+  /* Toggle ativo */
+  .toggle-on { @apply bg-brand; }
 }

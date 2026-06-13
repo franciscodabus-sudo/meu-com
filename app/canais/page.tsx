@@ -47,10 +47,10 @@ const PLATAFORMA_COR: Record<string, string> = {
 const AYRSHARE_URL = 'https://app.ayrshare.com';
 
 function statusLabel(s: string): { text: string; cor: string } {
-  if (s === 'success' || s === 'published') return { text: 'Publicado', cor: '#17996B' };
-  if (s === 'scheduled') return { text: 'Agendado', cor: '#0E5F66' };
+  if (s === 'success' || s === 'published') return { text: 'Publicado', cor: '#F04E3E' };
+  if (s === 'scheduled') return { text: 'Agendado', cor: '#8B2FC9' };
   if (s === 'error' || s === 'failed') return { text: 'Falhou', cor: '#DC2626' };
-  return { text: s, cor: '#6B7E85' };
+  return { text: s, cor: '#7B6B8A' };
 }
 
 function tempoAtras(iso: string): string {
@@ -94,7 +94,7 @@ function ModalConectar({
         style={{ paddingBottom: 'calc(24px + env(safe-area-inset-bottom))' }}
       >
         {/* Handle */}
-        <div className="w-[42px] h-[5px] bg-[#CDD8DB] rounded-full mx-auto mt-3 mb-4" />
+        <div className="w-[42px] h-[5px] bg-[#D4B8EF] rounded-full mx-auto mt-3 mb-4" />
 
         {/* Cabeçalho */}
         <div className="flex items-center justify-between px-4 mb-4">
@@ -109,17 +109,17 @@ function ModalConectar({
             <ol className="space-y-2 text-[13px] text-ink leading-relaxed">
               <li className="flex gap-2">
                 <span className="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold text-white flex-shrink-0 mt-0.5"
-                  style={{ background: '#0E5F66' }}>1</span>
+                  style={{ background: '#8B2FC9' }}>1</span>
                 <span>Toque em <b>"Abrir painel de contas"</b> abaixo</span>
               </li>
               <li className="flex gap-2">
                 <span className="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold text-white flex-shrink-0 mt-0.5"
-                  style={{ background: '#0E5F66' }}>2</span>
+                  style={{ background: '#8B2FC9' }}>2</span>
                 <span>Na nova aba, vá em <b>Social Accounts</b> e conecte a rede desejada</span>
               </li>
               <li className="flex gap-2">
                 <span className="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold text-white flex-shrink-0 mt-0.5"
-                  style={{ background: '#0E5F66' }}>3</span>
+                  style={{ background: '#8B2FC9' }}>3</span>
                 <span>Volte aqui e toque em <b>"Já conectei — verificar"</b></span>
               </li>
             </ol>
@@ -143,7 +143,7 @@ function ModalConectar({
               className="rounded-xl px-4 py-3 mb-3 text-[13px] font-semibold"
               style={{
                 background: feedbackVerificar.startsWith('✓') ? '#E6F4EE' : '#FEF2F2',
-                color:      feedbackVerificar.startsWith('✓') ? '#17996B' : '#B91C1C',
+                color:      feedbackVerificar.startsWith('✓') ? '#F04E3E' : '#B91C1C',
               }}
             >
               {feedbackVerificar}
@@ -157,7 +157,7 @@ function ModalConectar({
               target="_blank"
               rel="noopener noreferrer"
               className="flex-1 py-3.5 rounded-2xl text-center text-[14px] font-semibold transition active:scale-95"
-              style={{ background: '#E5F1F0', color: '#0E5F66' }}
+              style={{ background: '#F0E8FA', color: '#8B2FC9' }}
             >
               Abrir painel ↗
             </a>
@@ -165,7 +165,7 @@ function ModalConectar({
               onClick={onVerificar}
               disabled={verificando}
               className="flex-[2] py-3.5 rounded-2xl text-white text-[14px] font-semibold transition active:scale-95 disabled:opacity-60"
-              style={{ background: '#0E5F66' }}
+              style={{ background: '#8B2FC9' }}
             >
               {verificando ? '↻ Verificando…' : 'Já conectei — verificar'}
             </button>
@@ -280,7 +280,7 @@ export default function Canais() {
           <button
             onClick={carregar}
             className="ml-auto text-[12.5px] font-semibold px-3 py-1.5 rounded-full transition active:scale-95"
-            style={{ background: '#F0F4F5', color: '#6B7E85' }}
+            style={{ background: '#F0F4F5', color: '#7B6B8A' }}
           >
             ↻ Atualizar
           </button>
@@ -357,7 +357,7 @@ export default function Canais() {
                         className="text-[11px] font-bold px-2.5 py-1 rounded-full flex-shrink-0"
                         style={{
                           background: conta.status === 'connected' ? '#E6F4EE' : '#FEF2F2',
-                          color:      conta.status === 'connected' ? '#17996B' : '#DC2626',
+                          color:      conta.status === 'connected' ? '#F04E3E' : '#DC2626',
                         }}
                       >
                         {conta.status === 'connected' ? '● Ativa' : '● Erro'}
@@ -371,7 +371,7 @@ export default function Canais() {
                   <button
                     onClick={() => { setFeedbackVerificar(null); setModalAberto(true); }}
                     className="w-full py-2.5 rounded-xl text-[13px] font-semibold transition active:scale-95"
-                    style={{ background: '#0E5F66', color: '#fff' }}
+                    style={{ background: '#8B2FC9', color: '#fff' }}
                   >
                     + Conectar conta
                   </button>
@@ -386,7 +386,7 @@ export default function Canais() {
               </p>
 
               {!carregando && historico.length === 0 && (
-                <div className="rounded-2xl px-4 py-6 text-center" style={{ background: '#F6F8F8' }}>
+                <div className="rounded-2xl px-4 py-6 text-center" style={{ background: '#FDF8FF' }}>
                   <p className="text-[13px] text-mut">Nenhuma publicação ainda</p>
                 </div>
               )}

@@ -11,7 +11,7 @@ type Perfil = {
 };
 
 const AVATAR_COLORS = [
-  '#0E5F66','#7C3AED','#DB2777','#EA580C','#16A34A',
+  '#8B2FC9','#7C3AED','#DB2777','#EA580C','#16A34A',
   '#0369A1','#9333EA','#B45309','#0F766E','#DC2626',
 ];
 
@@ -38,7 +38,7 @@ const CAMPO_VAZIO: Omit<Perfil, 'id' | 'name' | 'ativo' | 'pausado' | 'radarAtiv
   displayName: '', descricao: '', publicoAlvo: '', tomDeVoz: '', tomEvitar: '',
   idioma: 'pt-BR', contato: '', produtos: '', frequencia: '',
   channelsActive: '["instagram","linkedin","facebook"]',
-  objetivo: 'engajamento', notasLivres: '', avatarColor: '#0E5F66',
+  objetivo: 'engajamento', notasLivres: '', avatarColor: '#8B2FC9',
 };
 
 function EditorCenario({ perfil, onClose, onSalvo }: EditorProps) {
@@ -102,7 +102,7 @@ function EditorCenario({ perfil, onClose, onSalvo }: EditorProps) {
         style={{ maxHeight: '92vh' }}>
         {/* Handle + header */}
         <div className="flex-shrink-0 px-4 pt-3 pb-3">
-          <div className="w-[42px] h-[5px] bg-[#CDD8DB] rounded-full mx-auto mb-4" />
+          <div className="w-[42px] h-[5px] bg-[#D4B8EF] rounded-full mx-auto mb-4" />
           <div className="flex items-center justify-between">
             <h2 className="font-disp text-[18px] font-bold">
               {perfil ? `Editar — ${perfil.displayName}` : 'Novo cenário'}
@@ -116,8 +116,8 @@ function EditorCenario({ perfil, onClose, onSalvo }: EditorProps) {
               <button key={s.key} onClick={() => setSecao(s.key)}
                 className="flex-shrink-0 text-[11.5px] font-semibold px-3 py-1.5 rounded-full transition"
                 style={{
-                  background: secao === s.key ? '#0E5F66' : '#E8EDEE',
-                  color:      secao === s.key ? '#fff'     : '#6B7E85',
+                  background: secao === s.key ? '#8B2FC9' : '#EDE6F5',
+                  color:      secao === s.key ? '#fff'     : '#7B6B8A',
                 }}>
                 {s.label}
               </button>
@@ -215,8 +215,8 @@ function EditorCenario({ perfil, onClose, onSalvo }: EditorProps) {
                     <button key={canal} onClick={() => toggleCanal(canal)}
                       className="flex-1 py-2.5 rounded-xl text-[12px] font-semibold transition"
                       style={{
-                        background: canaisAtivos.includes(canal) ? '#0E5F66' : '#F0F4F5',
-                        color:      canaisAtivos.includes(canal) ? '#fff'    : '#6B7E85',
+                        background: canaisAtivos.includes(canal) ? '#8B2FC9' : '#F0F4F5',
+                        color:      canaisAtivos.includes(canal) ? '#fff'    : '#7B6B8A',
                       }}>
                       {CANAL_ICON[canal]} {canal.charAt(0).toUpperCase() + canal.slice(1)}
                     </button>
@@ -238,8 +238,8 @@ function EditorCenario({ perfil, onClose, onSalvo }: EditorProps) {
                 <button key={obj} onClick={() => set('objetivo', obj)}
                   className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-left transition"
                   style={{
-                    background: form.objetivo === obj ? '#E5F1F0' : '#F6F8F8',
-                    border:     form.objetivo === obj ? '1.5px solid #0E5F66' : '1.5px solid transparent',
+                    background: form.objetivo === obj ? '#F0E8FA' : '#FDF8FF',
+                    border:     form.objetivo === obj ? '1.5px solid #8B2FC9' : '1.5px solid transparent',
                   }}>
                   <span className="text-[22px]">
                     {obj === 'engajamento' ? '💬' : obj === 'leads' ? '🎯' : '🏆'}
@@ -270,10 +270,10 @@ function EditorCenario({ perfil, onClose, onSalvo }: EditorProps) {
         </div>
 
         {/* Rodapé com botão salvar */}
-        <div className="flex-shrink-0 px-4 pt-3 pb-8" style={{ borderTop: '1px solid #E8EDEE' }}>
+        <div className="flex-shrink-0 px-4 pt-3 pb-8" style={{ borderTop: '1px solid #EDE6F5' }}>
           <button onClick={salvar} disabled={salvando || !form.displayName.trim()}
             className="w-full py-3.5 rounded-2xl text-white font-semibold text-[15px] transition active:scale-[.98] disabled:opacity-50"
-            style={{ background: 'linear-gradient(135deg,#0E5F66,#17996B)' }}>
+            style={{ background: 'linear-gradient(135deg,#8B2FC9,#F04E3E)' }}>
             {salvando ? 'Salvando…' : perfil ? 'Atualizar cenário' : 'Criar cenário'}
           </button>
         </div>
@@ -358,7 +358,7 @@ export default function Cenarios() {
           <button
             onClick={() => setEditor('novo')}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-[13px] font-semibold text-white transition active:scale-95"
-            style={{ background: 'linear-gradient(135deg,#0E5F66,#17996B)' }}
+            style={{ background: 'linear-gradient(135deg,#8B2FC9,#F04E3E)' }}
           >
             + Novo
           </button>
@@ -406,7 +406,7 @@ export default function Cenarios() {
                     )}
                     {p.pausado && (
                       <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                        style={{ background: '#F0F4F5', color: '#6B7E85' }}>
+                        style={{ background: '#F0F4F5', color: '#7B6B8A' }}>
                         Pausado
                       </span>
                     )}
@@ -431,7 +431,7 @@ export default function Cenarios() {
                   <button
                     onClick={() => setEditor(p)}
                     className="text-[11.5px] font-semibold px-2.5 py-1.5 rounded-xl transition"
-                    style={{ background: '#F0F4F5', color: '#475B63' }}
+                    style={{ background: '#F0F4F5', color: '#7B6B8A' }}
                   >
                     Editar
                   </button>
@@ -446,23 +446,23 @@ export default function Cenarios() {
                     </button>
                     {menuId === p.id && (
                       <div className="absolute right-0 top-full mt-1 w-[160px] bg-white rounded-2xl overflow-hidden z-20"
-                        style={{ boxShadow: '0 4px 20px rgba(23,38,44,.12)', border: '1px solid #E8EDEE' }}>
+                        style={{ boxShadow: '0 4px 20px rgba(23,38,44,.12)', border: '1px solid #EDE6F5' }}>
                         {!p.ativo && (
                           <button onClick={() => ativar(p.id)}
-                            className="w-full text-left px-4 py-2.5 text-[13px] hover:bg-[#F6F8F8] transition">
+                            className="w-full text-left px-4 py-2.5 text-[13px] hover:bg-[#FDF8FF] transition">
                             ✓ Usar este cenário
                           </button>
                         )}
                         <button onClick={() => togglePausado(p.id, !p.pausado)}
-                          className="w-full text-left px-4 py-2.5 text-[13px] hover:bg-[#F6F8F8] transition">
+                          className="w-full text-left px-4 py-2.5 text-[13px] hover:bg-[#FDF8FF] transition">
                           {p.pausado ? '▶ Retomar' : '⏸ Pausar'}
                         </button>
                         <button onClick={() => duplicar(p)}
-                          className="w-full text-left px-4 py-2.5 text-[13px] hover:bg-[#F6F8F8] transition">
+                          className="w-full text-left px-4 py-2.5 text-[13px] hover:bg-[#FDF8FF] transition">
                           ⧉ Duplicar
                         </button>
                         <button onClick={() => excluir(p.id)}
-                          className="w-full text-left px-4 py-2.5 text-[13px] hover:bg-[#F6F8F8] transition"
+                          className="w-full text-left px-4 py-2.5 text-[13px] hover:bg-[#FDF8FF] transition"
                           style={{ color: '#DC2626' }}>
                           🗑 Excluir
                         </button>
@@ -486,7 +486,7 @@ export default function Cenarios() {
                     setPerfis(prev => prev.map(x => x.id === p.id ? { ...x, radarAtivo: !x.radarAtivo } : x));
                   }}
                   className="relative w-[42px] h-[24px] rounded-full transition-colors flex-shrink-0"
-                  style={{ background: p.radarAtivo ? p.avatarColor : '#CDD8DB' }}
+                  style={{ background: p.radarAtivo ? p.avatarColor : '#D4B8EF' }}
                 >
                   <span className="absolute top-[3px] w-[18px] h-[18px] rounded-full bg-white shadow transition-all"
                     style={{ left: p.radarAtivo ? '21px' : '3px' }} />
