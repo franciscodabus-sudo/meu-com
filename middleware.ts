@@ -23,5 +23,5 @@ export async function middleware(req: NextRequest) {
 
 // Protege todas as rotas exceto /login, /api/auth/* e assets estáticos
 export const config = {
-  matcher: ['/((?!login|api/auth|api/stats|_next|favicon.ico).*)'],
+  matcher: ['/((?!login|api/auth|api/stats|_next|favicon\\.ico|.*\\.png|.*\\.svg|.*\\.jpg|.*\\.webp|.*\\.ico).*)'],
 };
