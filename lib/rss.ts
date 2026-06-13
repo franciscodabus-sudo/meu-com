@@ -270,17 +270,29 @@ export async function lerRadar(): Promise<RadarEntry[]> {
       // Detecta fonte problemática e salva aviso
       if (resultado.bloqueada) {
         const gnUrl = googleNewsRssUrl(fonte.url);
+        // Tenta converter automaticamente para Google News RSS
+        if (gnUrl) {
+          try {
+            const gnEntries = await lerFeedRSS(gnUrl);
+            if (gnEntries.length > 0) {
+              // Converte a fonte para o Google News RSS (sem precisar de ação manual)
+              await db.radarSource.update({
+                where: { id: fonte.id },
+                data: {
+                  url: gnUrl,
+                  kind: 'rss',
+                  warning: '🔄 Convertida automaticamente para Google News RSS (site original bloqueado)',
+                },
+              });
+              itens.push(...gnEntries);
+              continue;
+            }
+          } catch { /* sem resultado no GN */ }
+        }
         await db.radarSource.update({
           where: { id: fonte.id },
           data: { warning: '🚫 Bloqueada por proteção anti-robô — use o feed RSS oficial ou uma busca do Google News' },
         });
-        // Tenta Google News como fallback automático
-        if (gnUrl) {
-          try {
-            const gnEntries = await lerFeedRSS(gnUrl);
-            itens.push(...gnEntries);
-          } catch { /* sem resultado */ }
-        }
         continue;
       }
 

@@ -6,7 +6,7 @@ import Link from 'next/link';
 
 type Fonte = {
   id: string; url: string; kind: string;
-  name: string; active: boolean; createdAt: string;
+  name: string; active: boolean; warning: string | null; createdAt: string;
 };
 
 type Canal = { name: string; active: boolean };
@@ -110,6 +110,11 @@ function FonteCard({
           <p className="text-[13.5px] font-semibold text-ink truncate">{fonte.name}</p>
         </div>
         <p className="text-[11.5px] text-soft truncate">{fonte.url}</p>
+        {fonte.warning && (
+          <p className="text-[11px] mt-1 leading-snug font-medium" style={{ color: '#C97F16' }}>
+            {fonte.warning}
+          </p>
+        )}
       </div>
 
       <div className="flex items-center gap-2 flex-shrink-0">
