@@ -11,6 +11,7 @@
 - [ ] Múltiplas contas por usuário (ex: perfil pessoal + página da empresa + gelateria), com seletor de conta ao aprovar
 
 ## FASE 3 — Virar SaaS (multi-cliente)
+- [ ] Cadastro/multiusuário + login com Google (OAuth real)
 - [ ] Arquitetura multi-tenant: workspaces isolados por cliente, Postgres, autenticação (login/cadastro)
 - [ ] Modo agência: uma empresa de marketing gerencia N clientes, cada um com suas contas e filas de aprovação
 - [ ] Conectores plug-and-play dentro da plataforma: usuário final conecta as próprias redes sem sair do app (Ayrshare Business com perfis de usuário; avaliar migração para APIs nativas)
