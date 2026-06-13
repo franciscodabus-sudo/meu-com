@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { gerarLinkConexao } from '@/lib/ayrshare';
+import { AYRSHARE_DASHBOARD_URL } from '@/lib/ayrshare';
 
 export async function GET() {
-  const url = gerarLinkConexao();
-  return NextResponse.json({ url });
+  return NextResponse.json({ url: AYRSHARE_DASHBOARD_URL });
 }

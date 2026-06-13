@@ -147,14 +147,7 @@ export async function buscarHistorico(limit = 20): Promise<HistoricoItem[]> {
   }));
 }
 
-// ── link de conexão OAuth ───────────────────────────────────────────────────────
-// Retorna uma URL para conectar redes sociais via OAuth.
-// Fase atual: abre o painel de conexão do serviço em popup.
-// Fase 3: white-label via Ayrshare Business (user profiles).
-export function gerarLinkConexao(): string {
-  // O painel de conexão aceita a chave como query param para pré-autenticar.
-  const apiKey = process.env.AYRSHARE_API_KEY ?? '';
-  return apiKey
-    ? `https://app.ayrshare.com/connect?apiKey=${encodeURIComponent(apiKey)}`
-    : 'https://app.ayrshare.com/';
-}
+// ── painel de gerenciamento de contas ─────────────────────────────────────────
+// Fase atual: direciona o usuário para conectar no painel web.
+// Fase 3: white-label via Ayrshare Business (OAuth embutido no app).
+export const AYRSHARE_DASHBOARD_URL = 'https://app.ayrshare.com';
