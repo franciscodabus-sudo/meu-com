@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
+import { signOut } from 'next-auth/react';
 
 // ─── tipos ───────────────────────────────────────────────────────────────────
 
@@ -584,6 +585,17 @@ export default function Configuracoes() {
       <p className="text-[11.5px] text-soft text-center mt-3 mb-2">
         Para adicionar ou alterar chaves, edite o arquivo <code className="bg-[#F0F4F5] px-1 rounded">.env</code> e reinicie o servidor.
       </p>
+
+      {/* Botão Sair */}
+      <div className="mt-6 pt-5" style={{ borderTop: '1px solid #E8EDEE' }}>
+        <button
+          onClick={() => signOut({ callbackUrl: '/login' })}
+          className="w-full py-3.5 rounded-2xl font-semibold text-[14px] transition active:scale-[.98]"
+          style={{ background: '#FEF2F2', color: '#DC2626' }}
+        >
+          Sair da conta
+        </button>
+      </div>
 
       {/* toast global */}
       {toast && (

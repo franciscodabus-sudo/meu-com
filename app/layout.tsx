@@ -1,6 +1,7 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import BottomNav from '@/components/BottomNav';
+import Providers from '@/components/Providers';
 
 export const metadata: Metadata = {
   title: 'Meu CMO',
@@ -11,8 +12,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="pt-BR">
       <body className="max-w-[430px] mx-auto min-h-screen pb-24 bg-fundo">
-        {children}
-        <BottomNav />
+        <Providers>
+          {children}
+          <BottomNav />
+        </Providers>
       </body>
     </html>
   );
