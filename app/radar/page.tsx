@@ -162,6 +162,7 @@ export default function Radar() {
   const [carregando, setCarregando] = useState(true);
   const [atualizando, setAtualizando] = useState(false);
   const [gerando, setGerando] = useState<string | null>(null);
+  const [deletando, setDeletando] = useState<string | null>(null);
   const [sucesso, setSucesso] = useState<string | null>(null);
   const [erroGerar, setErroGerar] = useState<string | null>(null);
   const router = useRouter();
@@ -179,6 +180,20 @@ export default function Radar() {
   }
 
   useEffect(() => { buscar(); }, []);
+
+  async function deletarItem(id: string) {
+    setDeletando(id);
+    try {
+      await fetch('/api/radar', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      setItens(prev => prev.filter(i => i.id !== id));
+    } finally {
+      setDeletando(null);
+    }
+  }
 
   async function gerarPost(item: RadarItem) {
     setGerando(item.id);
@@ -333,6 +348,15 @@ export default function Radar() {
                     Ver fonte ↗
                   </a>
                 )}
+                <button
+                  onClick={() => deletarItem(item.id)}
+                  disabled={deletando === item.id}
+                  title="Descartar pauta"
+                  className="w-[42px] flex items-center justify-center rounded-xl text-[16px] transition active:scale-95 disabled:opacity-40"
+                  style={{ background: '#FEF2F2', color: '#DC2626' }}
+                >
+                  {deletando === item.id ? '…' : '🗑'}
+                </button>
               </div>
             </div>
           ))}

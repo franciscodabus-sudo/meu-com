@@ -48,15 +48,16 @@ model MediaAsset {
 }
 
 model RadarItem {
-  id         String   @id @default(cuid())
-  kind       String   // noticia | concorrente
+  id         String    @id @default(cuid())
+  kind       String    // noticia | concorrente
   title      String
   summary    String?
   sourceUrl  String?
   sourceName String?
-  heat       Int      @default(0)
+  heat       Int       @default(0)
   usedAt     DateTime?
-  createdAt  DateTime @default(now())
+  deletedAt  DateTime? // marcado como descartado pelo usuário — nunca volta
+  createdAt  DateTime  @default(now())
 }
 
 model RadarSource {
@@ -65,6 +66,7 @@ model RadarSource {
   kind      String   @default("rss") // rss | website | instagram
   name      String
   active    Boolean  @default(true)
+  warning   String?  // aviso de qualidade da fonte
   createdAt DateTime @default(now())
 }
 

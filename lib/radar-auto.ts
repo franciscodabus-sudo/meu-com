@@ -1,5 +1,5 @@
 import { db } from './db';
-import { lerRadar } from './rss';
+import { lerRadar, isTituloLixo } from './rss';
 import { gerarPostDoRadar } from './claude';
 import { buscarFotoPexels } from './pexels';
 
@@ -49,11 +49,13 @@ export async function executarRadarAuto(): Promise<AutoResult> {
   // 1. Busca itens dos RSS
   const itens = await lerRadar();
 
-  // 2. Salva apenas os novos
+  // 2. Salva apenas os novos (que passem no filtro de qualidade)
   let novosItens = 0;
   const novos: { id: string; title: string; summary: string | null; sourceName: string | null; sourceUrl: string | null }[] = [];
 
   for (const item of itens) {
+    if (isTituloLixo(item.title)) continue;
+    // Não re-adiciona item já existente (mesmo deletado)
     const existe = await db.radarItem.findFirst({ where: { title: item.title } });
     if (!existe) {
       const criado = await db.radarItem.create({ data: { kind: 'noticia', ...item } });
