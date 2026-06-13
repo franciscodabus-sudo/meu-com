@@ -64,37 +64,49 @@ export async function executarRadarAuto(): Promise<AutoResult> {
     }
   }
 
-  // 3. Gera posts para os N melhores itens novos
+  // 3. Busca perfis com radarAtivo = true (fallback: perfil ativo)
+  let perfisRadar = await db.brandProfile.findMany({ where: { radarAtivo: true } });
+  if (perfisRadar.length === 0) {
+    const ativo = await db.brandProfile.findFirst({ where: { ativo: true } });
+    if (ativo) perfisRadar = [ativo];
+  }
+
+  // 4. Gera posts para os N melhores itens novos × perfis do radar
   const maxPosts = parseInt(await getSetting('radarMaxPostsPerRun', '2'), 10);
   let postsGerados = 0;
 
   for (const item of novos.slice(0, maxPosts)) {
-    try {
-      const post = await gerarPostDoRadar(item);
-      const mediaUrl = await buscarFotoPexels(post.imageQuery ?? '');
+    for (const perfil of perfisRadar) {
+      try {
+        const post = await gerarPostDoRadar(item, perfil as Parameters<typeof gerarPostDoRadar>[1]);
+        const mediaUrl = await buscarFotoPexels(post.imageQuery ?? '');
 
-      const channel  = VALID_CHANNELS.find(c => post.channel?.toLowerCase().includes(c)) ?? 'instagram';
-      const stage    = VALID_STAGES.find(s => post.stage?.toLowerCase().includes(s)) ?? 'atrair';
-      const hashtags = Array.isArray(post.hashtags) ? post.hashtags.join(' ') : (post.hashtags ?? '');
+        const channel  = VALID_CHANNELS.find(c => post.channel?.toLowerCase().includes(c)) ?? 'instagram';
+        const stage    = VALID_STAGES.find(s => post.stage?.toLowerCase().includes(s)) ?? 'atrair';
+        const hashtags = Array.isArray(post.hashtags) ? post.hashtags.join(' ') : (post.hashtags ?? '');
 
-      const campaign = await db.campaign.create({
-        data: { name: `Radar: ${item.title.slice(0, 40)}`, brief: `Auto-gerado do radar: ${item.title}` },
-      });
+        const campaign = await db.campaign.create({
+          data: {
+            name: `Radar: ${item.title.slice(0, 40)}`,
+            brief: `Auto-gerado do radar: ${item.title} [perfil: ${perfil.displayName}]`,
+          },
+        });
 
-      await db.post.create({
-        data: {
-          campaignId: campaign.id,
-          channel, format: post.format ?? 'post', stage,
-          title: post.title, caption: post.caption, hashtags,
-          whyNow: post.whyNow, mediaUrl, status: 'pending',
-        },
-      });
+        await db.post.create({
+          data: {
+            campaignId: campaign.id,
+            channel, format: post.format ?? 'post', stage,
+            title: post.title, caption: post.caption, hashtags,
+            whyNow: post.whyNow, mediaUrl, status: 'pending',
+          },
+        });
 
-      await db.radarItem.update({ where: { id: item.id }, data: { usedAt: new Date() } });
-      postsGerados++;
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      erros.push(`"${item.title.slice(0, 50)}": ${msg}`);
+        await db.radarItem.update({ where: { id: item.id }, data: { usedAt: new Date() } });
+        postsGerados++;
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        erros.push(`"${item.title.slice(0, 50)}" [${perfil.displayName}]: ${msg}`);
+      }
     }
   }
 

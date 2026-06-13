@@ -15,7 +15,12 @@ export type BrandProfile = {
   tomDeVoz: string | null;
   idioma: string;
   contato: string | null;
+  produtos: string | null;
+  frequencia: string | null;
+  objetivo: string | null;
+  notasLivres: string | null;
   ativo: boolean;
+  radarAtivo: boolean;
 };
 
 export async function getPerfilAtivo(): Promise<BrandProfile | null> {
@@ -47,10 +52,22 @@ function montarPromptDoPerfil(perfil: BrandProfile | null): string {
   if (perfil.tomDeVoz?.trim())
     linhas.push(`Tom de voz: ${perfil.tomDeVoz.trim()}`);
 
+  if (perfil.produtos?.trim())
+    linhas.push(`Produtos/serviços: ${perfil.produtos.trim()}`);
+
+  if (perfil.objetivo?.trim())
+    linhas.push(`Objetivo de marketing: ${perfil.objetivo.trim()}`);
+
+  if (perfil.frequencia?.trim())
+    linhas.push(`Frequência de postagem: ${perfil.frequencia.trim()}`);
+
   linhas.push(`Idioma principal: ${perfil.idioma}.`);
 
   if (perfil.contato?.trim())
     linhas.push(`Site/contato: ${perfil.contato.trim()}`);
+
+  if (perfil.notasLivres?.trim())
+    linhas.push(`Notas adicionais para o CMO: ${perfil.notasLivres.trim()}`);
 
   linhas.push(
     'Sua função: transformar um brief ou notícia em posts prontos para redes sociais sobre QUALQUER tema. Adapte o ângulo ao tema do brief.',

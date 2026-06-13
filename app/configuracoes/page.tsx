@@ -3,6 +3,16 @@ import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { signOut } from 'next-auth/react';
 
+// ─── tipos de perfil ──────────────────────────────────────────────────────────
+
+type BrandPerfil = {
+  id: string; name: string; displayName: string;
+  descricao: string; publicoAlvo: string; tomDeVoz: string;
+  idioma: string; contato: string; produtos: string;
+  frequencia: string; objetivo: string; notasLivres: string;
+  ativo: boolean; radarAtivo: boolean;
+};
+
 // ─── tipos ───────────────────────────────────────────────────────────────────
 
 type Fonte = {
@@ -177,6 +187,7 @@ export default function Configuracoes() {
   useEffect(() => {
     carregarFontes();
     carregarConfig();
+    carregarPerfis();
   }, []);
 
   // ── fontes ─────────────────────────────────────────────────────────────────
@@ -311,6 +322,90 @@ export default function Configuracoes() {
       return { ...c, canais };
     });
   }
+
+  // ── perfis de marca ────────────────────────────────────────────────────────
+  const PERFIL_VAZIO: Omit<BrandPerfil, 'id' | 'ativo' | 'radarAtivo'> = {
+    name: '', displayName: '', descricao: '', publicoAlvo: '',
+    tomDeVoz: '', idioma: 'pt-BR', contato: '',
+    produtos: '', frequencia: '', objetivo: '', notasLivres: '',
+  };
+
+  const [perfis, setPerfis] = useState<BrandPerfil[]>([]);
+  const [perfilEditando, setPerfilEditando] = useState<BrandPerfil | null>(null);
+  const [perfilForm, setPerfilForm] = useState(PERFIL_VAZIO);
+  const [salvandoPerfil, setSalvandoPerfil] = useState(false);
+  const [excluindoPerfil, setExcluindoPerfil] = useState<string | null>(null);
+
+  async function carregarPerfis() {
+    const r = await fetch('/api/perfis');
+    if (r.ok) setPerfis(await r.json());
+  }
+
+  async function salvarPerfil() {
+    if (!perfilForm.displayName.trim()) return;
+    setSalvandoPerfil(true);
+    const body = perfilEditando
+      ? { ...perfilForm, id: perfilEditando.id, name: perfilEditando.name }
+      : { ...perfilForm, name: perfilForm.displayName.trim().toLowerCase().replace(/\s+/g, '-') };
+    const r = await fetch('/api/perfis', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (r.ok) {
+      await carregarPerfis();
+      setPerfilEditando(null);
+      setPerfilForm(PERFIL_VAZIO);
+      mostrarToast('Perfil salvo ✓');
+    }
+    setSalvandoPerfil(false);
+  }
+
+  async function ativarPerfil(id: string) {
+    await fetch('/api/perfis', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    setPerfis(prev => prev.map(p => ({ ...p, ativo: p.id === id })));
+  }
+
+  async function toggleRadarPerfil(perfilId: string, radarAtivo: boolean) {
+    await fetch('/api/perfis', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ perfilId, radarAtivo }),
+    });
+    setPerfis(prev => prev.map(p => p.id === perfilId ? { ...p, radarAtivo } : p));
+  }
+
+  async function excluirPerfil(id: string) {
+    setExcluindoPerfil(id);
+    const r = await fetch('/api/perfis', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    if (r.ok) {
+      await carregarPerfis();
+      mostrarToast('Perfil excluído');
+    } else {
+      const e = await r.json();
+      mostrarToast(e.error ?? 'Erro ao excluir');
+    }
+    setExcluindoPerfil(null);
+  }
+
+  function editarPerfil(p: BrandPerfil) {
+    setPerfilEditando(p);
+    setPerfilForm({
+      name: p.name, displayName: p.displayName, descricao: p.descricao,
+      publicoAlvo: p.publicoAlvo, tomDeVoz: p.tomDeVoz, idioma: p.idioma,
+      contato: p.contato, produtos: p.produtos, frequencia: p.frequencia,
+      objetivo: p.objetivo, notasLivres: p.notasLivres,
+    });
+  }
+
 
   if (!config) {
     return (
@@ -493,14 +588,110 @@ export default function Configuracoes() {
         ))}
       </div>
 
-      {/* ── SEÇÃO 4: Perfil e tom de voz ─────────────────────────────────── */}
-      <SecHeader icon="🎙" title="Perfil e tom de voz" />
+      {/* ── SEÇÃO 4: Perfis de Marca (DNA de Campanha) ───────────────────── */}
+      <SecHeader icon="🎯" title="Perfis de Marca" count={perfis.length} />
+
+      {/* Cards de perfis existentes */}
+      {perfis.map(p => (
+        <div key={p.id} className="bg-white rounded-2xl px-4 py-3.5 mb-2.5"
+          style={{ boxShadow: '0 1px 3px rgba(23,38,44,.06),0 4px 14px rgba(23,38,44,.05)', opacity: p.ativo ? 1 : 0.75 }}>
+          <div className="flex items-center gap-2 mb-1">
+            {p.ativo && (
+              <span className="text-[10.5px] font-bold px-2 py-0.5 rounded-full"
+                style={{ background: '#E5F1F0', color: '#0E5F66' }}>✓ Ativo</span>
+            )}
+            {p.radarAtivo && (
+              <span className="text-[10.5px] font-bold px-2 py-0.5 rounded-full"
+                style={{ background: '#EEF2FF', color: '#4338CA' }}>📡 Radar</span>
+            )}
+            <p className="text-[14px] font-semibold text-ink flex-1 truncate">{p.displayName}</p>
+            <button onClick={() => editarPerfil(p)}
+              className="text-[12px] font-semibold px-2.5 py-1 rounded-full transition"
+              style={{ background: '#F0F4F5', color: '#6B7E85' }}>Editar</button>
+            {!p.ativo && (
+              <button onClick={() => ativarPerfil(p.id)}
+                className="text-[12px] font-semibold px-2.5 py-1 rounded-full transition"
+                style={{ background: '#E5F1F0', color: '#0E5F66' }}>Usar</button>
+            )}
+            <button onClick={() => excluirPerfil(p.id)}
+              disabled={excluindoPerfil === p.id}
+              className="text-soft hover:text-red-400 text-[18px] leading-none transition disabled:opacity-40">
+              {excluindoPerfil === p.id ? '…' : '×'}
+            </button>
+          </div>
+          {p.descricao && <p className="text-[12px] text-mut truncate">{p.descricao}</p>}
+          <div className="flex items-center gap-2 mt-2">
+            <span className="text-[11.5px] text-mut">Radar automático</span>
+            <Toggle on={p.radarAtivo} onChange={v => toggleRadarPerfil(p.id, v)} />
+          </div>
+        </div>
+      ))}
+
+      {/* Formulário de criação/edição */}
+      <div className="bg-white rounded-2xl px-4 py-4 mb-3"
+        style={{ boxShadow: '0 1px 3px rgba(23,38,44,.06),0 4px 14px rgba(23,38,44,.05)' }}>
+        <p className="text-[13px] font-semibold text-ink mb-3">
+          {perfilEditando ? `Editar — ${perfilEditando.displayName}` : '+ Novo perfil de marca'}
+        </p>
+
+        {([
+          { key: 'displayName', label: 'Nome do perfil *', placeholder: 'Ex.: Francisco Dabus, Vip Insurance…' },
+          { key: 'descricao',   label: 'Sobre o negócio', placeholder: 'O que você faz e onde atua.' },
+          { key: 'publicoAlvo', label: 'Público-alvo', placeholder: 'Ex.: Brasileiros em Orlando, 30-55 anos.' },
+          { key: 'produtos',    label: 'Produtos / serviços', placeholder: 'Ex.: Seguro auto, residencial, vida, saúde.' },
+          { key: 'objetivo',    label: 'Objetivo de marketing', placeholder: 'Ex.: Gerar leads, aumentar autoridade, awareness.' },
+          { key: 'tomDeVoz',    label: 'Tom de voz', placeholder: 'Ex.: Consultivo, caloroso, sem juridiquês.' },
+          { key: 'frequencia',  label: 'Frequência de posts', placeholder: 'Ex.: 3x por semana, diário.' },
+          { key: 'contato',     label: 'Site / link de contato', placeholder: 'https://…' },
+          { key: 'notasLivres', label: 'Notas para o CMO', placeholder: 'Qualquer contexto adicional que a IA deve saber.' },
+        ] as const).map(({ key, label, placeholder }) => (
+          <div key={key} className="mb-3">
+            <label className="text-[11.5px] font-semibold text-mut uppercase tracking-wide block mb-1">{label}</label>
+            {key === 'descricao' || key === 'notasLivres' ? (
+              <textarea
+                value={perfilForm[key]}
+                onChange={e => setPerfilForm(f => ({ ...f, [key]: e.target.value }))}
+                placeholder={placeholder}
+                rows={3}
+                className="w-full border border-[#E0E8EA] rounded-xl px-3 py-2.5 text-[13px] outline-none focus:border-[#0E5F66] resize-none font-sans leading-relaxed"
+                style={{ background: '#F6F8F8' }}
+              />
+            ) : (
+              <input
+                type="text"
+                value={perfilForm[key]}
+                onChange={e => setPerfilForm(f => ({ ...f, [key]: e.target.value }))}
+                placeholder={placeholder}
+                className="w-full border border-[#E0E8EA] rounded-xl px-3 py-2.5 text-[13px] outline-none focus:border-[#0E5F66]"
+                style={{ background: '#F6F8F8' }}
+              />
+            )}
+          </div>
+        ))}
+
+        <div className="flex gap-2 mt-1">
+          {perfilEditando && (
+            <button onClick={() => { setPerfilEditando(null); setPerfilForm(PERFIL_VAZIO); }}
+              className="flex-1 py-2.5 rounded-xl text-[13px] font-semibold transition"
+              style={{ background: '#F0F4F5', color: '#6B7E85' }}>
+              Cancelar
+            </button>
+          )}
+          <button
+            onClick={salvarPerfil}
+            disabled={salvandoPerfil || !perfilForm.displayName.trim()}
+            className="flex-[2] py-2.5 rounded-xl text-[13px] font-semibold text-white transition active:scale-95 disabled:opacity-60"
+            style={{ background: '#0E5F66' }}>
+            {salvandoPerfil ? 'Salvando…' : perfilEditando ? 'Atualizar perfil' : 'Criar perfil'}
+          </button>
+        </div>
+      </div>
 
       {/* WhatsApp */}
+      <SecHeader icon="📲" title="WhatsApp CTA" />
       <div className="bg-white rounded-2xl px-4 py-4 mb-3" style={{ boxShadow: '0 1px 3px rgba(23,38,44,.06),0 4px 14px rgba(23,38,44,.05)' }}>
-        <p className="text-[13px] font-semibold text-ink mb-0.5">📲 Número do WhatsApp</p>
         <p className="text-[12px] text-mut mb-3 leading-relaxed">
-          Quando configurado, a IA inclui seu link <code className="bg-[#F0F4F5] px-1 rounded">wa.me</code> automaticamente nos posts com CTA de contato direto.
+          A IA inclui seu link <code className="bg-[#F0F4F5] px-1 rounded">wa.me</code> automaticamente nos posts com CTA de contato direto.
         </p>
         <div className="flex gap-2">
           <input
@@ -525,28 +716,6 @@ export default function Configuracoes() {
             ✓ Link: wa.me/{config.whatsappNumero.replace(/\D/g, '')}
           </p>
         )}
-      </div>
-
-      <div className="bg-white rounded-2xl px-4 py-4" style={{ boxShadow: '0 1px 3px rgba(23,38,44,.06),0 4px 14px rgba(23,38,44,.05)' }}>
-        <p className="text-[12px] text-mut mb-2 leading-relaxed">
-          Adicione contexto extra sobre o negócio, público-alvo, produtos ou tom de voz. A IA usa isso em todos os posts.
-        </p>
-        <textarea
-          value={config.perfil}
-          onChange={e => setPerfil(e.target.value)}
-          placeholder={'Ex.: Foco principal em seguros residenciais e auto para brasileiros em Orlando. Público de 30-55 anos, classe média, muitos recém-chegados. Tom: acolhedor, didático, sem jargão.'}
-          rows={5}
-          className="w-full border border-[#E0E8EA] rounded-xl px-3 py-2.5 text-[13px] outline-none focus:border-[#0E5F66] resize-none mb-3 font-sans leading-relaxed"
-          style={{ background: '#F6F8F8' }}
-        />
-        <button
-          onClick={() => salvarCampo({ perfil: config.perfil })}
-          disabled={salvando}
-          className="w-full py-2.5 rounded-xl text-[13px] font-semibold text-white transition active:scale-95 disabled:opacity-60"
-          style={{ background: '#0E5F66' }}
-        >
-          {salvando ? 'Salvando…' : 'Salvar perfil'}
-        </button>
       </div>
 
       {/* ── SEÇÃO 5: Chaves e integrações ────────────────────────────────── */}

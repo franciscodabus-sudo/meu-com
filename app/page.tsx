@@ -101,9 +101,27 @@ export default function Hoje() {
     <>
       <main className="px-4">
         <header className="pt-6 pb-3 flex items-center justify-between gap-3">
-          <div>
+          <div className="flex-1 min-w-0">
             <p className="text-xs text-soft">{new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
             <h1 className="font-disp text-[23px] font-bold">Bom dia, Francisco</h1>
+            {/* Seletor de perfil — compacto no subheading */}
+            {perfis.length > 1 && (
+              <div className="flex gap-1.5 mt-1.5 overflow-x-auto pb-0.5">
+                {perfis.map(p => (
+                  <button
+                    key={p.id}
+                    onClick={() => trocarPerfil(p.id)}
+                    className="flex-shrink-0 px-3 py-1 rounded-full text-[11px] font-semibold transition active:scale-95"
+                    style={{
+                      background: p.ativo ? '#0E5F66' : '#F0F4F5',
+                      color: p.ativo ? '#fff' : '#6B7E85',
+                    }}
+                  >
+                    {p.displayName}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <Link
             href="/configuracoes"
@@ -112,25 +130,6 @@ export default function Hoje() {
             title="Configurações"
           >FD</Link>
         </header>
-
-        {/* Seletor de perfil de marca */}
-        {perfis.length > 0 && (
-          <div className="flex gap-1.5 mb-3 overflow-x-auto pb-0.5">
-            {perfis.map(p => (
-              <button
-                key={p.id}
-                onClick={() => trocarPerfil(p.id)}
-                className="flex-shrink-0 px-3.5 py-1.5 rounded-full text-[12px] font-semibold transition active:scale-95"
-                style={{
-                  background: p.ativo ? '#0E5F66' : '#F0F4F5',
-                  color: p.ativo ? '#fff' : '#6B7E85',
-                }}
-              >
-                {p.name}
-              </button>
-            ))}
-          </div>
-        )}
 
         <div className="bg-white rounded-full flex items-center gap-2 px-4 py-1.5 mb-4" style={{ boxShadow: '0 1px 3px rgba(23,38,44,.06),0 4px 14px rgba(23,38,44,.05)' }}>
           <span className="text-brand">✦</span>

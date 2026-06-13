@@ -92,14 +92,19 @@ model User {
 }
 
 model BrandProfile {
-  id          String   @id @default(cuid())
-  name        String   @unique  // "Pessoal — Francisco Dabus" | "Vip Insurance"
-  displayName String            // nome a exibir nos posts
-  descricao   String?           // descrição do negócio
-  publicoAlvo String?           // público-alvo detalhado
-  tomDeVoz    String?           // palavras a usar / evitar
-  idioma      String   @default("pt-BR")
-  contato     String?           // site ou link de contato (opcional)
-  ativo       Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  id           String   @id @default(cuid())
+  name         String   @unique  // slug único do perfil
+  displayName  String            // nome a exibir nos posts
+  descricao    String?           // descrição do negócio
+  publicoAlvo  String?           // público-alvo detalhado
+  tomDeVoz     String?           // palavras a usar / evitar
+  idioma       String   @default("pt-BR")
+  contato      String?           // site ou link de contato (opcional)
+  produtos     String?           // produtos / serviços oferecidos
+  frequencia   String?           // frequência de postagem pretendida
+  objetivo     String?           // objetivo principal (ex: gerar leads, awareness)
+  notasLivres  String?           // notas livres para o CMO
+  ativo        Boolean  @default(false)
+  radarAtivo   Boolean  @default(false) // participa do ciclo automático do Radar
+  createdAt    DateTime @default(now())
 }
