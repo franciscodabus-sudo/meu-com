@@ -50,26 +50,32 @@ model MediaAsset {
 }
 
 model RadarItem {
-  id         String    @id @default(cuid())
-  kind       String    // noticia | concorrente
+  id         String        @id @default(cuid())
+  kind       String        // noticia | concorrente
   title      String
   summary    String?
   sourceUrl  String?
   sourceName String?
-  heat       Int       @default(0)
+  heat       Int           @default(0)
   usedAt     DateTime?
-  deletedAt  DateTime? // marcado como descartado pelo usuário — nunca volta
-  createdAt  DateTime  @default(now())
+  deletedAt  DateTime?     // marcado como descartado pelo usuário — nunca volta
+  profile    BrandProfile? @relation(fields: [profileId], references: [id], onDelete: SetNull)
+  profileId  String?
+  createdAt  DateTime      @default(now())
 }
 
 model RadarSource {
-  id        String   @id @default(cuid())
-  url       String   @unique
-  kind      String   @default("rss") // rss | website | instagram
+  id        String        @id @default(cuid())
+  url       String
+  kind      String        @default("rss") // rss | website | instagram
   name      String
-  active    Boolean  @default(true)
-  warning   String?  // aviso de qualidade da fonte
-  createdAt DateTime @default(now())
+  active    Boolean       @default(true)
+  warning   String?       // aviso de qualidade da fonte
+  profile   BrandProfile? @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  profileId String?
+  createdAt DateTime      @default(now())
+
+  @@unique([url, profileId])
 }
 
 model Channel {
@@ -123,5 +129,7 @@ model BrandProfile {
   pausado        Boolean  @default(false) // toggle ativo/pausado na UI
   radarAtivo     Boolean  @default(false)
   posts          Post[]
+  radarSources   RadarSource[]
+  radarItems     RadarItem[]
   createdAt      DateTime @default(now())
 }
