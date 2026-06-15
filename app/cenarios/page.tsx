@@ -580,6 +580,7 @@ export default function Cenarios() {
     });
     if (r.ok) {
       setToast('Cenário excluído.');
+      window.dispatchEvent(new Event('cenario-changed'));
       setTimeout(() => {
         setPerfis(prev => prev.filter(p => p.id !== id));
         setDeletingId(null);
@@ -624,7 +625,7 @@ export default function Cenarios() {
 
   return (
     <>
-      <main className="px-4 pb-32 lg:overflow-y-auto lg:h-full lg:pb-8">
+      <main className="px-4">
         <header className="pt-6 pb-4 flex items-center justify-between">
           <div>
             <p className="text-xs text-soft">Gerenciar perfis</p>

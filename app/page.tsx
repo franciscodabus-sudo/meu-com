@@ -109,7 +109,7 @@ function TopBar({ perfil, allPerfis, onSwitch }: {
           onClick={() => setShowPopover(v => !v)}>
           <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#F04E3E' }} />
           <span className="text-[11px] font-semibold" style={{ color: '#8B2FC9' }}>
-            {perfil?.displayName ?? 'Vip Insurance'}
+            {perfil?.displayName ?? ''}
           </span>
           {allPerfis.length > 1 && (
             <span className="text-[9px] leading-none" style={{ color: '#8B2FC9' }}>▾</span>
@@ -452,6 +452,10 @@ function ColumnC({ stats }: { stats: PanelStats | null }) {
   const [adSaved, setAdSaved] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Agenda tab state
+  const [agendaPosts, setAgendaPosts] = useState<JourneyPost[] | null>(null);
+  const [agendaLoading, setAgendaLoading] = useState(false);
+
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMsgs]);
@@ -465,6 +469,22 @@ function ColumnC({ stats }: { stats: PanelStats | null }) {
         .finally(() => setAdLoading(false));
     }
   }, [tab, adSettings, adLoading]);
+
+  useEffect(() => {
+    if (tab !== 'agenda') return;
+    setAgendaLoading(true);
+    const hoje = new Date();
+    const from = hoje.toISOString().slice(0, 10);
+    const to = new Date(hoje.getTime() + 6 * 86_400_000).toISOString().slice(0, 10);
+    fetch(`/api/agenda?from=${from}&to=${to}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (d) setAgendaPosts(
+          (d.posts as JourneyPost[]).filter((p: JourneyPost) => p.scheduledAt || p.publishedAt)
+        );
+      })
+      .finally(() => setAgendaLoading(false));
+  }, [tab]);
 
   function showSaved() {
     setAdSaved(true);
@@ -656,33 +676,64 @@ function ColumnC({ stats }: { stats: PanelStats | null }) {
 
       {/* ── Agenda ── */}
       {tab === 'agenda' && (
-        <div className="flex-1 p-3">
+        <div className="flex-1 p-3 overflow-y-auto no-scrollbar">
           <p className="text-[11.5px] font-semibold text-mut mb-3 uppercase tracking-wide">Esta semana</p>
-          {[0, 1, 2, 3, 4, 5, 6].map(i => {
+
+          {agendaLoading && (
+            <p className="text-[12px] text-mut text-center py-8 animate-pulse">Carregando…</p>
+          )}
+
+          {!agendaLoading && [0, 1, 2, 3, 4, 5, 6].map(i => {
             const d = new Date(); d.setDate(d.getDate() + i);
-            const hoje = i === 0;
+            const isoKey = d.toISOString().slice(0, 10);
+            const isHoje = i === 0;
+            const dayPosts = (agendaPosts ?? []).filter(p => {
+              const dt = p.scheduledAt ?? p.publishedAt;
+              return dt ? dt.slice(0, 10) === isoKey : false;
+            });
             return (
-              <div key={i} className="flex items-center gap-2.5 py-2 border-b last:border-0"
+              <div key={i} className="flex items-start gap-2.5 py-2 border-b last:border-0"
                 style={{ borderColor: 'var(--color-border-subtle)' }}>
-                <div className="flex flex-col items-center flex-shrink-0 w-8">
+                {/* Coluna da data */}
+                <div className="flex flex-col items-center flex-shrink-0 w-8 pt-0.5">
                   <span className="text-[9px] text-soft capitalize">
                     {d.toLocaleDateString('pt-BR', { weekday: 'short' })}
                   </span>
-                  <span className={`text-[14px] font-bold leading-none mt-0.5 ${hoje ? 'text-brand' : 'text-ink'}`}>
+                  <span className={`text-[14px] font-bold leading-none mt-0.5 ${isHoje ? 'text-brand' : 'text-ink'}`}>
                     {d.getDate()}
                   </span>
                 </div>
-                {hoje ? (
-                  <span className="text-[10.5px] text-mut italic">Hoje</span>
-                ) : (
-                  <span className="text-[10.5px] text-soft">—</span>
-                )}
+                {/* Posts do dia */}
+                <div className="flex-1 min-w-0">
+                  {dayPosts.length === 0 ? (
+                    <span className="text-[10.5px] text-soft leading-[2.2]">—</span>
+                  ) : (
+                    <>
+                      {dayPosts.slice(0, 3).map(p => (
+                        <div key={p.id} className="flex items-center gap-1.5 mb-0.5 last:mb-0">
+                          <span className="w-[5px] h-[5px] rounded-full flex-shrink-0"
+                            style={{ background: CANAL_COR[p.channel] ?? '#9CA3AF' }} />
+                          <p className="text-[10.5px] text-ink font-medium leading-snug truncate">
+                            {p.title}
+                          </p>
+                        </div>
+                      ))}
+                      {dayPosts.length > 3 && (
+                        <p className="text-[9.5px] text-mut mt-0.5">+{dayPosts.length - 3} mais</p>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
             );
           })}
-          <p className="text-[10.5px] text-mut mt-3 text-center">
-            Agende posts na fila de aprovação
-          </p>
+
+          {agendaPosts !== null && agendaPosts.length === 0 && !agendaLoading && (
+            <p className="text-[10.5px] text-mut mt-2 text-center leading-relaxed">
+              Nenhum post agendado esta semana.<br />
+              <span style={{ color: '#8B2FC9' }}>Agende na fila de aprovação.</span>
+            </p>
+          )}
         </div>
       )}
 
@@ -836,7 +887,11 @@ export default function Hoje() {
     }
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    fetchData();
+    window.addEventListener('cenario-changed', fetchData);
+    return () => window.removeEventListener('cenario-changed', fetchData);
+  }, [fetchData]);
 
   async function switchPerfil(id: string) {
     await fetch('/api/perfis', {

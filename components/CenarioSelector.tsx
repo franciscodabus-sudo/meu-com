@@ -40,7 +40,11 @@ export default function CenarioSelector() {
       if (ref.current && !ref.current.contains(e.target as Node)) setAberto(false);
     }
     document.addEventListener('mousedown', handleOutside);
-    return () => document.removeEventListener('mousedown', handleOutside);
+    window.addEventListener('cenario-changed', carregar);
+    return () => {
+      document.removeEventListener('mousedown', handleOutside);
+      window.removeEventListener('cenario-changed', carregar);
+    };
   }, []);
 
   if (!ativo || perfis.length <= 1) return null;
