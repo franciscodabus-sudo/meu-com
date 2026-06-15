@@ -24,7 +24,17 @@ const CANAL_COR: Record<string, string> = {
 const CANAL_LABEL: Record<string, string> = {
   instagram: 'IG', facebook: 'FB', linkedin: 'LI', tiktok: 'TT',
 };
+const CANAL_NOME: Record<string, string> = {
+  instagram: 'Instagram', facebook: 'Facebook', linkedin: 'LinkedIn', tiktok: 'TikTok',
+};
 const CANAIS_ALL = ['instagram', 'facebook', 'linkedin', 'tiktok'] as const;
+
+type ContaConectada = {
+  platform: string;
+  username?: string;
+  displayName?: string;
+  status: 'connected' | 'error' | 'disconnected';
+};
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -181,6 +191,15 @@ function Wizard({ perfil, onClose, onSalvo }: {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<WizardForm>(() => perfil ? fromPerfil(perfil) : { ...FORM_VAZIO });
   const [salvando, setSalvando] = useState(false);
+  const [contasConectadas, setContasConectadas] = useState<ContaConectada[]>([]);
+  const [saibaMais, setSaibaMais] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/canais/contas')
+      .then(r => r.ok ? r.json() : [])
+      .then(d => { if (Array.isArray(d)) setContasConectadas(d); })
+      .catch(() => {});
+  }, []);
 
   function set<K extends keyof WizardForm>(k: K, v: WizardForm[K]) {
     setForm(f => ({ ...f, [k]: v }));
@@ -401,6 +420,7 @@ function Wizard({ perfil, onClose, onSalvo }: {
                     const isOn = form.canaisAtivos.includes(canal);
                     const cor  = CANAL_COR[canal];
                     const freq = form.freqCanal[canal] ?? 3;
+                    const conta = contasConectadas.find(c => c.platform === canal);
                     return (
                       <div key={canal}>
                         <div className="flex items-center gap-3 py-2.5 px-3.5 rounded-2xl transition"
@@ -412,7 +432,12 @@ function Wizard({ perfil, onClose, onSalvo }: {
                             style={{ background: cor }}>
                             {CANAL_LABEL[canal]}
                           </div>
-                          <span className="flex-1 font-semibold text-[13px] text-ink capitalize">{canal}</span>
+                          <div className="flex-1 min-w-0">
+                            <span className="font-semibold text-[13px] text-ink capitalize block">{CANAL_NOME[canal]}</span>
+                            {isOn && conta?.username && (
+                              <span className="text-[11px] text-mut">@{conta.username}</span>
+                            )}
+                          </div>
                           <button type="button" onClick={() => toggleCanal(canal)}
                             className="relative w-[42px] h-[24px] rounded-full transition-colors flex-shrink-0"
                             style={{ background: isOn ? cor : '#D1D5DB' }}>
@@ -428,6 +453,17 @@ function Wizard({ perfil, onClose, onSalvo }: {
                               borderRight: `1.5px solid ${cor}`,
                               borderBottom: `1.5px solid ${cor}`,
                             }}>
+                            <div className="flex items-center justify-between mb-2.5">
+                              <span className="text-[11.5px] text-ink font-medium">
+                                {conta?.username
+                                  ? `${CANAL_NOME[canal]} · @${conta.username}`
+                                  : 'Sem conta própria vinculada'}
+                              </span>
+                              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ml-2"
+                                style={{ background: '#FEF3C7', color: '#92400E' }}>
+                                Conta compartilhada
+                              </span>
+                            </div>
                             <div className="flex items-center justify-between mb-1.5">
                               <span className="text-[11px] text-mut">Frequência</span>
                               <span className="text-[12px] font-bold" style={{ color: cor }}>{freq}× /sem</span>
@@ -446,6 +482,31 @@ function Wizard({ perfil, onClose, onSalvo }: {
                   })}
                 </div>
               </div>
+
+              {/* Aviso conta compartilhada */}
+              <div className="rounded-2xl px-4 py-3.5" style={{ background: '#FFFBEB', border: '1.5px solid #FCD34D' }}>
+                <p className="text-[12.5px] font-semibold mb-1" style={{ color: '#78350F' }}>
+                  Conta compartilhada entre cenários
+                </p>
+                <p className="text-[12px] leading-relaxed" style={{ color: '#92400E' }}>
+                  Todos os cenários publicam pelo mesmo perfil conectado. Para contas separadas por cenário (ex: @francisco.dabus e @vipinsurance independentes), é necessário upgrade de plano.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setSaibaMais(v => !v)}
+                  className="text-[12px] font-semibold mt-2 underline-offset-2"
+                  style={{ color: '#78350F' }}>
+                  Saiba mais {saibaMais ? '▴' : '▾'}
+                </button>
+                {saibaMais && (
+                  <div className="mt-2.5 pt-2.5 text-[12px] leading-relaxed space-y-1.5"
+                    style={{ borderTop: '1px solid #FCD34D', color: '#92400E' }}>
+                    <p>Com o plano avançado, cada cenário pode ter sua própria conta no Instagram, Facebook e LinkedIn — publicando de forma independente no mesmo painel, sem interferência entre cenários.</p>
+                    <p>Custo estimado: a partir de $300/mês (plano Business). Alternativa: integração direta com as APIs nativas da Meta e LinkedIn para independência total de plataformas intermediárias.</p>
+                  </div>
+                )}
+              </div>
+
               <div>
                 <label className="label-sm">Notas para a IA</label>
                 <textarea value={form.notasLivres}

@@ -6,27 +6,31 @@
 - Login: NextAuth credentials (ADMIN_EMAIL + ADMIN_PASSWORD), sessão JWT, logout
 - Brief → IA gera posts (Opus) → fila de aprovação
 - Aprovar / Pular / Publicar agora / Agendar post (PreviewModal + /api/publish → Ayrshare)
-- Radar: coleta RSS → filtra lixo (emprego, navegação, CAPTCHA) → avalia relevância (Haiku) → DB
+- Radar: coleta RSS → filtra lixo (emprego, navegação, CAPTCHA, Google Alerts) → avalia relevância (Haiku) → DB
 - Radar: "Gerar post de pauta" → Sonnet → post pending na fila
 - Radar: deletar item → marca deletedAt permanente
+- Radar: Google Alerts detectados automaticamente → banner de aviso → botão "Converter para Google News"
 - Cenários: criar/editar (wizard 4 passos), pausar, duplicar, trocar ativo
-- Cenários: botão "—" → modal confirmação → DELETE → fade-out (corrigido 2026-06-15)
+- Cenários: botão "—" → modal confirmação → DELETE → fade-out
 - Studio: busca Pexels, upload de arquivos, banco de mídia salvos
-- Configurações: fontes RSS (CRUD + teste + auto-convert para Google News se bloqueado)
-- Configurações: canais, frequência, horários, contexto IA, WhatsApp, status das chaves
+- Configurações: fontes RSS (CRUD + teste + auto-convert Google Alerts/bloqueados para Google News)
+- Configurações: canais, frequência, horários, contexto IA, WhatsApp CTA, status das chaves
 - Painel /painel: KPIs reais, sparkline 14 dias, distribuição canal, chat CMO
 - ColumnC Painel: posts reais (publicados, na fila), barras de canal reais
-- ColumnC Verba: sliders Teto/CPC com debounce 800ms, toggles (autoBrake, boostWinners) persistidos (corrigido 2026-06-15)
-- ColumnC Verba: status Meta Ads baseado em META_ACCESS_TOKEN no env (corrigido 2026-06-15)
+- ColumnC Agenda: mini-calendário 7 dias com posts reais (scheduledAt/publishedAt) por dia ✓ (2026-06-15)
+- ColumnC Verba: sliders Teto/CPC com debounce 800ms, toggles (autoBrake, boostWinners) persistidos
+- ColumnC Verba: status Meta Ads baseado em META_ACCESS_TOKEN no env
 - TopBar: pill de cenário ativo com popover para trocar
 - Seleção de modelo IA: getModel(task) — Haiku/Sonnet/Opus por tipo de tarefa
+- WhatsApp CTA: wa.me injetado no prompt da IA quando configurado
+- Agenda /agenda: calendário semanal navegável + jornada de campanha com posts reais
+- Vercel Cron: /api/cron/radar dispara automaticamente a cada 6h em produção ✓ (2026-06-15)
 
 ### ⚠️ Parcialmente funcional (UI existe, integração pendente)
-- ColumnC Agenda: mostra calendário semanal mas sem posts reais vinculados
 - ColumnC KPIs ROAS/Custo/Verba: mostra aviso honesto "Requer Meta Ads"
 - Publicação via Ayrshare: API pronta mas requer AYRSHARE_API_KEY no .env
-- Radar auto (intervalo): lógica existe, mas cron real depende de serviço externo ou cron job (não Next.js nativo)
-- "Impulsionar vencedores": toggle salva no DB, mas a lógica de boosting automático não está implementada
+- Radar auto (intervalo): lógica existe; em produção usa Vercel Cron; localmente executa via botão "Sincronizar"
+- "Impulsionar vencedores": toggle salva no DB, mas a lógica de boosting automático requer Meta Marketing API
 
 ### ✗ Não implementado (requer integrações externas)
 - ROAS, Custo/lead, Verba usada real: requer Meta Marketing API
@@ -40,19 +44,20 @@
 - [x] Radar automático: RSS → filtro → relevância IA → fila de aprovação
 - [x] Frequência configurável + horários de publicação
 - [x] Agendamento com data/hora na aprovação (PreviewModal → /api/publish)
-- [ ] **PRÓXIMO**: Aba Agenda com posts reais — mostrar posts scheduled na mini-agenda da ColumnC
-- [ ] **PRÓXIMO**: Cron real para radar automático (vercel-cron ou serviço externo)
-- [ ] **PRÓXIMO**: Lógica de "Impulsionar vencedores" — detectar 2× engajamento médio e criar anúncio via Meta API
-- [ ] Instagram Stories (Ayrshare suporta, precisa endpoint separado)
-- [ ] Posts de vídeo (Reels/MP4) e áudio
-- [ ] CTA com botão de WhatsApp (wa.me nos posts orgânicos)
-- [ ] Canal TikTok (Ayrshare suporta)
+- [x] ColumnC Agenda com posts reais — mini-calendário 7 dias com posts vinculados
+- [x] Cron real para radar automático — vercel.json + /api/cron/radar (a cada 6h)
+- [x] WhatsApp CTA — wa.me injetado no prompt quando número configurado
+- [ ] **PRÓXIMO**: Lógica "Impulsionar vencedores" — detectar 2× engajamento e criar anúncio via Meta API (bloqueado: requer META_ACCESS_TOKEN)
+- [ ] Instagram Stories (Ayrshare suporta, precisa endpoint separado + formato 'story' no schema)
+- [ ] Posts de vídeo (Reels/MP4): requer upload de vídeo + Ayrshare video endpoint
+- [ ] Canal TikTok (ícone e cor já no código; requer conta TikTok no Ayrshare)
 - [ ] Múltiplas contas por usuário (seletor de conta ao aprovar)
 
 ## FASE 3 — Virar SaaS (multi-cliente)
 - [ ] Cadastro/multiusuário + login com Google (OAuth real)
 - [ ] Arquitetura multi-tenant: workspaces isolados, Postgres, autenticação
 - [ ] Modo agência: gerencia N clientes, cada um com filas e contas próprias
+- [ ] Ayrshare Business — cada cenário com suas próprias contas de redes sociais (User Profiles). Permite Giselle ter IG/FB/LI dela separado do Francisco, tudo gerenciado na mesma plataforma. Custo: ~$300/mês no plano Business ou migrar para APIs nativas da Meta/LinkedIn.
 - [ ] White-label OAuth de conexão de contas (Ayrshare Business user profiles)
 - [ ] Avaliar migração para APIs nativas Meta/LinkedIn para independência total
 - [ ] Planos e cobrança (Stripe): Free / Pro $20 / Business $50
