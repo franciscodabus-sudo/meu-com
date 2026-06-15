@@ -488,13 +488,51 @@ function Wizard({ perfil, onClose, onSalvo }: {
   );
 }
 
+// ─── Modal de confirmação de exclusão ─────────────────────────────────────────
+
+function ConfirmDeleteModal({ perfil, onCancel, onConfirm }: {
+  perfil: Perfil; onCancel: () => void; onConfirm: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center px-4"
+      style={{ background: 'rgba(26,10,46,.65)' }}
+      onClick={e => { if (e.target === e.currentTarget) onCancel(); }}
+    >
+      <div className="bg-white rounded-[24px] w-full max-w-sm p-6 shadow-2xl"
+        style={{ animation: 'scale-in .15s ease' }}>
+        <p className="font-disp text-[18px] font-bold text-ink mb-2">Excluir cenário?</p>
+        <p className="text-[13.5px] leading-relaxed mb-5" style={{ color: '#7B6B8A' }}>
+          Todos os posts associados a{' '}
+          <strong className="text-ink">"{perfil.displayName}"</strong>{' '}
+          serão desvinculados. Esta ação não pode ser desfeita.
+        </p>
+        <div className="flex gap-2">
+          <button onClick={onCancel}
+            className="flex-1 py-3 rounded-2xl text-[14px] font-semibold transition active:scale-[.98]"
+            style={{ background: '#F0E8FA', color: '#8B2FC9' }}>
+            Cancelar
+          </button>
+          <button onClick={onConfirm}
+            className="flex-1 py-3 rounded-2xl text-[14px] font-semibold text-white transition active:scale-[.98]"
+            style={{ background: '#E24B4A' }}>
+            Excluir
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Página /cenarios ──────────────────────────────────────────────────────────
 
 export default function Cenarios() {
-  const [perfis, setPerfis]   = useState<Perfil[]>([]);
-  const [wizard, setWizard]   = useState<'novo' | Perfil | null>(null);
-  const [menuId, setMenuId]   = useState<string | null>(null);
-  const [toast,  setToast]    = useState<string | null>(null);
+  const [perfis, setPerfis]         = useState<Perfil[]>([]);
+  const [wizard, setWizard]         = useState<'novo' | Perfil | null>(null);
+  const [menuId, setMenuId]         = useState<string | null>(null);
+  const [toast,  setToast]          = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<Perfil | null>(null);
+  const [deletingId,    setDeletingId]    = useState<string | null>(null);
 
   async function carregar() {
     const r = await fetch('/api/perfis');
@@ -521,14 +559,36 @@ export default function Cenarios() {
     setMenuId(null);
   }
 
-  async function excluir(id: string) {
+  function pedirExclusao(p: Perfil) {
+    setMenuId(null);
+    if (perfis.length <= 1) {
+      setToast('Você precisa ter pelo menos um cenário ativo.');
+      return;
+    }
+    setConfirmDelete(p);
+  }
+
+  async function confirmarExclusao() {
+    if (!confirmDelete) return;
+    const id = confirmDelete.id;
+    setConfirmDelete(null);
+    setDeletingId(id);
     const r = await fetch('/api/perfis', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id }),
     });
-    if (r.ok) await carregar();
-    setMenuId(null);
+    if (r.ok) {
+      setToast('Cenário excluído.');
+      setTimeout(() => {
+        setPerfis(prev => prev.filter(p => p.id !== id));
+        setDeletingId(null);
+      }, 320);
+    } else {
+      const data = await r.json().catch(() => ({}));
+      setDeletingId(null);
+      setToast(data.error ?? 'Não foi possível excluir.');
+    }
   }
 
   async function duplicar(p: Perfil) {
@@ -592,13 +652,17 @@ export default function Cenarios() {
           const freqLabel = parseFrequencia(p.frequencia, canais);
           const avStyle = avatarStyle(p.displayName, p.avatarColor || AVATAR_COLORS[idx % AVATAR_COLORS.length]);
 
+          const isDeleting = deletingId === p.id;
           return (
             <div key={p.id}
               className="bg-white rounded-[20px] mb-3 overflow-hidden"
               style={{
                 boxShadow: '0 1px 3px rgba(23,38,44,.06),0 4px 14px rgba(23,38,44,.05)',
                 border: p.ativo ? '2px solid #8B2FC9' : '2px solid transparent',
-                opacity: p.pausado ? 0.65 : 1,
+                opacity: isDeleting ? 0 : p.pausado ? 0.65 : 1,
+                transform: isDeleting ? 'scale(0.95)' : 'scale(1)',
+                transition: 'opacity .3s ease, transform .3s ease',
+                pointerEvents: isDeleting ? 'none' : undefined,
               }}
             >
               {/* Main row */}
@@ -674,9 +738,9 @@ export default function Cenarios() {
                           className="w-full text-left px-4 py-2.5 text-[13px] hover:bg-[#FDF8FF] transition">
                           ⧉ Duplicar
                         </button>
-                        <button onClick={() => excluir(p.id)}
+                        <button onClick={() => pedirExclusao(p)}
                           className="w-full text-left px-4 py-2.5 text-[13px] hover:bg-[#FDF8FF] transition"
-                          style={{ color: '#DC2626' }}>
+                          style={{ color: '#E24B4A' }}>
                           🗑 Excluir
                         </button>
                       </div>
@@ -705,6 +769,14 @@ export default function Cenarios() {
       </main>
 
       {toast && <Toast msg={toast} onDone={() => setToast(null)} />}
+
+      {confirmDelete && (
+        <ConfirmDeleteModal
+          perfil={confirmDelete}
+          onCancel={() => setConfirmDelete(null)}
+          onConfirm={confirmarExclusao}
+        />
+      )}
 
       {wizard && (
         <Wizard
