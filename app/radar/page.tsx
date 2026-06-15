@@ -222,7 +222,7 @@ export default function Radar() {
   }
 
   return (
-    <main className="px-4 pb-8">
+    <main className="px-4">
       {/* Header */}
       <header className="pt-6 pb-4 flex items-center justify-between gap-2">
         <div>

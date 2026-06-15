@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { signOut } from 'next-auth/react';
+import { proximoSlot, formatarSlot } from '@/lib/cadencia';
 
 // ─── tipos de perfil ──────────────────────────────────────────────────────────
 
@@ -29,6 +30,8 @@ type Config = {
   maxPostsPerRun: string;
   canais: Canal[];
   chaves: { anthropic: boolean; ayrshare: boolean; pexels: boolean };
+  publicacaoHorarios: string; // JSON array, ex: '["09:00","14:00"]'
+  publicacaoPorSemana: string; // "3" | "5" | "7" | "14"
 };
 
 type TesteStatus = { ok: boolean; count: number; rssUrl?: string; erro?: string } | null;
@@ -314,6 +317,23 @@ export default function Configuracoes() {
     setConfig(c => c ? { ...c, maxPostsPerRun: v } : c);
     salvarCampo({ maxPostsPerRun: v });
   }
+
+  function toggleHorario(h: string) {
+    setConfig(c => {
+      if (!c) return c;
+      const atual: string[] = JSON.parse(c.publicacaoHorarios || '[]');
+      const novo = atual.includes(h) ? atual.filter(x => x !== h) : [...atual, h];
+      const json = JSON.stringify(novo.sort());
+      salvarCampo({ publicacaoHorarios: json });
+      return { ...c, publicacaoHorarios: json };
+    });
+  }
+
+  function setPorSemana(v: string) {
+    setConfig(c => c ? { ...c, publicacaoPorSemana: v } : c);
+    salvarCampo({ publicacaoPorSemana: v });
+  }
+
   function setCanal(name: string, active: boolean) {
     setConfig(c => {
       if (!c) return c;
@@ -409,7 +429,7 @@ export default function Configuracoes() {
 
   if (!config) {
     return (
-      <main className="px-4 pt-6 pb-8">
+      <main className="px-4 pt-6">
         <p className="text-sm text-mut text-center pt-20 animate-pulse">Carregando…</p>
       </main>
     );
@@ -418,7 +438,7 @@ export default function Configuracoes() {
   const ativas = fontes.filter(f => f.active).length;
 
   return (
-    <main className="px-4 pb-10">
+    <main className="px-4">
       {/* Header */}
       <header className="pt-6 pb-4 flex items-center gap-3">
         <Link href="/" className="text-mut text-[22px] leading-none">‹</Link>
@@ -569,6 +589,70 @@ export default function Configuracoes() {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* ── SEÇÃO 2b: Cadência de publicação ─────────────────────────────── */}
+      <SecHeader icon="🕐" title="Cadência de publicação" />
+
+      <div className="bg-white rounded-2xl px-4 py-4 mb-3" style={{ boxShadow: '0 1px 3px rgba(23,38,44,.06),0 4px 14px rgba(23,38,44,.05)' }}>
+        <p className="text-[12px] font-semibold text-mut mb-2">Horários preferidos</p>
+        <p className="text-[11.5px] text-soft mb-3 leading-relaxed">
+          A IA vai sugerir esses horários ao agendar e usará o próximo slot livre ao gerar posts pelo Radar.
+        </p>
+        <div className="grid grid-cols-4 gap-1.5 mb-5">
+          {['07:00','08:00','09:00','10:00','11:00','12:00','14:00','16:00','17:00','18:00','19:00','21:00'].map(h => {
+            const selecionados: string[] = JSON.parse(config.publicacaoHorarios || '[]');
+            const on = selecionados.includes(h);
+            return (
+              <button
+                key={h}
+                onClick={() => toggleHorario(h)}
+                className="py-2 rounded-xl text-[12px] font-semibold transition"
+                style={{
+                  background: on ? '#8B2FC9' : '#F0F4F5',
+                  color: on ? '#fff' : '#7B6B8A',
+                }}
+              >
+                {h.slice(0, 5)}
+              </button>
+            );
+          })}
+        </div>
+
+        <p className="text-[12px] font-semibold text-mut mb-2">Posts por semana</p>
+        <div className="flex gap-1.5">
+          {[
+            { label: '3×', value: '3', sub: 'seg/qua/sex' },
+            { label: '5×', value: '5', sub: 'dias úteis' },
+            { label: '7×', value: '7', sub: 'diário' },
+            { label: '14×', value: '14', sub: '2/dia' },
+          ].map(op => (
+            <button
+              key={op.value}
+              onClick={() => setPorSemana(op.value)}
+              className="flex-1 py-2 rounded-xl text-[12px] font-semibold transition flex flex-col items-center"
+              style={{
+                background: config.publicacaoPorSemana === op.value ? '#8B2FC9' : '#F0F4F5',
+                color: config.publicacaoPorSemana === op.value ? '#fff' : '#7B6B8A',
+              }}
+            >
+              <span>{op.label}</span>
+              <span className="text-[9.5px] opacity-70 font-normal">{op.sub}</span>
+            </button>
+          ))}
+        </div>
+
+        {(() => {
+          const h: string[] = JSON.parse(config.publicacaoHorarios || '[]');
+          if (!h.length) return null;
+          const slot = proximoSlot(h);
+          if (!slot) return null;
+          return (
+            <p className="text-[11.5px] mt-3 font-semibold" style={{ color: '#8B2FC9' }}>
+              ✦ Próximo slot: {formatarSlot(slot)}
+            </p>
+          );
+        })()}
       </div>
 
       {/* ── SEÇÃO 3: Canais ───────────────────────────────────────────────── */}

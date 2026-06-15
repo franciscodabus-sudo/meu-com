@@ -693,7 +693,7 @@ export default function Hoje() {
   return (
     <>
       {/* Single render — CSS controls desktop vs mobile layout */}
-      <div className="lg:flex lg:flex-col lg:h-full lg:overflow-hidden">
+      <div className="lg:flex lg:flex-col lg:h-full lg:overflow-hidden pb-28 lg:pb-0">
         <TopBar perfil={perfil} />
 
         {erroGerar && (

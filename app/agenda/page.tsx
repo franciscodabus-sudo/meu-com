@@ -41,7 +41,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 const STATUS_COR: Record<string, string> = {
   pending:   '#F59E0B',
-  approved:  '#0E5F66',
+  approved:  '#8B2FC9',
   scheduled: '#6366F1',
   published: '#17996B',
   skipped:   '#9CA3AF',
@@ -128,14 +128,14 @@ function Calendario({ posts, semana, onSemana }: {
             <button key={key} onClick={() => setDiaSel(isSel ? null : key)}
               className="flex flex-col items-center py-2 rounded-2xl transition"
               style={{
-                background: isSel ? '#0E5F66' : isHoje ? '#E5F1F0' : 'transparent',
+                background: isSel ? '#8B2FC9' : isHoje ? '#F0E8FA' : 'transparent',
               }}>
               <span className="text-[10px] font-semibold mb-0.5"
                 style={{ color: isSel ? 'rgba(255,255,255,0.7)' : '#9CA3AF' }}>
                 {DIAS_PT[i]}
               </span>
               <span className="text-[15px] font-bold"
-                style={{ color: isSel ? '#fff' : isHoje ? '#0E5F66' : '#3D4451' }}>
+                style={{ color: isSel ? '#fff' : isHoje ? '#8B2FC9' : '#3D4451' }}>
                 {d.getDate()}
               </span>
               <div className="flex gap-0.5 mt-1 flex-wrap justify-center min-h-[6px]">
@@ -239,13 +239,13 @@ function Jornada({ campaigns, allPosts }: { campaigns: Campaign[]; allPosts: Pos
           <div key={camp.id} className="mb-6">
             {/* header campanha */}
             <div className="rounded-2xl p-4 mb-3"
-              style={{ background: 'linear-gradient(135deg, #0E5F66, #0A3D42)' }}>
+              style={{ background: 'linear-gradient(135deg, #8B2FC9, #D63AA0, #F04E3E)' }}>
               <p className="text-[11px] font-bold text-white/60 mb-0.5">Campanha ativa</p>
               <h3 className="font-disp text-[17px] font-bold text-white mb-2">{camp.name}</h3>
               {/* barra progresso */}
               <div className="h-[4px] rounded-full mb-2" style={{ background: 'rgba(255,255,255,0.2)' }}>
                 <div className="h-full rounded-full transition-all"
-                  style={{ width: `${pct}%`, background: '#5CF5B0' }} />
+                  style={{ width: `${pct}%`, background: 'rgba(255,255,255,0.85)' }} />
               </div>
               <p className="text-[11.5px] text-white/70">
                 {publicados} de {naoSkipped.length} publicados · {pct}% concluído
@@ -269,11 +269,11 @@ function Jornada({ campaigns, allPosts }: { campaigns: Campaign[]; allPosts: Pos
                   <div className="flex flex-col items-center">
                     <div className="w-[18px] h-[18px] rounded-full border-2 flex items-center justify-center flex-shrink-0"
                       style={{
-                        borderColor: isDone ? '#17996B' : isCurrent ? '#0E5F66' : '#D1D5DB',
-                        background: isDone ? '#17996B' : isCurrent ? '#E5F1F0' : '#fff',
+                        borderColor: isDone ? '#17996B' : isCurrent ? '#8B2FC9' : '#D1D5DB',
+                        background: isDone ? '#17996B' : isCurrent ? '#F0E8FA' : '#fff',
                       }}>
                       {isDone && <span className="text-[9px] text-white font-bold">✓</span>}
-                      {isCurrent && <span className="w-[6px] h-[6px] rounded-full bg-[#0E5F66] block" />}
+                      {isCurrent && <span className="w-[6px] h-[6px] rounded-full bg-[#8B2FC9] block" />}
                     </div>
                     {!isLast && <div className="w-[2px] flex-1 mt-1" style={{ background: '#E5E7EB' }} />}
                   </div>
@@ -332,7 +332,7 @@ export default function Agenda() {
   }, [semana]);
 
   return (
-    <main className="px-4 pb-8">
+    <main className="px-4">
       {/* Header */}
       <header className="pt-6 pb-4 flex items-center justify-between">
         <div>
@@ -342,7 +342,7 @@ export default function Agenda() {
         <button
           onClick={() => router.push('/')}
           className="text-[13px] font-semibold px-3.5 py-1.5 rounded-full"
-          style={{ background: '#0E5F66', color: '#fff' }}
+          style={{ background: 'var(--brand-gradient)', color: '#fff' }}
         >
           + Brief
         </button>
@@ -354,7 +354,7 @@ export default function Agenda() {
           <button key={t} onClick={() => setAba(t)}
             className="flex-1 py-2 rounded-xl text-[13px] font-semibold transition"
             style={{
-              background: aba === t ? '#0E5F66' : 'transparent',
+              background: aba === t ? '#8B2FC9' : 'transparent',
               color: aba === t ? '#fff' : '#6B7280',
             }}>
             {t === 'cal' ? 'Calendário' : 'Jornada'}

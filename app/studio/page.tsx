@@ -108,7 +108,7 @@ export default function Studio() {
   }
 
   return (
-    <main className="px-4 pb-8">
+    <main className="px-4">
       {/* Header */}
       <header className="pt-6 pb-4 flex items-center justify-between">
         <div>
@@ -118,7 +118,7 @@ export default function Studio() {
         <Link
           href="/canais"
           className="text-[13px] font-semibold px-3.5 py-1.5 rounded-full transition active:scale-95"
-          style={{ background: '#E5F1F0', color: '#0E5F66' }}
+          style={{ background: '#F0E8FA', color: '#8B2FC9' }}
         >
           📡 Canais →
         </Link>
@@ -132,7 +132,7 @@ export default function Studio() {
             onClick={() => setAba(a)}
             className="flex-1 py-2.5 rounded-2xl text-[13.5px] font-semibold transition"
             style={{
-              background: aba === a ? '#0E5F66' : '#F0F4F5',
+              background: aba === a ? '#8B2FC9' : '#F0F4F5',
               color: aba === a ? '#fff' : '#6B7E85',
             }}
           >
@@ -180,7 +180,7 @@ export default function Studio() {
               onClick={buscar}
               disabled={buscando || !query.trim()}
               className="px-5 rounded-xl text-white text-[13px] font-semibold disabled:opacity-50 active:scale-95 transition"
-              style={{ background: '#0E5F66' }}
+              style={{ background: '#8B2FC9' }}
             >
               {buscando ? '…' : 'Buscar'}
             </button>
@@ -220,7 +220,7 @@ export default function Studio() {
                       disabled={salvando || salvo}
                       className="absolute bottom-1.5 right-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full transition active:scale-95 disabled:opacity-70"
                       style={{
-                        background: salvo ? '#17996B' : '#0E5F66',
+                        background: salvo ? '#17996B' : '#8B2FC9',
                         color: '#fff',
                       }}
                     >

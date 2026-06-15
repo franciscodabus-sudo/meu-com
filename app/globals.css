@@ -40,3 +40,15 @@ body { @apply bg-fundo text-ink font-sans; }
   /* Toggle ativo */
   .toggle-on { @apply bg-brand; }
 }
+
+/* ─── Safe-area bottom padding — clears fixed BottomNav on mobile ─────────── */
+@media (max-width: 1023px) {
+  main, [data-main], .page-content {
+    padding-bottom: max(80px, calc(64px + env(safe-area-inset-bottom)));
+  }
+}
+@media (min-width: 1024px) {
+  main, [data-main], .page-content {
+    padding-bottom: 24px;
+  }
+}

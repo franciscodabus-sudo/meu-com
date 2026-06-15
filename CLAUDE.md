@@ -26,6 +26,7 @@ npm install && npx prisma db push && npm run db:seed && npm run dev
 
 ## Regras de qualidade
 - Ao final de qualquer mudança, SEMPRE verificar que http://localhost:3000 carrega sem erro (HTTP 200, sem crash no terminal) antes de declarar a tarefa concluída.
+- Todo container com scroll deve ter padding-bottom suficiente para compensar menus fixos. Mobile: min 80px. Desktop: min 24px. Usar sempre calc() e env(safe-area-inset-bottom) para iPhones. O globals.css já tem a regra global para `main` e `[data-main]`; páginas sem `<main>` devem adicionar `pb-28 lg:pb-0` ao wrapper mais externo.
 
 ## Princípio de produto — tela única
 A plataforma é o ÚNICO front do usuário. Serviços de terceiros (Ayrshare, Pexels,

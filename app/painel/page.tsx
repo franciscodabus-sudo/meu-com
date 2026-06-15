@@ -120,7 +120,7 @@ function PergunteAoCMO({ stats }: { stats: Stats }) {
           <div key={i} className={`mb-2 flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div className="max-w-[85%] px-3 py-2 rounded-2xl text-[13px] leading-relaxed whitespace-pre-line"
               style={{
-                background: m.role === 'user' ? '#0E5F66' : '#F6F8F8',
+                background: m.role === 'user' ? '#8B2FC9' : '#F6F8F8',
                 color: m.role === 'user' ? '#fff' : '#3D4451',
                 borderBottomRightRadius: m.role === 'user' ? 4 : undefined,
                 borderBottomLeftRadius: m.role === 'cmo' ? 4 : undefined,
@@ -151,11 +151,11 @@ function PergunteAoCMO({ stats }: { stats: Stats }) {
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && enviar()}
           placeholder="Pergunte qualquer coisa…"
-          className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-[13px] outline-none focus:border-[#0E5F66]"
+          className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-[13px] outline-none focus:border-[#8B2FC9]"
         />
         <button onClick={enviar} disabled={enviando || !input.trim()}
           className="px-3 py-2 rounded-xl text-white font-bold text-[14px] transition disabled:opacity-40"
-          style={{ background: '#0E5F66' }}>
+          style={{ background: '#8B2FC9' }}>
           ↑
         </button>
       </div>
@@ -182,7 +182,7 @@ export default function Painel() {
     : 0;
 
   return (
-    <main className="px-4 pb-8">
+    <main className="px-4">
       <header className="pt-6 pb-4">
         <p className="text-xs text-soft">Visão geral da sua operação</p>
         <h1 className="font-disp text-[23px] font-bold">Painel</h1>
@@ -199,7 +199,7 @@ export default function Painel() {
         </div>
         <div className="bg-white rounded-2xl shadow-sm p-4">
           <p className="text-[12px] text-soft mb-1">Taxa de publicação</p>
-          <p className="text-[32px] font-bold font-disp" style={{ color: '#0E5F66' }}>
+          <p className="text-[32px] font-bold font-disp" style={{ color: '#8B2FC9' }}>
             {taxaPublicacao}%
           </p>
           <p className="text-[11.5px] text-mut">{stats.campanhas} campanha{stats.campanhas !== 1 ? 's' : ''}</p>
@@ -222,7 +222,7 @@ export default function Painel() {
       </div>
 
       {/* Sparkline */}
-      <div className="rounded-2xl p-4 mb-4" style={{ background: 'linear-gradient(135deg, #0E5F66, #0A3D42)' }}>
+      <div className="rounded-2xl p-4 mb-4" style={{ background: 'linear-gradient(135deg, #8B2FC9, #D63AA0, #F04E3E)' }}>
         <p className="text-[12px] font-bold text-white/70 mb-2">Posts publicados · últimos 14 dias</p>
         <Sparkline atividade={stats.atividade} />
         <p className="text-[11px] text-white/50 mt-1">
