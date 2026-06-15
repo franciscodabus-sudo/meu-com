@@ -30,7 +30,28 @@ type PanelStats = {
   porCanal: Record<string, number>;
 };
 
-type Perfil = { displayName: string; avatarColor: string; ativo: boolean };
+type Perfil = { id: string; displayName: string; avatarColor: string; ativo: boolean };
+
+type AdSettings = {
+  monthlyBudget: number; maxCPC: number;
+  autoBrake: boolean; boostWinners: boolean;
+  metaConnected: boolean;
+};
+
+// ─── Helpers ───────────────────────────────────────────────────────────────────
+
+function cleanCampaignName(raw: string): string {
+  const lc = raw.trim().toLowerCase();
+  // "post para linkedin sobre seguro de saude" → "Seguro de Saúde · Linkedin"
+  const m1 = lc.match(/(?:post(?:agem)?\s+)?(?:para\s+(\w+)\s+)?(?:sobre|de)\s+(.+)/);
+  if (m1) {
+    const canal = m1[1] ? m1[1].charAt(0).toUpperCase() + m1[1].slice(1) : '';
+    const tema = m1[2].trim().replace(/\b\w/g, c => c.toUpperCase());
+    return canal ? `${tema} · ${canal}` : tema;
+  }
+  // Fallback: title-case + truncate
+  return raw.trim().replace(/\b\w/g, c => c.toUpperCase()).slice(0, 50);
+}
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 
@@ -51,24 +72,75 @@ const STAGE_COR: Record<string, { bg: string; text: string }> = {
 
 // ─── TopBar ────────────────────────────────────────────────────────────────────
 
-function TopBar({ perfil }: { perfil: Perfil | null }) {
+function TopBar({ perfil, allPerfis, onSwitch }: {
+  perfil: Perfil | null;
+  allPerfis: Perfil[];
+  onSwitch: (id: string) => void;
+}) {
+  const [showPopover, setShowPopover] = useState(false);
+  const popoverRef = useRef<HTMLDivElement>(null);
   const h = new Date().getHours();
   const saudacao = h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
   const dataFmt = new Date().toLocaleDateString('pt-BR', {
     weekday: 'long', day: 'numeric', month: 'long',
   });
+
+  useEffect(() => {
+    if (!showPopover) return;
+    function close(e: MouseEvent) {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        setShowPopover(false);
+      }
+    }
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [showPopover]);
+
   return (
     <div className="h-11 flex items-center px-3.5 gap-2 flex-shrink-0 border-b"
       style={{ background: '#fff', borderColor: 'var(--color-border-subtle)' }}>
       <span className="text-[14px] font-medium text-ink flex-shrink-0">
         {saudacao}, Francisco
       </span>
-      <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full flex-shrink-0"
-        style={{ background: '#F0E8FA' }}>
-        <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#F04E3E' }} />
-        <span className="text-[11px] font-semibold" style={{ color: '#8B2FC9' }}>
-          {perfil?.displayName ?? 'Vip Insurance'}
-        </span>
+      <div className="relative flex-shrink-0" ref={popoverRef}>
+        <button
+          className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full transition"
+          style={{ background: '#F0E8FA' }}
+          onClick={() => setShowPopover(v => !v)}>
+          <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#F04E3E' }} />
+          <span className="text-[11px] font-semibold" style={{ color: '#8B2FC9' }}>
+            {perfil?.displayName ?? 'Vip Insurance'}
+          </span>
+          {allPerfis.length > 1 && (
+            <span className="text-[9px] leading-none" style={{ color: '#8B2FC9' }}>▾</span>
+          )}
+        </button>
+        {showPopover && allPerfis.length > 1 && (
+          <div className="absolute top-full left-0 mt-1 w-[192px] bg-white rounded-2xl shadow-lg z-50 overflow-hidden"
+            style={{ border: '1px solid var(--color-border-subtle)' }}>
+            {allPerfis.map(p => {
+              const initials = p.displayName.split(/\s+/).map((w: string) => w[0]).slice(0, 2).join('').toUpperCase();
+              const isF = p.displayName.toLowerCase().includes('francisco');
+              const isV = p.displayName.toLowerCase().includes('vip');
+              const avatarBg = isF ? 'linear-gradient(135deg,#8B2FC9,#F04E3E)' : isV ? '#1D9E75' : (p.avatarColor || '#8B2FC9');
+              return (
+                <button key={p.id}
+                  onClick={() => { onSwitch(p.id); setShowPopover(false); }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition hover:bg-[#FDF8FF]"
+                  style={{ borderBottom: '1px solid var(--color-border-subtle)' }}>
+                  <div className="w-7 h-7 rounded-lg flex-shrink-0 flex items-center justify-center text-white text-[11px] font-bold"
+                    style={{ background: avatarBg }}>
+                    {initials}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[12px] font-semibold text-ink truncate">{p.displayName}</p>
+                    {p.ativo && <p className="text-[9.5px] font-medium" style={{ color: '#0F6E56' }}>● Ativo</p>}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
       <span className="ml-auto text-[11px] text-soft capitalize hidden lg:block">{dataFmt}</span>
     </div>
@@ -107,7 +179,7 @@ function BriefBar({ onGerar, gerando }: {
         <button
           onClick={submit}
           disabled={gerando || !brief.trim()}
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-[14px] font-bold transition disabled:opacity-40 active:scale-95"
+          className="flex-shrink-0 px-3 py-1.5 rounded-xl text-white text-[13px] font-semibold transition disabled:opacity-40 active:scale-95"
           style={{ background: 'linear-gradient(135deg,#8B2FC9,#F04E3E)' }}
         >
           {gerando ? '…' : '→'}
@@ -301,7 +373,7 @@ function ColumnB({ campaign }: { campaign: Campaign | null }) {
         <p className="text-[9.5px] font-semibold mb-0.5" style={{ color: 'rgba(255,255,255,.75)' }}>
           Campanha ativa
         </p>
-        <p className="text-[13px] font-medium text-white mb-2.5 leading-snug">{campaign.name}</p>
+        <p className="text-[13px] font-medium text-white mb-2.5 leading-snug">{cleanCampaignName(campaign.name)}</p>
         <div className="h-[4px] rounded-full mb-1.5" style={{ background: 'rgba(255,255,255,.2)' }}>
           <div className="h-full rounded-full" style={{ width: `${pct}%`, background: 'rgba(255,255,255,.8)' }} />
         </div>
@@ -374,14 +446,57 @@ function ColumnC({ stats }: { stats: PanelStats | null }) {
   const [enviando, setEnviando] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
+  // Verba tab state
+  const [adSettings, setAdSettings] = useState<AdSettings | null>(null);
+  const [adLoading, setAdLoading] = useState(false);
+  const [adSaved, setAdSaved] = useState(false);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMsgs]);
 
-  async function enviarChat() {
-    const q = chatInput.trim();
+  useEffect(() => {
+    if (tab === 'verba' && !adSettings && !adLoading) {
+      setAdLoading(true);
+      fetch('/api/ads-settings')
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d) setAdSettings(d); })
+        .finally(() => setAdLoading(false));
+    }
+  }, [tab, adSettings, adLoading]);
+
+  function showSaved() {
+    setAdSaved(true);
+    setTimeout(() => setAdSaved(false), 2000);
+  }
+
+  function handleSlider(field: 'monthlyBudget' | 'maxCPC', value: number) {
+    setAdSettings(s => s ? { ...s, [field]: value } : s);
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      fetch('/api/ads-settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [field]: value }),
+      }).then(r => r.ok && showSaved());
+    }, 800);
+  }
+
+  async function handleToggle(field: 'autoBrake' | 'boostWinners', value: boolean) {
+    setAdSettings(s => s ? { ...s, [field]: value } : s);
+    const r = await fetch('/api/ads-settings', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ [field]: value }),
+    });
+    if (r.ok) showSaved();
+  }
+
+  async function enviarChat(textoOverride?: string) {
+    const q = (textoOverride ?? chatInput).trim();
     if (!q || enviando) return;
-    setChatInput('');
+    if (!textoOverride) setChatInput('');
     setChatMsgs(m => [...m, { role: 'user', text: q }]);
     setEnviando(true);
     try {
@@ -430,24 +545,30 @@ function ColumnC({ stats }: { stats: PanelStats | null }) {
       {tab === 'painel' && (
         <div className="flex-1 p-3 overflow-y-auto no-scrollbar">
 
-          {/* KPI 2×2 */}
+          {/* KPI 2×2 — dados reais + placeholders honestos */}
           <div className="grid grid-cols-2 gap-2 mb-3">
-            {[
-              { label: 'ROAS',        value: '3.4×', change: '↑21%',  ok: true },
-              { label: 'Custo/lead',  value: '$11',  change: '↓18%',  ok: true },
-              { label: 'Leads',       value: String(stats?.totais.publicados ?? '—'), change: `↑${stats?.ultimos7.publicados ?? 0} semana`, ok: true },
-              { label: 'Verba usada', value: '$182', change: 'de $400', ok: false },
-            ].map(kpi => (
-              <div key={kpi.label} className="rounded-xl p-2.5"
-                style={{ background: 'var(--color-bg-tertiary)' }}>
-                <p className="text-[9.5px] text-mut mb-1">{kpi.label}</p>
-                <p className="text-[20px] font-bold font-disp text-ink leading-none">{kpi.value}</p>
-                <p className="text-[9px] mt-0.5 font-semibold"
-                  style={{ color: kpi.ok ? '#1D9E75' : '#854F0B' }}>
-                  {kpi.change}
-                </p>
-              </div>
-            ))}
+            <div className="rounded-xl p-2.5" style={{ background: 'var(--color-bg-tertiary)' }}>
+              <p className="text-[9.5px] text-mut mb-1">Posts publicados</p>
+              <p className="text-[20px] font-bold font-disp text-ink leading-none">
+                {stats?.totais.publicados ?? '—'}
+              </p>
+              <p className="text-[9px] mt-0.5 font-semibold" style={{ color: '#1D9E75' }}>
+                ↑{stats?.ultimos7.publicados ?? 0} esta semana
+              </p>
+            </div>
+            <div className="rounded-xl p-2.5" style={{ background: 'var(--color-bg-tertiary)' }}>
+              <p className="text-[9.5px] text-mut mb-1">Na fila</p>
+              <p className="text-[20px] font-bold font-disp text-ink leading-none">
+                {(stats?.totais.pendentes ?? 0) + (stats?.totais.agendados ?? 0)}
+              </p>
+              <p className="text-[9px] mt-0.5 font-semibold text-soft">pendentes + agendados</p>
+            </div>
+            <div className="col-span-2 rounded-xl p-2.5" style={{ background: 'var(--color-bg-tertiary)' }}>
+              <p className="text-[9.5px] text-mut mb-1">ROAS · Custo/lead · Verba</p>
+              <p className="text-[11px] text-soft">
+                Requer Meta Ads — configure META_ACCESS_TOKEN no .env para ativar.
+              </p>
+            </div>
           </div>
 
           {/* Channel bars */}
@@ -464,18 +585,11 @@ function ColumnC({ stats }: { stats: PanelStats | null }) {
                   <span className="text-[9.5px] text-mut w-6 text-right">{pct}%</span>
                 </div>
               ))}
+              {canaisBars.length === 1 && (
+                <p className="text-[9.5px] text-soft text-center italic mt-1.5">Único canal ativo até agora</p>
+              )}
             </div>
           )}
-
-          {/* Alert */}
-          <div className="rounded-xl p-2.5 mb-3" style={{ background: '#FDE8E7' }}>
-            <p className="text-[10.5px] font-bold mb-0.5" style={{ color: '#F04E3E' }}>
-              Pixel da Meta com problema
-            </p>
-            <p className="text-[10px] leading-relaxed" style={{ color: '#7B6B8A' }}>
-              Evento Lead não registrado desde terça — quer corrigir?
-            </p>
-          </div>
 
           {/* CMO Chat */}
           <div className="border rounded-xl overflow-hidden"
@@ -488,7 +602,7 @@ function ColumnC({ stats }: { stats: PanelStats | null }) {
               {chatMsgs.length === 0 && (
                 <div className="flex flex-wrap gap-1 pb-1">
                   {['Qual canal performa melhor?', 'Próximo passo?', 'Como crescer?'].map(s => (
-                    <button key={s} onClick={() => setChatInput(s)}
+                    <button key={s} onClick={() => enviarChat(s)}
                       className="text-[10px] px-2 py-1 rounded-full font-medium transition"
                       style={{ background: 'var(--color-bg-tertiary)', color: '#7B6B8A' }}>
                       {s}
@@ -530,7 +644,7 @@ function ColumnC({ stats }: { stats: PanelStats | null }) {
                 placeholder="Pergunte qualquer coisa…"
                 className="flex-1 text-[11.5px] outline-none bg-transparent"
               />
-              <button onClick={enviarChat} disabled={enviando || !chatInput.trim()}
+              <button onClick={() => enviarChat()} disabled={enviando || !chatInput.trim()}
                 className="w-6 h-6 rounded-lg flex items-center justify-center text-white font-bold text-[12px] transition disabled:opacity-40"
                 style={{ background: '#8B2FC9' }}>
                 ↑
@@ -574,39 +688,112 @@ function ColumnC({ stats }: { stats: PanelStats | null }) {
 
       {/* ── Verba ── */}
       {tab === 'verba' && (
-        <div className="flex-1 p-3">
-          <p className="text-[11.5px] font-semibold text-mut mb-3 uppercase tracking-wide">Meta Ads</p>
-          {[
-            { label: 'Teto mensal', value: 400, max: 1000, symbol: '$' },
-            { label: 'CPC máximo', value: 2.5, max: 10, symbol: '$' },
-          ].map(item => (
-            <div key={item.label} className="mb-4">
-              <div className="flex justify-between mb-1.5">
-                <span className="text-[11px] font-semibold text-ink">{item.label}</span>
-                <span className="text-[11px] font-bold" style={{ color: '#8B2FC9' }}>
-                  {item.symbol}{item.value}
-                </span>
-              </div>
-              <input type="range" min={0} max={item.max} value={item.value} readOnly
-                className="w-full h-1.5 rounded-full appearance-none"
-                style={{ background: `linear-gradient(to right, #8B2FC9 ${(item.value/item.max)*100}%, #EDE6F5 0%)` }}
-              />
-            </div>
-          ))}
-          <div className="flex items-center justify-between py-3 border-t"
-            style={{ borderColor: 'var(--color-border-subtle)' }}>
-            <div>
-              <p className="text-[11px] font-semibold text-ink">Freio automático</p>
-              <p className="text-[10px] text-mut">Para quando atingir o teto</p>
-            </div>
-            <div className="w-10 h-5 rounded-full relative transition"
-              style={{ background: '#8B2FC9' }}>
-              <span className="absolute right-0.5 top-0.5 w-4 h-4 rounded-full bg-white shadow" />
-            </div>
+        <div className="flex-1 p-3 overflow-y-auto no-scrollbar">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[11.5px] font-semibold text-mut uppercase tracking-wide">Controle de verba</p>
+            {adSaved && (
+              <span className="text-[10px] font-semibold" style={{ color: '#0F6E56' }}>✓ Salvo</span>
+            )}
           </div>
-          <p className="text-[10.5px] text-soft text-center mt-3">
-            Integração Meta Ads — em breve
-          </p>
+
+          {adLoading && (
+            <p className="text-[12px] text-mut text-center py-8 animate-pulse">Carregando…</p>
+          )}
+
+          {adSettings && !adLoading && (
+            <>
+              {/* Teto mensal */}
+              <div className="mb-4">
+                <div className="flex justify-between mb-1.5">
+                  <span className="text-[11px] font-semibold text-ink">Teto mensal</span>
+                  <span className="text-[11px] font-bold" style={{ color: '#8B2FC9' }}>
+                    ${adSettings.monthlyBudget.toFixed(0)}
+                  </span>
+                </div>
+                <input type="range" min={100} max={2000} step={50}
+                  value={adSettings.monthlyBudget}
+                  onChange={e => handleSlider('monthlyBudget', Number(e.target.value))}
+                  className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
+                  style={{
+                    background: `linear-gradient(to right, #8B2FC9 ${((adSettings.monthlyBudget - 100) / 1900) * 100}%, #EDE6F5 0%)`,
+                    accentColor: '#8B2FC9',
+                  }}
+                />
+                <div className="flex justify-between text-[9px] text-soft mt-0.5">
+                  <span>$100</span><span>$2.000</span>
+                </div>
+              </div>
+
+              {/* CPC máximo */}
+              <div className="mb-4">
+                <div className="flex justify-between mb-1.5">
+                  <span className="text-[11px] font-semibold text-ink">CPC máximo</span>
+                  <span className="text-[11px] font-bold" style={{ color: '#8B2FC9' }}>
+                    ${adSettings.maxCPC.toFixed(2)}
+                  </span>
+                </div>
+                <input type="range" min={0.5} max={6} step={0.1}
+                  value={adSettings.maxCPC}
+                  onChange={e => handleSlider('maxCPC', Number(e.target.value))}
+                  className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
+                  style={{
+                    background: `linear-gradient(to right, #8B2FC9 ${((adSettings.maxCPC - 0.5) / 5.5) * 100}%, #EDE6F5 0%)`,
+                    accentColor: '#8B2FC9',
+                  }}
+                />
+                <div className="flex justify-between text-[9px] text-soft mt-0.5">
+                  <span>$0,50</span><span>$6,00</span>
+                </div>
+              </div>
+
+              {/* Toggles */}
+              <div className="border-t pt-3" style={{ borderColor: 'var(--color-border-subtle)' }}>
+                {[
+                  {
+                    field: 'autoBrake' as const,
+                    label: 'Freio automático',
+                    desc: 'Para os anúncios ao atingir o teto mensal',
+                    value: adSettings.autoBrake,
+                  },
+                  {
+                    field: 'boostWinners' as const,
+                    label: 'Impulsionar vencedores',
+                    desc: 'Posts com 2× engajamento médio viram anúncios automaticamente',
+                    value: adSettings.boostWinners,
+                  },
+                ].map(item => (
+                  <div key={item.field} className="flex items-center justify-between py-3 border-b last:border-0"
+                    style={{ borderColor: 'var(--color-border-subtle)' }}>
+                    <div className="flex-1 min-w-0 mr-3">
+                      <p className="text-[11px] font-semibold text-ink">{item.label}</p>
+                      <p className="text-[10px] text-mut leading-snug">{item.desc}</p>
+                    </div>
+                    <button
+                      onClick={() => handleToggle(item.field, !item.value)}
+                      className="relative w-[38px] h-[22px] rounded-full transition-colors flex-shrink-0"
+                      style={{ background: item.value ? '#8B2FC9' : '#D4B8EF' }}>
+                      <span className="absolute top-[2px] w-[18px] h-[18px] rounded-full bg-white shadow transition-all"
+                        style={{ left: item.value ? '18px' : '2px' }} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Status Meta Ads */}
+              <div className="mt-3 rounded-xl p-3"
+                style={{ background: adSettings.metaConnected ? '#E1F5EE' : '#FEF8DC' }}>
+                <p className="text-[10.5px] font-bold mb-0.5"
+                  style={{ color: adSettings.metaConnected ? '#0F6E56' : '#854F0B' }}>
+                  {adSettings.metaConnected ? '✓ Meta Ads conectado' : '⚠ Meta Ads não conectado'}
+                </p>
+                {!adSettings.metaConnected && (
+                  <p className="text-[10px] leading-relaxed" style={{ color: '#7B6B8A' }}>
+                    Adicione META_ACCESS_TOKEN e META_AD_ACCOUNT_ID no .env para ativar o controle de verba real.
+                  </p>
+                )}
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>
@@ -621,6 +808,7 @@ export default function Hoje() {
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [stats, setStats] = useState<PanelStats | null>(null);
   const [perfil, setPerfil] = useState<Perfil | null>(null);
+  const [allPerfis, setAllPerfis] = useState<Perfil[]>([]);
   const [gerando, setGerando] = useState(false);
   const [erroGerar, setErroGerar] = useState<string | null>(null);
   const [previewPost, setPreviewPost] = useState<PendingPost | null>(null);
@@ -641,12 +829,23 @@ export default function Hoje() {
     }
     if (painelR.status === 'fulfilled') setStats(painelR.value);
     if (perfisR.status === 'fulfilled') {
-      const ativo = (perfisR.value as Perfil[]).find(p => p.ativo);
+      const lista = perfisR.value as Perfil[];
+      setAllPerfis(lista);
+      const ativo = lista.find(p => p.ativo);
       if (ativo) setPerfil(ativo);
     }
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  async function switchPerfil(id: string) {
+    await fetch('/api/perfis', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    await fetchData();
+  }
 
   async function gerarPosts(brief: string) {
     setGerando(true);
@@ -694,7 +893,7 @@ export default function Hoje() {
     <>
       {/* Single render — CSS controls desktop vs mobile layout */}
       <div className="lg:flex lg:flex-col lg:h-full lg:overflow-hidden pb-28 lg:pb-0">
-        <TopBar perfil={perfil} />
+        <TopBar perfil={perfil} allPerfis={allPerfis} onSwitch={switchPerfil} />
 
         {erroGerar && (
           <div className="px-3 py-2 text-[12px] font-medium flex-shrink-0 border-b"

@@ -93,6 +93,16 @@ model User {
   createdAt DateTime @default(now())
 }
 
+model AdSettings {
+  id            String   @id @default(cuid())
+  profileId     String   @unique
+  monthlyBudget Float    @default(400)
+  maxCPC        Float    @default(2.5)
+  autoBrake     Boolean  @default(true)
+  boostWinners  Boolean  @default(false)
+  updatedAt     DateTime @updatedAt
+}
+
 model BrandProfile {
   id             String   @id @default(cuid())
   name           String   @unique  // slug único do perfil
