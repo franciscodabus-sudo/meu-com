@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
+
+// ─── Types ─────────────────────────────────────────────────────────────────────
 
 type Perfil = {
   id: string; name: string; displayName: string; avatarColor: string;
@@ -10,284 +11,490 @@ type Perfil = {
   ativo: boolean; pausado: boolean; radarAtivo: boolean;
 };
 
+// ─── Constants ─────────────────────────────────────────────────────────────────
+
 const AVATAR_COLORS = [
   '#8B2FC9','#7C3AED','#DB2777','#EA580C','#16A34A',
   '#0369A1','#9333EA','#B45309','#0F766E','#DC2626',
 ];
 
-const OBJETIVO_LABEL: Record<string, string> = {
-  engajamento: 'Engajamento', leads: 'Geração de leads', autoridade: 'Autoridade',
+const CANAL_COR: Record<string, string> = {
+  instagram: '#C13584', facebook: '#1877F2', linkedin: '#0A66C2', tiktok: '#000000',
 };
-const CANAL_ICON: Record<string, string> = {
-  instagram: '📷', facebook: '📘', linkedin: '💼',
+const CANAL_LABEL: Record<string, string> = {
+  instagram: 'IG', facebook: 'FB', linkedin: 'LI', tiktok: 'TT',
 };
+const CANAIS_ALL = ['instagram', 'facebook', 'linkedin', 'tiktok'] as const;
+
+// ─── Helpers ───────────────────────────────────────────────────────────────────
 
 function initials(name: string) {
   return name.split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
 }
 
-// ── Editor de cenário (sheet modal) ──────────────────────────────────────────
+function avatarStyle(displayName: string, avatarColor: string): React.CSSProperties {
+  const dn = displayName.toLowerCase();
+  if (dn.includes('francisco')) return { background: 'linear-gradient(135deg,#8B2FC9,#F04E3E)' };
+  if (dn.includes('vip insurance')) return { background: '#1D9E75' };
+  return { background: avatarColor || '#8B2FC9' };
+}
 
-type EditorProps = {
-  perfil: Perfil | null; // null = novo
-  onClose: () => void;
-  onSalvo: () => void;
-};
+function parseFrequencia(freq: string, canaisAtivos: string[]): string {
+  if (!freq) return '';
+  try {
+    const obj = JSON.parse(freq) as Record<string, number>;
+    const vals = canaisAtivos.map(c => obj[c]).filter((v): v is number => typeof v === 'number');
+    const max = vals.length ? Math.max(...vals) : null;
+    return max ? `${max}× /sem` : '';
+  } catch {
+    const m = freq.match(/\d+/);
+    return m ? `${m[0]}× /sem` : freq;
+  }
+}
 
-const CAMPO_VAZIO: Omit<Perfil, 'id' | 'name' | 'ativo' | 'pausado' | 'radarAtivo' | 'createdAt'> = {
-  displayName: '', descricao: '', publicoAlvo: '', tomDeVoz: '', tomEvitar: '',
-  idioma: 'pt-BR', contato: '', produtos: '', frequencia: '',
-  channelsActive: '["instagram","linkedin","facebook"]',
-  objetivo: 'engajamento', notasLivres: '', avatarColor: '#8B2FC9',
-};
+function parsePublicoAlvo(texto: string) {
+  const quemM  = texto.match(/Quem: ?(.*?)(?:\n|$)/);
+  const ondeM  = texto.match(/Onde: ?(.*?)(?:\n|$)/);
+  const doresM = texto.match(/Dores: ?([\s\S]*?)$/);
+  const hasKeys = quemM || ondeM || doresM;
+  return {
+    quem:  quemM?.[1]?.trim()  || (hasKeys ? '' : texto),
+    onde:  ondeM?.[1]?.trim()  || '',
+    dores: doresM?.[1]?.trim() || '',
+  };
+}
 
-function EditorCenario({ perfil, onClose, onSalvo }: EditorProps) {
-  const [form, setForm] = useState<typeof CAMPO_VAZIO>(
-    perfil ? {
-      displayName: perfil.displayName, descricao: perfil.descricao,
-      publicoAlvo: perfil.publicoAlvo, tomDeVoz: perfil.tomDeVoz,
-      tomEvitar: perfil.tomEvitar, idioma: perfil.idioma, contato: perfil.contato,
-      produtos: perfil.produtos, frequencia: perfil.frequencia,
-      channelsActive: perfil.channelsActive || '["instagram","linkedin","facebook"]',
-      objetivo: perfil.objetivo, notasLivres: perfil.notasLivres,
-      avatarColor: perfil.avatarColor,
-    } : { ...CAMPO_VAZIO }
+// ─── Toast ─────────────────────────────────────────────────────────────────────
+
+function Toast({ msg, onDone }: { msg: string; onDone: () => void }) {
+  useEffect(() => {
+    const t = setTimeout(onDone, 2500);
+    return () => clearTimeout(t);
+  }, [onDone]);
+  return (
+    <div className="fixed bottom-28 left-1/2 -translate-x-1/2 z-[70] px-4 py-2.5 rounded-2xl text-white text-[13px] font-semibold shadow-lg whitespace-nowrap"
+      style={{ background: '#17996B' }}>
+      {msg}
+    </div>
   );
-  const [secao, setSecao] = useState<string>('identidade');
+}
+
+// ─── Tags Input ────────────────────────────────────────────────────────────────
+
+function TagsInput({ tags, onChange, placeholder }: {
+  tags: string[]; onChange: (t: string[]) => void; placeholder: string;
+}) {
+  const [input, setInput] = useState('');
+
+  function add() {
+    const v = input.trim();
+    if (v && !tags.includes(v)) onChange([...tags, v]);
+    setInput('');
+  }
+
+  return (
+    <div className="border border-[#E4DCF0] rounded-xl px-3 pt-2.5 pb-2 bg-[#FAF7FF] min-h-[52px]">
+      {tags.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-2">
+          {tags.map(t => (
+            <span key={t}
+              className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[11.5px] font-medium"
+              style={{ background: '#F0E8FA', color: '#8B2FC9' }}>
+              {t}
+              <button type="button" onClick={() => onChange(tags.filter(x => x !== t))}
+                className="opacity-60 hover:opacity-100 ml-0.5 text-[13px] leading-none">×</button>
+            </span>
+          ))}
+        </div>
+      )}
+      <input
+        value={input}
+        onChange={e => setInput(e.target.value)}
+        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); add(); } }}
+        placeholder={tags.length === 0 ? placeholder : 'Adicionar… (Enter)'}
+        className="w-full text-[13px] outline-none bg-transparent"
+      />
+    </div>
+  );
+}
+
+// ─── Wizard ────────────────────────────────────────────────────────────────────
+
+type WizardForm = {
+  displayName: string;
+  name: string;
+  descricao: string;
+  objetivo: string;
+  publicoQuem: string;
+  publicoOnde: string;
+  publicoDores: string;
+  tomUsarTags: string[];
+  tomEvitarTags: string[];
+  idioma: string;
+  canaisAtivos: string[];
+  freqCanal: Record<string, number>;
+  notasLivres: string;
+};
+
+const FORM_VAZIO: WizardForm = {
+  displayName: '', name: '', descricao: '', objetivo: 'leads',
+  publicoQuem: '', publicoOnde: '', publicoDores: '',
+  tomUsarTags: [], tomEvitarTags: [], idioma: 'pt-BR',
+  canaisAtivos: ['instagram', 'linkedin', 'facebook'],
+  freqCanal: { instagram: 5, linkedin: 3, facebook: 3, tiktok: 2 },
+  notasLivres: '',
+};
+
+function fromPerfil(p: Perfil): WizardForm {
+  const pub = parsePublicoAlvo(p.publicoAlvo);
+  let canaisAtivos: string[] = ['instagram', 'linkedin', 'facebook'];
+  try { canaisAtivos = JSON.parse(p.channelsActive || '[]'); } catch {}
+
+  let freqCanal: Record<string, number> = { instagram: 5, linkedin: 3, facebook: 3, tiktok: 2 };
+  try {
+    const obj = JSON.parse(p.frequencia);
+    if (obj && typeof obj === 'object' && !Array.isArray(obj)) freqCanal = { ...freqCanal, ...obj };
+  } catch {}
+
+  return {
+    displayName: p.displayName,
+    name: p.name || '',
+    descricao: p.descricao || '',
+    objetivo: p.objetivo || 'leads',
+    publicoQuem: pub.quem,
+    publicoOnde: pub.onde,
+    publicoDores: pub.dores,
+    tomUsarTags: p.tomDeVoz ? p.tomDeVoz.split(/,\s*/).filter(Boolean) : [],
+    tomEvitarTags: p.tomEvitar ? p.tomEvitar.split(/,\s*/).filter(Boolean) : [],
+    idioma: p.idioma || 'pt-BR',
+    canaisAtivos,
+    freqCanal,
+    notasLivres: p.notasLivres || '',
+  };
+}
+
+const STEPS = ['Identidade', 'Público', 'Tom de voz', 'Canais e frequência'] as const;
+
+function Wizard({ perfil, onClose, onSalvo }: {
+  perfil: Perfil | null; onClose: () => void; onSalvo: () => void;
+}) {
+  const [step, setStep] = useState(0);
+  const [form, setForm] = useState<WizardForm>(() => perfil ? fromPerfil(perfil) : { ...FORM_VAZIO });
   const [salvando, setSalvando] = useState(false);
 
-  function set(k: keyof typeof CAMPO_VAZIO, v: string) {
+  function set<K extends keyof WizardForm>(k: K, v: WizardForm[K]) {
     setForm(f => ({ ...f, [k]: v }));
   }
 
   function toggleCanal(canal: string) {
-    const atual: string[] = JSON.parse(form.channelsActive || '[]');
-    const novo = atual.includes(canal) ? atual.filter(c => c !== canal) : [...atual, canal];
-    set('channelsActive', JSON.stringify(novo));
+    const next = form.canaisAtivos.includes(canal)
+      ? form.canaisAtivos.filter(c => c !== canal)
+      : [...form.canaisAtivos, canal];
+    set('canaisAtivos', next);
   }
-
-  const canaisAtivos: string[] = JSON.parse(form.channelsActive || '[]');
 
   async function salvar() {
     if (!form.displayName.trim()) return;
     setSalvando(true);
-    const body = perfil
-      ? { ...form, id: perfil.id }
-      : { ...form };
+
+    const publicoAlvo = [
+      form.publicoQuem && `Quem: ${form.publicoQuem}`,
+      form.publicoOnde && `Onde: ${form.publicoOnde}`,
+      form.publicoDores && `Dores: ${form.publicoDores}`,
+    ].filter(Boolean).join('\n');
+
+    const freqObj: Record<string, number> = {};
+    form.canaisAtivos.forEach(c => { freqObj[c] = form.freqCanal[c] ?? 3; });
+
+    const body = {
+      ...(perfil ? { id: perfil.id } : {}),
+      ...(form.name.trim() ? { name: form.name.trim() } : {}),
+      displayName:    form.displayName,
+      descricao:      form.descricao,
+      objetivo:       form.objetivo,
+      publicoAlvo,
+      tomDeVoz:       form.tomUsarTags.join(', '),
+      tomEvitar:      form.tomEvitarTags.join(', '),
+      idioma:         form.idioma,
+      channelsActive: JSON.stringify(form.canaisAtivos),
+      frequencia:     JSON.stringify(freqObj),
+      notasLivres:    form.notasLivres,
+    };
+
     await fetch('/api/perfis', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
+
     setSalvando(false);
     onSalvo();
   }
 
-  const secoes = [
-    { key: 'identidade', label: '🏷 Identidade' },
-    { key: 'publico',    label: '👥 Público' },
-    { key: 'tom',        label: '🎙 Tom de voz' },
-    { key: 'canais',     label: '📡 Canais e frequência' },
-    { key: 'objetivo',   label: '🎯 Objetivo' },
-    { key: 'ia',         label: '🤖 Notas para IA' },
-  ];
+  const pct = ((step + 1) / STEPS.length) * 100;
+  const isLast = step === STEPS.length - 1;
+  const canNext = step === 0 ? !!form.displayName.trim() : true;
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center"
-      style={{ background: 'rgba(23,38,44,.5)' }}
+      className="fixed inset-0 z-50 flex items-end justify-center lg:items-center"
+      style={{ background: 'rgba(26,10,46,.55)' }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-fundo rounded-t-[26px] w-full max-w-[430px] flex flex-col"
-        style={{ maxHeight: '92vh' }}>
-        {/* Handle + header */}
-        <div className="flex-shrink-0 px-4 pt-3 pb-3">
-          <div className="w-[42px] h-[5px] bg-[#D4B8EF] rounded-full mx-auto mb-4" />
-          <div className="flex items-center justify-between">
-            <h2 className="font-disp text-[18px] font-bold">
-              {perfil ? `Editar — ${perfil.displayName}` : 'Novo cenário'}
-            </h2>
-            <button onClick={onClose} className="text-mut text-[22px] leading-none">×</button>
-          </div>
+      <div className="bg-fundo w-full max-w-lg flex flex-col rounded-t-[26px] lg:rounded-[24px]"
+        style={{ maxHeight: '94vh' }}>
 
-          {/* Navegação de seções */}
-          <div className="flex gap-1.5 overflow-x-auto pb-1 mt-3 no-scrollbar">
-            {secoes.map(s => (
-              <button key={s.key} onClick={() => setSecao(s.key)}
-                className="flex-shrink-0 text-[11.5px] font-semibold px-3 py-1.5 rounded-full transition"
-                style={{
-                  background: secao === s.key ? '#8B2FC9' : '#EDE6F5',
-                  color:      secao === s.key ? '#fff'     : '#7B6B8A',
-                }}>
-                {s.label}
-              </button>
-            ))}
-          </div>
+        {/* Progress bar */}
+        <div className="h-1 rounded-t-[26px] lg:rounded-t-[24px] overflow-hidden flex-shrink-0">
+          <div className="h-full transition-all duration-300 ease-out"
+            style={{ width: `${pct}%`, background: 'linear-gradient(90deg,#8B2FC9,#F04E3E)' }} />
         </div>
 
-        {/* Conteúdo scrollável */}
-        <div className="flex-1 overflow-y-auto px-4 pb-4">
+        {/* Header */}
+        <div className="flex-shrink-0 px-5 pt-4 pb-1">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-soft">
+              Passo {step + 1}/{STEPS.length}
+            </span>
+            <button onClick={onClose}
+              className="w-8 h-8 flex items-center justify-center rounded-full text-mut text-[20px]"
+              style={{ background: '#F0E8FA' }}>
+              ×
+            </button>
+          </div>
+          <h2 className="font-disp text-[20px] font-bold text-ink">{STEPS[step]}</h2>
+        </div>
 
-          {secao === 'identidade' && (
-            <div className="flex flex-col gap-3">
+        {/* Step indicator dots */}
+        <div className="flex items-center gap-1.5 px-5 py-3 flex-shrink-0">
+          {STEPS.map((_, i) => (
+            <button key={i} onClick={() => i < step && setStep(i)}
+              className="h-[3px] flex-1 rounded-full transition-all"
+              style={{ background: i <= step ? '#8B2FC9' : '#EDE6F5', cursor: i < step ? 'pointer' : 'default' }} />
+          ))}
+        </div>
+
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto px-5 pb-4 no-scrollbar">
+
+          {/* ── Passo 1: Identidade ── */}
+          {step === 0 && (
+            <div className="flex flex-col gap-4">
               <div>
                 <label className="label-sm">Nome do cenário *</label>
-                <input value={form.displayName} onChange={e => set('displayName', e.target.value)}
-                  placeholder="Ex.: Francisco Dabus, Vip Insurance…"
+                <input value={form.displayName}
+                  onChange={e => set('displayName', e.target.value)}
+                  placeholder="Ex.: Vip Insurance, Francisco Dabus…"
                   className="input-base" />
               </div>
               <div>
-                <label className="label-sm">Sobre o negócio</label>
-                <textarea value={form.descricao} onChange={e => set('descricao', e.target.value)}
-                  placeholder="O que você faz e onde atua."
+                <label className="label-sm">Nome a exibir</label>
+                <input value={form.name}
+                  onChange={e => set('name', e.target.value)}
+                  placeholder="Slug/identificador (opcional — gerado automaticamente)"
+                  className="input-base" />
+              </div>
+              <div>
+                <label className="label-sm">Descrição do negócio</label>
+                <textarea value={form.descricao}
+                  onChange={e => set('descricao', e.target.value)}
+                  placeholder="O que você faz, onde atua, o que te diferencia…"
                   rows={3} className="input-base resize-none" />
               </div>
               <div>
-                <label className="label-sm">Produtos / serviços</label>
-                <input value={form.produtos} onChange={e => set('produtos', e.target.value)}
-                  placeholder="Ex.: Seguro auto, residencial, vida, saúde."
-                  className="input-base" />
-              </div>
-              <div>
-                <label className="label-sm">Site / link de contato</label>
-                <input value={form.contato} onChange={e => set('contato', e.target.value)}
-                  placeholder="https://…" className="input-base" />
-              </div>
-              <div>
-                <label className="label-sm">Cor do avatar</label>
-                <div className="flex gap-2 flex-wrap mt-1">
-                  {AVATAR_COLORS.map(c => (
-                    <button key={c} onClick={() => set('avatarColor', c)}
-                      className="w-7 h-7 rounded-full transition active:scale-90"
+                <label className="label-sm">Objetivo principal</label>
+                <div className="flex flex-col gap-2 mt-1">
+                  {([
+                    { v: 'leads',       icon: '🎯', label: 'Leads',       desc: 'Gerar contatos qualificados e consultas diretas' },
+                    { v: 'autoridade',  icon: '🏆', label: 'Autoridade',  desc: 'Posicionar como referência no mercado' },
+                    { v: 'engajamento', icon: '💬', label: 'Engajamento', desc: 'Aumentar alcance orgânico, curtidas e comentários' },
+                  ] as const).map(opt => (
+                    <button key={opt.v} type="button" onClick={() => set('objetivo', opt.v)}
+                      className="flex items-center gap-3 px-3.5 py-3 rounded-2xl text-left transition"
                       style={{
-                        background: c,
-                        boxShadow: form.avatarColor === c ? `0 0 0 3px white, 0 0 0 5px ${c}` : 'none',
-                      }} />
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {secao === 'publico' && (
-            <div className="flex flex-col gap-3">
-              <div>
-                <label className="label-sm">Quem é o público-alvo</label>
-                <textarea value={form.publicoAlvo} onChange={e => set('publicoAlvo', e.target.value)}
-                  placeholder="Ex.: Brasileiros e latinos em Orlando, 30-55 anos, recém-chegados."
-                  rows={3} className="input-base resize-none" />
-              </div>
-            </div>
-          )}
-
-          {secao === 'tom' && (
-            <div className="flex flex-col gap-3">
-              <div>
-                <label className="label-sm">Palavras a USAR</label>
-                <input value={form.tomDeVoz} onChange={e => set('tomDeVoz', e.target.value)}
-                  placeholder="Ex.: consultivo, caloroso, didático, sem jargão."
-                  className="input-base" />
-              </div>
-              <div>
-                <label className="label-sm">Palavras a EVITAR</label>
-                <input value={form.tomEvitar} onChange={e => set('tomEvitar', e.target.value)}
-                  placeholder="Ex.: barato, urgente, promoção relâmpago."
-                  className="input-base" />
-              </div>
-              <div>
-                <label className="label-sm">Idioma principal</label>
-                <select value={form.idioma} onChange={e => set('idioma', e.target.value)}
-                  className="input-base">
-                  <option value="pt-BR">Português (Brasil)</option>
-                  <option value="en-US">English (US)</option>
-                  <option value="es">Español</option>
-                </select>
-              </div>
-            </div>
-          )}
-
-          {secao === 'canais' && (
-            <div className="flex flex-col gap-3">
-              <div>
-                <label className="label-sm">Canais ativos</label>
-                <div className="flex gap-2 mt-1">
-                  {(['instagram', 'facebook', 'linkedin'] as const).map(canal => (
-                    <button key={canal} onClick={() => toggleCanal(canal)}
-                      className="flex-1 py-2.5 rounded-xl text-[12px] font-semibold transition"
-                      style={{
-                        background: canaisAtivos.includes(canal) ? '#8B2FC9' : '#F0F4F5',
-                        color:      canaisAtivos.includes(canal) ? '#fff'    : '#7B6B8A',
+                        background: form.objetivo === opt.v ? '#F0E8FA' : '#FDF8FF',
+                        border: form.objetivo === opt.v ? '1.5px solid #8B2FC9' : '1.5px solid #EDE6F5',
                       }}>
-                      {CANAL_ICON[canal]} {canal.charAt(0).toUpperCase() + canal.slice(1)}
+                      <span className="text-[20px] flex-shrink-0">{opt.icon}</span>
+                      <div>
+                        <p className="font-semibold text-[13px] text-ink">{opt.label}</p>
+                        <p className="text-[11px] text-mut">{opt.desc}</p>
+                      </div>
                     </button>
                   ))}
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* ── Passo 2: Público ── */}
+          {step === 1 && (
+            <div className="flex flex-col gap-4">
               <div>
-                <label className="label-sm">Frequência (posts/semana)</label>
-                <input value={form.frequencia} onChange={e => set('frequencia', e.target.value)}
-                  placeholder="Ex.: 3x por semana, todos os dias." className="input-base" />
+                <label className="label-sm">Quem é seu público</label>
+                <input value={form.publicoQuem}
+                  onChange={e => set('publicoQuem', e.target.value)}
+                  placeholder="Ex.: Brasileiros e latinos, 30–55 anos, recém-chegados"
+                  className="input-base" />
+              </div>
+              <div>
+                <label className="label-sm">Onde está</label>
+                <input value={form.publicoOnde}
+                  onChange={e => set('publicoOnde', e.target.value)}
+                  placeholder="Ex.: Orlando, FL — área metropolitana"
+                  className="input-base" />
+              </div>
+              <div>
+                <label className="label-sm">Principais dores / necessidades</label>
+                <textarea value={form.publicoDores}
+                  onChange={e => set('publicoDores', e.target.value)}
+                  placeholder="Ex.: Processo burocrático, não falam inglês, medo de fraudes, custo alto…"
+                  rows={4} className="input-base resize-none" />
               </div>
             </div>
           )}
 
-          {secao === 'objetivo' && (
-            <div className="flex flex-col gap-2">
-              <label className="label-sm">Objetivo principal de marketing</label>
-              {(['engajamento', 'leads', 'autoridade'] as const).map(obj => (
-                <button key={obj} onClick={() => set('objetivo', obj)}
-                  className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-left transition"
-                  style={{
-                    background: form.objetivo === obj ? '#F0E8FA' : '#FDF8FF',
-                    border:     form.objetivo === obj ? '1.5px solid #8B2FC9' : '1.5px solid transparent',
-                  }}>
-                  <span className="text-[22px]">
-                    {obj === 'engajamento' ? '💬' : obj === 'leads' ? '🎯' : '🏆'}
-                  </span>
-                  <div>
-                    <p className="font-semibold text-[13.5px] text-ink capitalize">{OBJETIVO_LABEL[obj]}</p>
-                    <p className="text-[11.5px] text-mut">
-                      {obj === 'engajamento' && 'Aumentar curtidas, comentários e alcance orgânico'}
-                      {obj === 'leads'       && 'Gerar contatos qualificados e consultas diretas'}
-                      {obj === 'autoridade'  && 'Posicionar como referência no mercado'}
-                    </p>
-                  </div>
-                </button>
-              ))}
+          {/* ── Passo 3: Tom de voz ── */}
+          {step === 2 && (
+            <div className="flex flex-col gap-4">
+              <div>
+                <label className="label-sm">Palavras a usar</label>
+                <p className="text-[11px] text-soft mb-1.5">Digite e aperte Enter para adicionar</p>
+                <TagsInput tags={form.tomUsarTags} onChange={t => set('tomUsarTags', t)}
+                  placeholder="Ex.: consultivo, caloroso, didático…" />
+              </div>
+              <div>
+                <label className="label-sm">Palavras a evitar</label>
+                <p className="text-[11px] text-soft mb-1.5">Digite e aperte Enter para adicionar</p>
+                <TagsInput tags={form.tomEvitarTags} onChange={t => set('tomEvitarTags', t)}
+                  placeholder="Ex.: barato, urgente, promoção relâmpago…" />
+              </div>
+              <div>
+                <label className="label-sm">Idioma principal</label>
+                <div className="flex gap-2 mt-1">
+                  {([
+                    { v: 'pt-BR', label: 'PT-BR' },
+                    { v: 'en-US', label: 'EN' },
+                    { v: 'ambos', label: 'Ambos' },
+                  ] as const).map(opt => (
+                    <button key={opt.v} type="button" onClick={() => set('idioma', opt.v)}
+                      className="flex-1 py-2.5 rounded-xl text-[12.5px] font-semibold transition active:scale-95"
+                      style={{
+                        background: form.idioma === opt.v ? '#8B2FC9' : '#F0E8FA',
+                        color:      form.idioma === opt.v ? '#fff'     : '#8B2FC9',
+                      }}>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 
-          {secao === 'ia' && (
-            <div className="flex flex-col gap-3">
+          {/* ── Passo 4: Canais e frequência ── */}
+          {step === 3 && (
+            <div className="flex flex-col gap-4">
               <div>
-                <label className="label-sm">Notas para a IA (campo livre)</label>
-                <textarea value={form.notasLivres} onChange={e => set('notasLivres', e.target.value)}
-                  placeholder="Qualquer contexto que a IA deve saber: datas comemorativas, concorrentes, eventos, restrições…"
-                  rows={5} className="input-base resize-none" />
+                <label className="label-sm">Canais ativos</label>
+                <div className="flex flex-col gap-3 mt-1.5">
+                  {CANAIS_ALL.map(canal => {
+                    const isOn = form.canaisAtivos.includes(canal);
+                    const cor  = CANAL_COR[canal];
+                    const freq = form.freqCanal[canal] ?? 3;
+                    return (
+                      <div key={canal}>
+                        <div className="flex items-center gap-3 py-2.5 px-3.5 rounded-2xl transition"
+                          style={{
+                            background: isOn ? `${cor}12` : '#F5F5F8',
+                            border: `1.5px solid ${isOn ? cor : '#EDE6F5'}`,
+                          }}>
+                          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-[11.5px] flex-shrink-0"
+                            style={{ background: cor }}>
+                            {CANAL_LABEL[canal]}
+                          </div>
+                          <span className="flex-1 font-semibold text-[13px] text-ink capitalize">{canal}</span>
+                          <button type="button" onClick={() => toggleCanal(canal)}
+                            className="relative w-[42px] h-[24px] rounded-full transition-colors flex-shrink-0"
+                            style={{ background: isOn ? cor : '#D1D5DB' }}>
+                            <span className="absolute top-[3px] w-[18px] h-[18px] rounded-full bg-white shadow transition-all"
+                              style={{ left: isOn ? '21px' : '3px' }} />
+                          </button>
+                        </div>
+                        {isOn && (
+                          <div className="px-3.5 pt-3 pb-3 rounded-b-2xl -mt-2"
+                            style={{
+                              background: `${cor}08`,
+                              borderLeft: `1.5px solid ${cor}`,
+                              borderRight: `1.5px solid ${cor}`,
+                              borderBottom: `1.5px solid ${cor}`,
+                            }}>
+                            <div className="flex items-center justify-between mb-1.5">
+                              <span className="text-[11px] text-mut">Frequência</span>
+                              <span className="text-[12px] font-bold" style={{ color: cor }}>{freq}× /sem</span>
+                            </div>
+                            <input type="range" min={1} max={7} value={freq}
+                              onChange={e => set('freqCanal', { ...form.freqCanal, [canal]: Number(e.target.value) })}
+                              className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
+                              style={{ accentColor: cor }} />
+                            <div className="flex justify-between text-[9.5px] text-soft mt-1">
+                              <span>1×</span><span>4×</span><span>7×</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <div>
+                <label className="label-sm">Notas para a IA</label>
+                <textarea value={form.notasLivres}
+                  onChange={e => set('notasLivres', e.target.value)}
+                  placeholder="Ex.: sempre mencionar furacões em junho, citar bairros de Orlando, evitar política…"
+                  rows={4} className="input-base resize-none" />
               </div>
             </div>
           )}
         </div>
 
-        {/* Rodapé com botão salvar */}
-        <div className="flex-shrink-0 px-4 pt-3 pb-8" style={{ borderTop: '1px solid #EDE6F5' }}>
-          <button onClick={salvar} disabled={salvando || !form.displayName.trim()}
-            className="w-full py-3.5 rounded-2xl text-white font-semibold text-[15px] transition active:scale-[.98] disabled:opacity-50"
-            style={{ background: 'linear-gradient(135deg,#8B2FC9,#F04E3E)' }}>
-            {salvando ? 'Salvando…' : perfil ? 'Atualizar cenário' : 'Criar cenário'}
-          </button>
+        {/* Footer navigation */}
+        <div className="flex-shrink-0 px-5 pt-3 pb-8 border-t flex gap-2"
+          style={{ borderColor: '#EDE6F5' }}>
+          {step > 0 && (
+            <button type="button" onClick={() => setStep(s => s - 1)}
+              className="flex-1 py-3.5 rounded-2xl font-semibold text-[14px] transition active:scale-[.98]"
+              style={{ background: '#F0E8FA', color: '#8B2FC9' }}>
+              ← Voltar
+            </button>
+          )}
+          {!isLast ? (
+            <button type="button" onClick={() => setStep(s => s + 1)}
+              disabled={!canNext}
+              className="flex-[2] py-3.5 rounded-2xl text-white font-semibold text-[14px] transition active:scale-[.98] disabled:opacity-40"
+              style={{ background: 'linear-gradient(135deg,#8B2FC9,#F04E3E)' }}>
+              Próximo →
+            </button>
+          ) : (
+            <button type="button" onClick={salvar}
+              disabled={salvando || !form.displayName.trim()}
+              className="flex-[2] py-3.5 rounded-2xl text-white font-semibold text-[14px] transition active:scale-[.98] disabled:opacity-40"
+              style={{ background: 'linear-gradient(135deg,#8B2FC9,#F04E3E)' }}>
+              {salvando ? 'Salvando…' : perfil ? 'Salvar alterações' : 'Criar cenário'}
+            </button>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-// ── Página principal /cenarios ────────────────────────────────────────────────
+// ─── Página /cenarios ──────────────────────────────────────────────────────────
 
 export default function Cenarios() {
-  const [perfis, setPerfis] = useState<Perfil[]>([]);
-  const [editor, setEditor] = useState<'novo' | Perfil | null>(null);
-  const [menuId, setMenuId] = useState<string | null>(null);
+  const [perfis, setPerfis]   = useState<Perfil[]>([]);
+  const [wizard, setWizard]   = useState<'novo' | Perfil | null>(null);
+  const [menuId, setMenuId]   = useState<string | null>(null);
+  const [toast,  setToast]    = useState<string | null>(null);
 
   async function carregar() {
     const r = await fetch('/api/perfis');
@@ -301,6 +508,7 @@ export default function Cenarios() {
       body: JSON.stringify({ id }),
     });
     setPerfis(prev => prev.map(p => ({ ...p, ativo: p.id === id })));
+    setMenuId(null);
   }
 
   async function togglePausado(id: string, pausado: boolean) {
@@ -323,20 +531,28 @@ export default function Cenarios() {
     setMenuId(null);
   }
 
-  async function duplicar(perfil: Perfil) {
+  async function duplicar(p: Perfil) {
     await fetch('/api/perfis', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        ...perfil,
-        id: undefined,
-        name: undefined,
-        displayName: `${perfil.displayName} (cópia)`,
-        ativo: false,
+        ...p, id: undefined, name: undefined,
+        displayName: `${p.displayName} (cópia)`, ativo: false,
       }),
     });
     await carregar();
     setMenuId(null);
+  }
+
+  async function toggleRadar(p: Perfil) {
+    const next = !p.radarAtivo;
+    await fetch('/api/perfis', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ perfilId: p.id, radarAtivo: next }),
+    });
+    setPerfis(prev => prev.map(x => x.id === p.id ? { ...x, radarAtivo: next } : x));
+    setToast(next ? 'Radar automático ativado ✓' : 'Radar automático desativado');
   }
 
   useEffect(() => {
@@ -348,18 +564,15 @@ export default function Cenarios() {
 
   return (
     <>
-      <main className="px-4 pb-10">
-        <header className="pt-6 pb-4 flex items-center gap-3">
-          <Link href="/" className="text-mut text-[22px] leading-none">‹</Link>
-          <div className="flex-1">
+      <main className="px-4 pb-32 lg:overflow-y-auto lg:h-full lg:pb-8">
+        <header className="pt-6 pb-4 flex items-center justify-between">
+          <div>
             <p className="text-xs text-soft">Gerenciar perfis</p>
             <h1 className="font-disp text-[23px] font-bold">Cenários</h1>
           </div>
-          <button
-            onClick={() => setEditor('novo')}
+          <button onClick={() => setWizard('novo')}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-[13px] font-semibold text-white transition active:scale-95"
-            style={{ background: 'linear-gradient(135deg,#8B2FC9,#F04E3E)' }}
-          >
+            style={{ background: 'linear-gradient(135deg,#8B2FC9,#F04E3E)' }}>
             + Novo
           </button>
         </header>
@@ -372,80 +585,80 @@ export default function Cenarios() {
           </div>
         )}
 
-        {perfis.map(p => {
-          const canais: string[] = JSON.parse(p.channelsActive || '[]');
+        {perfis.map((p, idx) => {
+          const canais: string[] = (() => {
+            try { return JSON.parse(p.channelsActive || '[]'); } catch { return []; }
+          })();
+          const freqLabel = parseFrequencia(p.frequencia, canais);
+          const avStyle = avatarStyle(p.displayName, p.avatarColor || AVATAR_COLORS[idx % AVATAR_COLORS.length]);
+
           return (
-            <div
-              key={p.id}
+            <div key={p.id}
               className="bg-white rounded-[20px] mb-3 overflow-hidden"
               style={{
                 boxShadow: '0 1px 3px rgba(23,38,44,.06),0 4px 14px rgba(23,38,44,.05)',
-                border: p.ativo ? `2px solid ${p.avatarColor}` : '2px solid transparent',
-                opacity: p.pausado ? 0.6 : 1,
+                border: p.ativo ? '2px solid #8B2FC9' : '2px solid transparent',
+                opacity: p.pausado ? 0.65 : 1,
               }}
             >
-              {/* Linha principal */}
-              <div className="flex items-center gap-3 px-4 py-3.5">
-                {/* Avatar */}
-                <div
-                  className="w-[46px] h-[46px] rounded-[14px] flex items-center justify-center text-white font-bold text-[16px] flex-shrink-0"
-                  style={{ background: p.avatarColor }}
-                >
+              {/* Main row */}
+              <div className="flex items-start gap-3 px-4 py-3.5">
+                <div className="w-[46px] h-[46px] rounded-[14px] flex items-center justify-center text-white font-bold text-[16px] flex-shrink-0"
+                  style={avStyle}>
                   {initials(p.displayName)}
                 </div>
 
-                {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 flex-wrap">
+                  <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
                     <p className="text-[15px] font-bold text-ink">{p.displayName}</p>
-                    {p.ativo && (
+                    {p.ativo && !p.pausado && (
                       <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                        style={{ background: `${p.avatarColor}20`, color: p.avatarColor }}>
+                        style={{ background: '#E1F5EE', color: '#0F6E56' }}>
                         Ativo
                       </span>
                     )}
                     {p.pausado && (
                       <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                        style={{ background: '#F0F4F5', color: '#7B6B8A' }}>
+                        style={{ background: '#FEF8DC', color: '#854F0B' }}>
                         Pausado
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                    <span className="text-[11.5px] text-mut capitalize">
-                      {OBJETIVO_LABEL[p.objetivo] ?? p.objetivo}
-                    </span>
-                    {canais.length > 0 && (
-                      <span className="text-[11.5px]">
-                        {canais.map(c => CANAL_ICON[c] ?? '').join(' ')}
+
+                  <p className="text-[11.5px] text-mut mb-1.5">
+                    {p.objetivo === 'leads' ? 'Geração de leads'
+                      : p.objetivo === 'autoridade' ? 'Autoridade'
+                      : 'Engajamento'}
+                  </p>
+
+                  <div className="flex items-center gap-1 flex-wrap">
+                    {canais.map(canal => (
+                      <span key={canal}
+                        className="text-[9.5px] font-bold px-2 py-0.5 rounded-full text-white"
+                        style={{ background: CANAL_COR[canal] ?? '#9CA3AF' }}>
+                        {CANAL_LABEL[canal] ?? canal}
                       </span>
-                    )}
-                    {p.frequencia && (
-                      <span className="text-[11px] text-soft">· {p.frequencia}</span>
+                    ))}
+                    {freqLabel && (
+                      <span className="text-[10.5px] text-soft ml-0.5">{freqLabel}</span>
                     )}
                   </div>
                 </div>
 
-                {/* Ações */}
                 <div className="flex items-center gap-1 flex-shrink-0">
-                  <button
-                    onClick={() => setEditor(p)}
+                  <button onClick={() => setWizard(p)}
                     className="text-[11.5px] font-semibold px-2.5 py-1.5 rounded-xl transition"
-                    style={{ background: '#F0F4F5', color: '#7B6B8A' }}
-                  >
+                    style={{ background: '#F0F4F5', color: '#7B6B8A' }}>
                     Editar
                   </button>
-                  {/* Menu ... */}
                   <div className="relative" onClick={e => e.stopPropagation()}>
-                    <button
-                      onClick={() => setMenuId(menuId === p.id ? null : p.id)}
-                      className="w-8 h-8 rounded-xl flex items-center justify-center text-mut font-bold text-[16px] transition"
-                      style={{ background: '#F0F4F5' }}
-                    >
+                    <button onClick={() => setMenuId(menuId === p.id ? null : p.id)}
+                      className="w-8 h-8 rounded-xl flex items-center justify-center text-mut font-bold text-[16px]"
+                      style={{ background: '#F0F4F5' }}>
                       ···
                     </button>
                     {menuId === p.id && (
-                      <div className="absolute right-0 top-full mt-1 w-[160px] bg-white rounded-2xl overflow-hidden z-20"
+                      <div className="absolute right-0 top-full mt-1 w-[168px] bg-white rounded-2xl overflow-hidden z-20"
                         style={{ boxShadow: '0 4px 20px rgba(23,38,44,.12)', border: '1px solid #EDE6F5' }}>
                         {!p.ativo && (
                           <button onClick={() => ativar(p.id)}
@@ -472,22 +685,16 @@ export default function Cenarios() {
                 </div>
               </div>
 
-              {/* Toggle radar */}
-              <div className="flex items-center justify-between px-4 py-2.5"
-                style={{ borderTop: '1px solid #F0F4F5', background: '#FAFCFC' }}>
-                <span className="text-[11.5px] text-mut">📡 Radar automático</span>
-                <button
-                  onClick={async () => {
-                    await fetch('/api/perfis', {
-                      method: 'PATCH',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ perfilId: p.id, radarAtivo: !p.radarAtivo }),
-                    });
-                    setPerfis(prev => prev.map(x => x.id === p.id ? { ...x, radarAtivo: !x.radarAtivo } : x));
-                  }}
+              {/* Radar toggle */}
+              <div className="flex items-center justify-between px-4 py-3"
+                style={{ borderTop: '1px solid #EDE6F5', background: '#FAFAFF' }}>
+                <div>
+                  <p className="text-[12px] font-semibold text-ink">Radar automático</p>
+                  <p className="text-[10.5px] text-mut">gera posts e envia para aprovação</p>
+                </div>
+                <button onClick={() => toggleRadar(p)}
                   className="relative w-[42px] h-[24px] rounded-full transition-colors flex-shrink-0"
-                  style={{ background: p.radarAtivo ? p.avatarColor : '#D4B8EF' }}
-                >
+                  style={{ background: p.radarAtivo ? '#8B2FC9' : '#D4B8EF' }}>
                   <span className="absolute top-[3px] w-[18px] h-[18px] rounded-full bg-white shadow transition-all"
                     style={{ left: p.radarAtivo ? '21px' : '3px' }} />
                 </button>
@@ -497,11 +704,17 @@ export default function Cenarios() {
         })}
       </main>
 
-      {editor && (
-        <EditorCenario
-          perfil={editor === 'novo' ? null : editor}
-          onClose={() => setEditor(null)}
-          onSalvo={() => { carregar(); setEditor(null); }}
+      {toast && <Toast msg={toast} onDone={() => setToast(null)} />}
+
+      {wizard && (
+        <Wizard
+          perfil={wizard === 'novo' ? null : wizard}
+          onClose={() => setWizard(null)}
+          onSalvo={() => {
+            carregar();
+            setWizard(null);
+            setToast(wizard === 'novo' ? 'Cenário criado! ✓' : 'Cenário atualizado ✓');
+          }}
         />
       )}
     </>
