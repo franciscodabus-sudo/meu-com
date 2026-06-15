@@ -3,10 +3,10 @@ import { db } from '@/lib/db';
 import { gerarPostDoRadar } from '@/lib/claude';
 import { buscarFotoPexels } from '@/lib/pexels';
 
-// POST /api/radar/gerar  { radarItemId }
+// POST /api/radar/gerar  { radarItemId, profileId? }
 export async function POST(req: Request) {
   try {
-    const { radarItemId } = await req.json();
+    const { radarItemId, profileId } = await req.json();
     if (!radarItemId) return NextResponse.json({ error: 'radarItemId obrigatório' }, { status: 400 });
 
     if (!process.env.ANTHROPIC_API_KEY) {
@@ -16,7 +16,15 @@ export async function POST(req: Request) {
     const item = await db.radarItem.findUnique({ where: { id: radarItemId } });
     if (!item) return NextResponse.json({ error: 'item não encontrado' }, { status: 404 });
 
-    const post = await gerarPostDoRadar(item);
+    // Use provided profileId or fall back to the item's own profileId or the active profile
+    let perfilId: string | null = profileId ?? item.profileId ?? null;
+    let perfil = perfilId ? await db.brandProfile.findUnique({ where: { id: perfilId } }) : null;
+    if (!perfil) {
+      perfil = await db.brandProfile.findFirst({ where: { ativo: true } });
+      perfilId = perfil?.id ?? null;
+    }
+
+    const post = await gerarPostDoRadar(item, perfil ?? undefined);
     const mediaUrl = await buscarFotoPexels(post.imageQuery ?? '');
 
     const VALID_CHANNELS = ['instagram', 'facebook', 'linkedin'];
@@ -32,6 +40,7 @@ export async function POST(req: Request) {
     const created = await db.post.create({
       data: {
         campaignId: campaign.id,
+        profileId: perfilId,
         channel, format: post.format, stage,
         title: post.title, caption: post.caption, hashtags,
         whyNow: post.whyNow, mediaUrl, status: 'pending'

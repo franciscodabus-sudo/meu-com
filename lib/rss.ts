@@ -26,10 +26,20 @@ const JUNK_PHRASES = [
   // navegação de site
   'contact us', 'connect with us', 'about us', 'rss feed', 'rss feeds',
   'browse rss', 'home ::', ':: home', 'newswire',
+  // vagas de emprego / recrutamento
+  ' jobs', 'careers', 'we are hiring', "we're hiring", 'is hiring',
+  'join our team', 'adjuster position', 'job opening', 'job opportunity',
+  'open position', 'now hiring', 'apply now', 'career opportunity',
+  'vacancy', 'vacancies', 'multiple locations', 'information for claimants',
+  'recovery services', 'early intervention services', 'gb - home',
+  'genesis.gallagherbassett', 'built on trust and committed',
 ];
 
 // Chaves técnicas tipo "Authentication.SignIn.HeadSignInHeader"
 const DOT_KEY_RE = /^[A-Z][a-zA-Z]+(\.[A-Z][a-zA-Z]+){2,}$/;
+
+// Vaga de emprego: "Cargo in Cidade, Estado | Empresa" ou "in Multiple Locations"
+const JOB_LISTING_RE = /\bin\s+(multiple\s+locations|[a-z\s]+,\s*[a-z]{2})\s*[|]/i;
 
 // Apenas nome próprio (1-3 palavras, todas com inicial maiúscula, sem verbos)
 const AUTHOR_NAME_RE = /^([A-Z][a-z]+\s){1,2}[A-Z][a-z]+$/;
@@ -59,6 +69,9 @@ export function isTituloLixo(title: string): boolean {
 
   // Frases de lixo conhecidas
   if (JUNK_PHRASES.some(p => lower.includes(p))) return true;
+
+  // Padrão de vaga de emprego: "Cargo in Cidade, Estado | Empresa"
+  if (JOB_LISTING_RE.test(t)) return true;
 
   // Começa com ponto, barra, parêntese — artefato de HTML
   if (/^[./()\[{]/.test(t)) return true;
@@ -96,6 +109,22 @@ export function googleNewsRssUrl(siteUrl: string): string {
   } catch {
     return '';
   }
+}
+
+// ── Google Alerts ─────────────────────────────────────────────────────────────
+
+export function isGoogleAlertsFeed(url: string): boolean {
+  return /google\.com\/alerts\/feeds\//i.test(url);
+}
+
+// "Google Alert - insurance florida" → "insurance florida"
+function alertsQueryFromTitle(title?: string): string {
+  if (!title) return '';
+  return title.replace(/^google\s+alerts?\s*[-–—]\s*/i, '').trim();
+}
+
+export function googleAlertsToNewsRss(query: string): string {
+  return `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=en-US&gl=US&ceid=US:en`;
 }
 
 // ── Leitores ─────────────────────────────────────────────────────────────────
@@ -148,6 +177,35 @@ type ColetaResult = {
 
 async function coletarFonte(url: string, kind: string, name: string): Promise<ColetaResult> {
   if (kind === 'rss') {
+    // Google Alerts → tenta extrair a query do título do feed e converter para Google News RSS
+    if (isGoogleAlertsFeed(url)) {
+      try {
+        const feed = await parser.parseURL(url);
+        const query = alertsQueryFromTitle(feed.title);
+        if (query) {
+          const gnUrl = googleAlertsToNewsRss(query);
+          try {
+            const entries = await lerFeedRSS(gnUrl);
+            if (entries.length > 0) {
+              return { entries, bloqueada: false, rssDescoberto: gnUrl, junkCount: 0, totalColetado: entries.length };
+            }
+          } catch { /* sem resultado no GN */ }
+        }
+        // Feed com itens (raro sem login)
+        if (feed.items.length > 0) {
+          const todos = feed.items.slice(0, 10).map(item => ({
+            title:      item.title ?? '(sem título)',
+            summary:    item.contentSnippet?.slice(0, 200),
+            sourceUrl:  item.link,
+            sourceName: name || feed.title,
+          }));
+          const limpos = todos.filter(e => !isTituloLixo(e.title));
+          return { entries: limpos, bloqueada: false, junkCount: todos.length - limpos.length, totalColetado: todos.length };
+        }
+      } catch { /* redirect para login do Google — ignora */ }
+      return { entries: [], bloqueada: false, junkCount: 0, totalColetado: 0 };
+    }
+
     try {
       const feed = await parser.parseURL(url);
       const todos = feed.items.slice(0, 10).map(item => ({
@@ -212,12 +270,42 @@ export type ResultadoTeste = {
   erro?: string;
   bloqueada?: boolean;
   googleNewsUrl?: string;
+  isGoogleAlerts?: boolean;
+  alertsQuery?: string;
+  suggestedNewsUrl?: string;
 };
 
 export async function testarFonte(url: string, kind: string, name: string): Promise<ResultadoTeste> {
   if (kind === 'instagram') {
     return { ok: false, count: 0, erro: 'Instagram não tem RSS nativo. Use rss.app para criar um feed do perfil e adicione como tipo RSS.' };
   }
+
+  // Detecta Google Alerts — exige autenticação Google sem login do usuário
+  if (isGoogleAlertsFeed(url)) {
+    let alertsQuery = '';
+    let suggestedNewsUrl = '';
+    try {
+      const feed = await parser.parseURL(url);
+      alertsQuery = alertsQueryFromTitle(feed.title);
+      suggestedNewsUrl = alertsQuery ? googleAlertsToNewsRss(alertsQuery) : '';
+      // Feed com itens (raro sem login)
+      if (feed.items.length > 0) {
+        const todos = feed.items.slice(0, 10).map(item => ({
+          title:      item.title ?? '(sem título)',
+          summary:    item.contentSnippet?.slice(0, 200),
+          sourceUrl:  item.link,
+          sourceName: name || feed.title,
+        }));
+        const limpos = todos.filter(e => !isTituloLixo(e.title));
+        return { ok: limpos.length > 0, count: limpos.length, isGoogleAlerts: true, alertsQuery, suggestedNewsUrl };
+      }
+    } catch { /* redirect para login → alertsQuery permanece vazio */ }
+    return {
+      ok: false, count: 0, isGoogleAlerts: true, alertsQuery, suggestedNewsUrl,
+      erro: 'Feed do Google Alerts exige login do Google.',
+    };
+  }
+
   try {
     const resultado = await coletarFonte(url, kind, name);
     if (resultado.bloqueada) {
@@ -255,17 +343,40 @@ export async function testarFonte(url: string, kind: string, name: string): Prom
 // ── lerRadar (chamado pelo agendador) ─────────────────────────────────────────
 // Retorna entradas limpas + atualiza avisos nas fontes com problemas
 
-export async function lerRadar(): Promise<RadarEntry[]> {
+export async function lerRadar(profileId?: string): Promise<RadarEntry[]> {
   const itens: RadarEntry[] = [];
   let fontes: { id: string; url: string; kind: string; name: string }[] = [];
 
   try {
-    fontes = await db.radarSource.findMany({ where: { active: true } });
+    const where: Record<string, unknown> = { active: true };
+    if (profileId) where.profileId = profileId;
+    fontes = await db.radarSource.findMany({ where });
   } catch { /* primeira run sem DB */ }
 
   for (const fonte of fontes) {
     try {
       const resultado = await coletarFonte(fonte.url, fonte.kind, fonte.name);
+
+      // Google Alerts → auto-converte para Google News RSS quando possível
+      if (isGoogleAlertsFeed(fonte.url)) {
+        if (resultado.rssDescoberto) {
+          await db.radarSource.update({
+            where: { id: fonte.id },
+            data: {
+              url: resultado.rssDescoberto,
+              kind: 'rss',
+              warning: '🔄 Convertido automaticamente para Google News RSS (Google Alerts exigia login)',
+            },
+          });
+          itens.push(...resultado.entries);
+        } else {
+          await db.radarSource.update({
+            where: { id: fonte.id },
+            data: { warning: '⚠️ Google Alerts exige login — converta para Google News nas Configurações' },
+          });
+        }
+        continue;
+      }
 
       // Detecta fonte problemática e salva aviso
       if (resultado.bloqueada) {

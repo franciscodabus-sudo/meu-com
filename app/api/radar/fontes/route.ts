@@ -1,23 +1,32 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
-export async function GET() {
-  const fontes = await db.radarSource.findMany({ orderBy: { createdAt: 'asc' } });
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const profileId = searchParams.get('profileId') ?? undefined;
+  const where = profileId ? { profileId } : {};
+  const fontes = await db.radarSource.findMany({ where, orderBy: { createdAt: 'asc' } });
   return NextResponse.json(fontes);
 }
 
 export async function POST(req: Request) {
   try {
-    const { url, kind, name } = await req.json() as { url: string; kind: string; name: string };
+    const { url, kind, name, profileId } = await req.json() as {
+      url: string; kind: string; name: string; profileId?: string;
+    };
     if (!url || !name) return NextResponse.json({ error: 'url e name obrigatórios' }, { status: 400 });
     const validos = ['rss', 'website', 'instagram'];
     if (!validos.includes(kind)) return NextResponse.json({ error: 'kind inválido' }, { status: 400 });
 
-    const fonte = await db.radarSource.upsert({
-      where: { url },
-      create: { url, kind: kind ?? 'rss', name, active: true },
-      update: { kind: kind ?? 'rss', name, active: true }
-    });
+    const existing = await db.radarSource.findFirst({ where: { url, profileId: profileId ?? null } });
+    const fonte = existing
+      ? await db.radarSource.update({
+          where: { id: existing.id },
+          data: { kind: kind ?? 'rss', name, active: true },
+        })
+      : await db.radarSource.create({
+          data: { url, kind: kind ?? 'rss', name, active: true, profileId: profileId ?? null },
+        });
     return NextResponse.json(fonte, { status: 201 });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Erro';

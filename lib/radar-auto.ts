@@ -80,29 +80,7 @@ export async function executarRadarAuto(): Promise<AutoResult> {
     return { novosItens: 0, postsGerados: 0, erros: ['ANTHROPIC_API_KEY não configurada'], rodarEm: null };
   }
 
-  const fontes = await db.radarSource.findMany({ where: { active: true } });
-  if (fontes.length === 0) {
-    return { novosItens: 0, postsGerados: 0, erros: ['Nenhuma fonte de radar ativa'], rodarEm: null };
-  }
-
-  // 1. Busca itens dos RSS
-  const itens = await lerRadar();
-
-  // 2. Salva apenas os novos (que passem no filtro de qualidade)
-  let novosItens = 0;
-  const novos: { id: string; title: string; summary: string | null; sourceName: string | null; sourceUrl: string | null }[] = [];
-
-  for (const item of itens) {
-    if (isTituloLixo(item.title)) continue;
-    const existe = await db.radarItem.findFirst({ where: { title: item.title } });
-    if (!existe) {
-      const criado = await db.radarItem.create({ data: { kind: 'noticia', ...item } });
-      novos.push(criado);
-      novosItens++;
-    }
-  }
-
-  // 3. Busca perfis com radarAtivo = true (fallback: perfil ativo)
+  // Perfis com radar ativo — cada um tem suas próprias fontes
   let perfisRadar = await db.brandProfile.findMany({
     where: { radarAtivo: true, pausado: false },
   });
@@ -111,17 +89,45 @@ export async function executarRadarAuto(): Promise<AutoResult> {
     if (ativo) perfisRadar = [ativo];
   }
 
+  if (perfisRadar.length === 0) {
+    return { novosItens: 0, postsGerados: 0, erros: ['Nenhum perfil ativo'], rodarEm: null };
+  }
+
   const maxPosts = parseInt(await getSetting('radarMaxPostsPerRun', '2'), 10);
   const horariosJson = await getSetting('publicacaoHorarios', '["09:00","14:00","19:00"]');
   const horariosConfig: string[] = JSON.parse(horariosJson);
+  let novosItens = 0;
   let postsGerados = 0;
 
-  // 4. Para cada item novo × cada perfil, avalia relevância ≥ 60 antes de gerar
-  for (const item of novos.slice(0, maxPosts)) {
-    for (const perfil of perfisRadar) {
+  // Para cada perfil: busca suas fontes, coleta itens, avalia, gera posts
+  for (const perfil of perfisRadar) {
+    const fontesDoPerfil = await db.radarSource.findMany({
+      where: { active: true, profileId: perfil.id },
+    });
+    if (fontesDoPerfil.length === 0) continue;
+
+    // 1. Coleta entradas das fontes deste perfil
+    const itens = await lerRadar(perfil.id);
+
+    // 2. Salva novos itens vinculados a este perfil
+    const novos: { id: string; title: string; summary: string | null; sourceName: string | null; sourceUrl: string | null }[] = [];
+    for (const item of itens) {
+      if (isTituloLixo(item.title)) continue;
+      const existe = await db.radarItem.findFirst({ where: { title: item.title, profileId: perfil.id } });
+      if (!existe) {
+        const criado = await db.radarItem.create({
+          data: { kind: 'noticia', ...item, profileId: perfil.id },
+        });
+        novos.push(criado);
+        novosItens++;
+      }
+    }
+
+    // 3. Para cada item novo: avalia relevância com DNA do perfil e gera post
+    for (const item of novos.slice(0, maxPosts)) {
       try {
         const relevancia = await avaliarRelevancia(item, perfil as BrandProfile);
-        if (relevancia < 60) continue; // não relevante para este perfil
+        if (relevancia < 60) continue;
 
         const post = await gerarPostDoRadar(item, perfil as BrandProfile);
         const mediaUrl = await buscarFotoPexels(post.imageQuery ?? '');
@@ -130,7 +136,6 @@ export async function executarRadarAuto(): Promise<AutoResult> {
         const stage    = VALID_STAGES.find(s => post.stage?.toLowerCase().includes(s)) ?? 'atrair';
         const hashtags = Array.isArray(post.hashtags) ? post.hashtags.join(' ') : (post.hashtags ?? '');
 
-        // Usa próximo slot de cadência como data sugerida (aguarda aprovação humana)
         const slotSugerido = proximoSlot(horariosConfig);
 
         const campaign = await db.campaign.create({

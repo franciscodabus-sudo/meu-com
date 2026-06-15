@@ -2,19 +2,26 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { lerRadar, isTituloLixo } from '@/lib/rss';
 
-// GET /api/radar — coleta, salva novos, devolve os não-deletados mais recentes
-export async function GET() {
-  const itens = await lerRadar();
+// GET /api/radar?profileId=xxx — coleta, salva novos, devolve os não-deletados mais recentes
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const profileId = searchParams.get('profileId') ?? undefined;
+
+  const itens = await lerRadar(profileId);
   for (const i of itens) {
     if (isTituloLixo(i.title)) continue;
-    // Ignora se já existe (mesmo deletado — não volta)
-    const existe = await db.radarItem.findFirst({ where: { title: i.title } });
+    const where = profileId
+      ? { title: i.title, profileId }
+      : { title: i.title };
+    const existe = await db.radarItem.findFirst({ where });
     if (!existe) {
-      await db.radarItem.create({ data: { kind: 'noticia', ...i } });
+      await db.radarItem.create({
+        data: { kind: 'noticia', ...i, profileId: profileId ?? null },
+      });
     }
   }
   const recentes = await db.radarItem.findMany({
-    where: { deletedAt: null },
+    where: { deletedAt: null, ...(profileId ? { profileId } : {}) },
     orderBy: { createdAt: 'desc' },
     take: 30,
   });
