@@ -64,7 +64,7 @@ export default function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] border-t grid grid-cols-5 px-1 pt-2 z-30 backdrop-blur-md"
+      className="lg:hidden fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] border-t grid grid-cols-5 px-1 pt-2 z-30 backdrop-blur-md"
       style={{
         background: 'rgba(253,248,255,0.94)',
         borderColor: '#EDE6F5',

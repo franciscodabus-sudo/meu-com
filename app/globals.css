@@ -7,6 +7,8 @@
   --brand-gradient: linear-gradient(135deg, #8B2FC9, #D63AA0, #F04E3E);
   --brand-gradient-v: linear-gradient(180deg, #8B2FC9, #D63AA0, #F04E3E);
   --sidebar-bg: linear-gradient(180deg, #1A0A2E 0%, #120720 100%);
+  --color-bg-tertiary: #F3F0F9;
+  --color-border-subtle: #EDE6F5;
 }
 
 body { @apply bg-fundo text-ink font-sans; }

@@ -1,6 +1,6 @@
 import './globals.css';
 import type { Metadata } from 'next';
-import BottomNav from '@/components/BottomNav';
+import AppShell from '@/components/AppShell';
 import Providers from '@/components/Providers';
 
 export const metadata: Metadata = {
@@ -11,10 +11,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
-      <body className="max-w-[430px] mx-auto min-h-screen pb-24" style={{ background: '#FDF8FF' }}>
+      <body className="bg-fundo text-ink font-sans antialiased">
         <Providers>
-          {children}
-          <BottomNav />
+          <AppShell>{children}</AppShell>
         </Providers>
       </body>
     </html>
