@@ -179,16 +179,13 @@ export default function PreviewModal({ post, onClose, onDone }: {
       />
     )}
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center"
+      className="fixed inset-0 z-50 flex items-center justify-center px-4"
       style={{ background: 'rgba(23,38,44,.5)' }}
       onClick={e => { if (e.target === e.currentTarget && fase !== 'enviando') onClose(); }}
     >
       <div
-        className="bg-fundo rounded-t-[26px] w-full max-w-[430px] max-h-[90vh] overflow-y-auto"
-        style={{ paddingBottom: 'calc(22px + env(safe-area-inset-bottom))' }}
+        className="bg-fundo rounded-[20px] w-full max-w-[480px] max-h-[85vh] overflow-y-auto pb-6"
       >
-        {/* Handle */}
-        <div className="w-[42px] h-[5px] bg-[#D4B8EF] rounded-full mx-auto mt-3 mb-4" />
 
         {/* Cabeçalho */}
         {(fase === 'preview' || fase === 'agendar') && (

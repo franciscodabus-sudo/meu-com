@@ -112,16 +112,13 @@ export default function ImagePicker({
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-end justify-center"
+      className="fixed inset-0 z-[60] flex items-center justify-center px-4"
       style={{ background: 'rgba(23,38,44,.55)' }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="bg-fundo rounded-t-[26px] w-full max-w-[430px] max-h-[88vh] flex flex-col"
-        style={{ paddingBottom: 'calc(16px + env(safe-area-inset-bottom))' }}
+        className="bg-fundo rounded-[20px] w-full max-w-[480px] max-h-[85vh] flex flex-col"
       >
-        {/* Handle */}
-        <div className="w-[42px] h-[5px] bg-[#D4B8EF] rounded-full mx-auto mt-3 mb-3 flex-shrink-0" />
 
         {/* Header */}
         <div className="flex items-center justify-between px-4 mb-3 flex-shrink-0">

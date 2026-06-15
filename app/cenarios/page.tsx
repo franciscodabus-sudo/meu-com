@@ -256,15 +256,15 @@ function Wizard({ perfil, onClose, onSalvo }: {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center lg:items-center"
+      className="fixed inset-0 z-50 flex items-center justify-center px-4"
       style={{ background: 'rgba(26,10,46,.55)' }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-fundo w-full max-w-lg flex flex-col rounded-t-[26px] lg:rounded-[24px]"
-        style={{ maxHeight: '94vh' }}>
+      <div className="bg-fundo w-full max-w-lg flex flex-col rounded-[20px]"
+        style={{ maxHeight: '90vh' }}>
 
         {/* Progress bar */}
-        <div className="h-1 rounded-t-[26px] lg:rounded-t-[24px] overflow-hidden flex-shrink-0">
+        <div className="h-1 rounded-t-[20px] overflow-hidden flex-shrink-0">
           <div className="h-full transition-all duration-300 ease-out"
             style={{ width: `${pct}%`, background: 'linear-gradient(90deg,#8B2FC9,#F04E3E)' }} />
         </div>

@@ -85,17 +85,13 @@ function ModalConectar({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center"
+      className="fixed inset-0 z-50 flex items-center justify-center px-4"
       style={{ background: 'rgba(23,38,44,.5)' }}
       onClick={e => { if (e.target === e.currentTarget) onFechar(); }}
     >
       <div
-        className="bg-fundo rounded-t-[26px] w-full max-w-[430px]"
-        style={{ paddingBottom: 'calc(24px + env(safe-area-inset-bottom))' }}
+        className="bg-fundo rounded-[20px] w-full max-w-[480px] max-h-[85vh] overflow-y-auto py-6"
       >
-        {/* Handle */}
-        <div className="w-[42px] h-[5px] bg-[#D4B8EF] rounded-full mx-auto mt-3 mb-4" />
-
         {/* Cabeçalho */}
         <div className="flex items-center justify-between px-4 mb-4">
           <h2 className="font-disp text-[17px] font-bold">Conectar conta</h2>
@@ -142,8 +138,8 @@ function ModalConectar({
             <div
               className="rounded-xl px-4 py-3 mb-3 text-[13px] font-semibold"
               style={{
-                background: feedbackVerificar.startsWith('✓') ? '#E6F4EE' : '#FEF2F2',
-                color:      feedbackVerificar.startsWith('✓') ? '#F04E3E' : '#B91C1C',
+                background: feedbackVerificar.startsWith('✓') ? '#E1F5EE' : '#FEF2F2',
+                color:      feedbackVerificar.startsWith('✓') ? '#0F6E56' : '#B91C1C',
               }}
             >
               {feedbackVerificar}
@@ -356,8 +352,8 @@ export default function Canais() {
                       <span
                         className="text-[11px] font-bold px-2.5 py-1 rounded-full flex-shrink-0"
                         style={{
-                          background: conta.status === 'connected' ? '#E6F4EE' : '#FEF2F2',
-                          color:      conta.status === 'connected' ? '#F04E3E' : '#DC2626',
+                          background: conta.status === 'connected' ? '#E1F5EE' : '#FEF2F2',
+                          color:      conta.status === 'connected' ? '#0F6E56' : '#DC2626',
                         }}
                       >
                         {conta.status === 'connected' ? '● Ativa' : '● Erro'}
