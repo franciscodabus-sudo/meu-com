@@ -503,9 +503,9 @@ function ConfirmDeleteModal({ perfil, onCancel, onConfirm }: {
         style={{ animation: 'scale-in .15s ease' }}>
         <p className="font-disp text-[18px] font-bold text-ink mb-2">Excluir cenário?</p>
         <p className="text-[13.5px] leading-relaxed mb-5" style={{ color: '#7B6B8A' }}>
-          Todos os posts associados a{' '}
+          O cenário{' '}
           <strong className="text-ink">"{perfil.displayName}"</strong>{' '}
-          serão desvinculados. Esta ação não pode ser desfeita.
+          será removido. Posts associados serão desvinculados. Ação irreversível.
         </p>
         <div className="flex gap-2">
           <button onClick={onCancel}
@@ -715,6 +715,14 @@ export default function Cenarios() {
                     style={{ background: '#F0F4F5', color: '#7B6B8A' }}>
                     Editar
                   </button>
+                  <button
+                    onClick={e => { e.stopPropagation(); pedirExclusao(p); }}
+                    className="w-8 h-8 rounded-xl flex items-center justify-center font-bold text-[18px] transition active:scale-95"
+                    style={{ background: '#FDE8E7', color: '#E24B4A' }}
+                    title="Excluir cenário"
+                  >
+                    —
+                  </button>
                   <div className="relative" onClick={e => e.stopPropagation()}>
                     <button onClick={() => setMenuId(menuId === p.id ? null : p.id)}
                       className="w-8 h-8 rounded-xl flex items-center justify-center text-mut font-bold text-[16px]"
@@ -737,11 +745,6 @@ export default function Cenarios() {
                         <button onClick={() => duplicar(p)}
                           className="w-full text-left px-4 py-2.5 text-[13px] hover:bg-[#FDF8FF] transition">
                           ⧉ Duplicar
-                        </button>
-                        <button onClick={() => pedirExclusao(p)}
-                          className="w-full text-left px-4 py-2.5 text-[13px] hover:bg-[#FDF8FF] transition"
-                          style={{ color: '#E24B4A' }}>
-                          🗑 Excluir
                         </button>
                       </div>
                     )}
