@@ -1,6 +1,7 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ImagePicker from '@/components/ImagePicker';
+import { proximoSlot, toDatetimeLocal, formatarSlot } from '@/lib/cadencia';
 
 export type PreviewPost = {
   id: string; channel: string; title: string; caption: string;
@@ -32,9 +33,6 @@ function IgMockup({ post }: { post: PreviewPost }) {
         <div className="relative p-5 text-white font-disp font-semibold text-[19px] leading-snug">
           {post.title}
         </div>
-        <span className="absolute bottom-[18px] left-5 text-[10.5px] text-white/75 font-bold tracking-[.08em] uppercase z-10">
-          @francisco.dabus
-        </span>
       </div>
       {/* Ações */}
       <div className="flex gap-3.5 px-3 pt-2 pb-1 items-center">
@@ -102,6 +100,19 @@ export default function PreviewModal({ post, onClose, onDone }: {
   const [mediaUrl, setMediaUrl] = useState(post.mediaUrl);
   const [corrigindo, setCorrigindo] = useState(false);
   const [mostrarPicker, setMostrarPicker] = useState(false);
+  const [slotSugerido, setSlotSugerido] = useState<Date | null>(null);
+
+  useEffect(() => {
+    fetch('/api/configuracoes')
+      .then(r => r.ok ? r.json() : null)
+      .then(cfg => {
+        if (!cfg?.publicacaoHorarios) return;
+        const horarios: string[] = JSON.parse(cfg.publicacaoHorarios);
+        const slot = proximoSlot(horarios);
+        if (slot) setSlotSugerido(slot);
+      })
+      .catch(() => {});
+  }, []);
 
   const temVerificar = caption.includes('[verificar]');
   const postAtual = { ...post, caption, mediaUrl };
@@ -268,9 +279,25 @@ export default function PreviewModal({ post, onClose, onDone }: {
           {/* ── AGENDAR ── */}
           {fase === 'agendar' && (
             <>
-              <p className="text-[13px] text-mut mb-4">
+              <p className="text-[13px] text-mut mb-3">
                 Escolha data e hora para publicar no <b className="text-ink">{post.channel}</b>.
               </p>
+
+              {slotSugerido && !dataHora && (
+                <button
+                  onClick={() => setDataHora(toDatetimeLocal(slotSugerido))}
+                  className="w-full flex items-center gap-2.5 px-4 py-3 rounded-2xl mb-3 text-left transition active:scale-95"
+                  style={{ background: '#F0E8FA', border: '1.5px solid #D4B8EF' }}
+                >
+                  <span className="text-[18px]">✦</span>
+                  <div>
+                    <p className="text-[12px] font-bold" style={{ color: '#8B2FC9' }}>Próximo slot sugerido</p>
+                    <p className="text-[13px] font-semibold text-ink">{formatarSlot(slotSugerido)}</p>
+                  </div>
+                  <span className="ml-auto text-[12px] font-semibold" style={{ color: '#8B2FC9' }}>Usar →</span>
+                </button>
+              )}
+
               <input
                 type="datetime-local"
                 min={minDataHora}
