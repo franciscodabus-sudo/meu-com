@@ -239,7 +239,7 @@ function ApprovalCard({ post, onAprovar, onSkip }: {
 
 // ─── Radar Pauta Card ──────────────────────────────────────────────────────────
 
-function RadarCard({ item, onGerar }: { item: RadarItem; onGerar: () => void }) {
+function RadarCard({ item, perfilNome, onGerar }: { item: RadarItem; perfilNome?: string; onGerar: () => void }) {
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
 
@@ -261,9 +261,12 @@ function RadarCard({ item, onGerar }: { item: RadarItem; onGerar: () => void }) 
         {item.summary && (
           <p className="text-[10.5px] text-mut mt-0.5 line-clamp-1">{item.summary}</p>
         )}
-        {item.sourceName && (
-          <p className="text-[10px] text-soft mt-0.5">{item.sourceName}</p>
-        )}
+        <p className="text-[10px] text-soft mt-0.5">
+          {item.sourceName}{item.sourceName && perfilNome ? ' · ' : ''}
+          {perfilNome && (
+            <span className="font-semibold" style={{ color: '#8B2FC9' }}>via Radar · {perfilNome}</span>
+          )}
+        </p>
       </div>
       <button onClick={handle} disabled={loading || done}
         className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold transition active:scale-95 disabled:opacity-60"
@@ -276,9 +279,10 @@ function RadarCard({ item, onGerar }: { item: RadarItem; onGerar: () => void }) 
 
 // ─── Column A ──────────────────────────────────────────────────────────────────
 
-function ColumnA({ posts, radarItems, onAprovar, onSkip, onGerarDoRadar, gerando }: {
+function ColumnA({ posts, radarItems, perfilNome, onAprovar, onSkip, onGerarDoRadar, gerando }: {
   posts: PendingPost[];
   radarItems: RadarItem[];
+  perfilNome?: string;
   onAprovar: (p: PendingPost) => void;
   onSkip: (id: string) => void;
   onGerarDoRadar: (id: string) => Promise<void>;
@@ -334,6 +338,7 @@ function ColumnA({ posts, radarItems, onAprovar, onSkip, onGerarDoRadar, gerando
             <RadarCard
               key={item.id}
               item={item}
+              perfilNome={perfilNome}
               onGerar={() => onGerarDoRadar(item.id)}
             />
           ))}
@@ -865,26 +870,32 @@ export default function Hoje() {
   const [previewPost, setPreviewPost] = useState<PendingPost | null>(null);
 
   const fetchData = useCallback(async () => {
-    const [postsR, radarR, agendaR, painelR, perfisR] = await Promise.allSettled([
+    // Fetch profiles + other data in parallel first
+    const [postsR, agendaR, painelR, perfisR] = await Promise.allSettled([
       fetch('/api/posts?status=pending').then(r => r.ok ? r.json() : []),
-      fetch('/api/radar').then(r => r.ok ? r.json() : []),
       fetch('/api/agenda').then(r => r.ok ? r.json() : null),
       fetch('/api/painel').then(r => r.ok ? r.json() : null),
       fetch('/api/perfis').then(r => r.ok ? r.json() : []),
     ]);
 
-    if (postsR.status === 'fulfilled') setPendingPosts(postsR.value);
-    if (radarR.status === 'fulfilled') setRadarItems((radarR.value as RadarItem[]).slice(0, 5));
-    if (agendaR.status === 'fulfilled' && agendaR.value?.campaigns?.[0]) {
-      setCampaign(agendaR.value.campaigns[0]);
-    }
-    if (painelR.status === 'fulfilled') setStats(painelR.value);
+    let activeProfileId: string | undefined;
     if (perfisR.status === 'fulfilled') {
       const lista = perfisR.value as Perfil[];
       setAllPerfis(lista);
       const ativo = lista.find(p => p.ativo);
-      if (ativo) setPerfil(ativo);
+      if (ativo) { setPerfil(ativo); activeProfileId = ativo.id; }
     }
+
+    if (postsR.status === 'fulfilled') setPendingPosts(postsR.value);
+    if (agendaR.status === 'fulfilled' && agendaR.value?.campaigns?.[0]) {
+      setCampaign(agendaR.value.campaigns[0]);
+    }
+    if (painelR.status === 'fulfilled') setStats(painelR.value);
+
+    // Fetch radar with the active profile's id so we get only relevant pautas
+    const radarUrl = activeProfileId ? `/api/radar?profileId=${activeProfileId}` : '/api/radar';
+    const radarData = await fetch(radarUrl).then(r => r.ok ? r.json() : []).catch(() => []);
+    setRadarItems((radarData as RadarItem[]).slice(0, 5));
   }, []);
 
   useEffect(() => {
@@ -938,7 +949,7 @@ export default function Hoje() {
     await fetch('/api/radar/gerar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ radarItemId: itemId }),
+      body: JSON.stringify({ radarItemId: itemId, profileId: perfil?.id }),
     });
     const novos = await fetch('/api/posts?status=pending').then(r => r.json());
     setPendingPosts(novos);
@@ -967,6 +978,7 @@ export default function Hoje() {
           <ColumnA
             posts={pendingPosts}
             radarItems={radarItems}
+            perfilNome={perfil?.displayName}
             onAprovar={p => setPreviewPost(p)}
             onSkip={skipPost}
             onGerarDoRadar={gerarDoRadar}

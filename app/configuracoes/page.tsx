@@ -11,7 +11,7 @@ type BrandPerfil = {
   descricao: string; publicoAlvo: string; tomDeVoz: string;
   idioma: string; contato: string; produtos: string;
   frequencia: string; objetivo: string; notasLivres: string;
-  ativo: boolean; radarAtivo: boolean;
+  ativo: boolean; pausado: boolean; radarAtivo: boolean;
 };
 
 // ─── tipos ───────────────────────────────────────────────────────────────────
@@ -34,7 +34,15 @@ type Config = {
   publicacaoPorSemana: string; // "3" | "5" | "7" | "14"
 };
 
-type TesteStatus = { ok: boolean; count: number; rssUrl?: string; erro?: string } | null;
+type TesteStatus = {
+  ok: boolean;
+  count: number;
+  rssUrl?: string;
+  erro?: string;
+  isGoogleAlerts?: boolean;
+  alertsQuery?: string;
+  suggestedNewsUrl?: string;
+} | null;
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -56,6 +64,7 @@ const MAX_POSTS_OPTS = ['1', '2', '3', '5'];
 
 function detectarKind(url: string): 'rss' | 'website' | 'instagram' {
   if (url.includes('instagram.com')) return 'instagram';
+  if (/google\.com\/alerts\/feeds/i.test(url)) return 'rss';
   if (/\/feed|\/rss|\.xml|\/atom/.test(url)) return 'rss';
   return 'website';
 }
@@ -161,6 +170,9 @@ export default function Configuracoes() {
   const [salvando, setSalvando] = useState(false);
   const [toast, setToast] = useState('');
 
+  // seletor de cenário para fontes
+  const [fontesProfileId, setFontesProfileId] = useState<string>('');
+
   // form nova fonte
   const [novaUrl,  setNovaUrl]  = useState('');
   const [novaName, setNovaName] = useState('');
@@ -177,8 +189,10 @@ export default function Configuracoes() {
 
   // ── carga inicial ──────────────────────────────────────────────────────────
 
-  async function carregarFontes() {
-    const r = await fetch('/api/radar/fontes');
+  async function carregarFontes(profileId?: string) {
+    const pid = profileId ?? fontesProfileId;
+    const qs = pid ? `?profileId=${pid}` : '';
+    const r = await fetch(`/api/radar/fontes${qs}`);
     if (r.ok) setFontes(await r.json());
   }
 
@@ -188,9 +202,8 @@ export default function Configuracoes() {
   }
 
   useEffect(() => {
-    carregarFontes();
     carregarConfig();
-    carregarPerfis();
+    carregarPerfis(); // carregarPerfis calls carregarFontes once it knows the active profile
   }, []);
 
   // ── fontes ─────────────────────────────────────────────────────────────────
@@ -214,8 +227,32 @@ export default function Configuracoes() {
     setTestando(null);
   }
 
+  async function converterAlerts() {
+    setTestando('novo');
+    setTesteResult(null);
+    const r = await fetch('/api/radar/fontes/testar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: novaUrl.trim(), kind: 'rss', name: novaName.trim() }),
+    });
+    const res: TesteStatus = await r.json();
+    setTestando(null);
+    if (res?.suggestedNewsUrl) {
+      setNovaUrl(res.suggestedNewsUrl);
+      setNovaKind('rss');
+      setTesteResult(null);
+      mostrarToast('URL convertida para Google News ✓');
+    } else {
+      setTesteResult(res);
+    }
+  }
+
   async function adicionarFonte() {
     if (!novaUrl.trim() || !novaName.trim()) return;
+    if (/google\.com\/alerts\/feeds/i.test(novaUrl)) {
+      setTesteResult({ ok: false, count: 0, isGoogleAlerts: true, erro: 'Converta para Google News antes de adicionar.' });
+      return;
+    }
     setAdicionando(true);
     // testa antes de salvar
     const tr = await fetch('/api/radar/fontes/testar', {
@@ -234,7 +271,7 @@ export default function Configuracoes() {
     const r = await fetch('/api/radar/fontes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: urlFinal, kind: kindFinal, name: novaName.trim() }),
+      body: JSON.stringify({ url: urlFinal, kind: kindFinal, name: novaName.trim(), profileId: fontesProfileId || undefined }),
     });
     if (r.ok) {
       setNovaUrl(''); setNovaName(''); setNovaKind('website'); setTesteResult(null);
@@ -283,7 +320,7 @@ export default function Configuracoes() {
     const r = await fetch('/api/radar/auto', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ rodar: true }),
+      body: JSON.stringify({ rodar: true, profileId: fontesProfileId || undefined }),
     });
     const d = await r.json();
     setSincronizando(false);
@@ -344,7 +381,7 @@ export default function Configuracoes() {
   }
 
   // ── perfis de marca ────────────────────────────────────────────────────────
-  const PERFIL_VAZIO: Omit<BrandPerfil, 'id' | 'ativo' | 'radarAtivo'> = {
+  const PERFIL_VAZIO: Omit<BrandPerfil, 'id' | 'ativo' | 'pausado' | 'radarAtivo'> = {
     name: '', displayName: '', descricao: '', publicoAlvo: '',
     tomDeVoz: '', idioma: 'pt-BR', contato: '',
     produtos: '', frequencia: '', objetivo: '', notasLivres: '',
@@ -358,7 +395,15 @@ export default function Configuracoes() {
 
   async function carregarPerfis() {
     const r = await fetch('/api/perfis');
-    if (r.ok) setPerfis(await r.json());
+    if (r.ok) {
+      const lista: BrandPerfil[] = await r.json();
+      setPerfis(lista);
+      const ativo = lista.find(p => p.ativo) ?? lista[0];
+      if (ativo && !fontesProfileId) {
+        setFontesProfileId(ativo.id);
+        await carregarFontes(ativo.id);
+      }
+    }
   }
 
   async function salvarPerfil() {
@@ -451,6 +496,32 @@ export default function Configuracoes() {
       {/* ── SEÇÃO 1: Fontes do Radar ─────────────────────────────────────── */}
       <SecHeader icon="📡" title="Fontes do Radar" count={`${ativas} ativa${ativas !== 1 ? 's' : ''} de ${fontes.length}` as unknown as number} />
 
+      {/* seletor de cenário */}
+      {perfis.length > 1 && (
+        <div className="mb-3">
+          <p className="text-[11px] font-semibold text-mut mb-1.5 px-0.5">Fontes do cenário:</p>
+          <div className="flex gap-1.5 flex-wrap">
+            {perfis.filter(p => !p.pausado).map(p => (
+              <button
+                key={p.id}
+                onClick={() => {
+                  setFontesProfileId(p.id);
+                  setTesteResult(null);
+                  carregarFontes(p.id);
+                }}
+                className="px-3 py-1.5 rounded-full text-[12px] font-semibold transition"
+                style={{
+                  background: fontesProfileId === p.id ? '#8B2FC9' : '#F0E8FA',
+                  color: fontesProfileId === p.id ? '#fff' : '#8B2FC9',
+                }}
+              >
+                {p.displayName}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* botão sync */}
       <button
         onClick={sincronizarTudo}
@@ -492,6 +563,22 @@ export default function Configuracoes() {
           className="w-full border border-[#E0E8EA] rounded-xl px-3 py-2.5 text-[13px] mb-2 outline-none focus:border-[#8B2FC9]"
         />
 
+        {/* aviso Google Alerts — detectado antes mesmo de testar */}
+        {/google\.com\/alerts\/feeds/i.test(novaUrl) && (
+          <div className="rounded-xl p-3 mb-2 text-[12px]" style={{ background: '#FFFBEB', color: '#92400E', borderLeft: '3px solid #F59E0B' }}>
+            <p className="font-semibold mb-0.5">Este feed exige login no Google.</p>
+            <p className="mb-2 leading-relaxed">Use o Google News com a mesma busca — funciona sem autenticação.</p>
+            <button
+              onClick={converterAlerts}
+              disabled={testando === 'novo'}
+              className="font-semibold px-3 py-1.5 rounded-lg text-[12px] transition active:scale-95 disabled:opacity-50"
+              style={{ background: '#F59E0B', color: '#fff' }}
+            >
+              {testando === 'novo' ? 'Convertendo…' : 'Converter para Google News →'}
+            </button>
+          </div>
+        )}
+
         {/* seletor de tipo */}
         <div className="flex gap-1.5 mb-3">
           {(['website', 'rss', 'instagram'] as const).map(k => (
@@ -520,15 +607,39 @@ export default function Configuracoes() {
         {/* resultado do teste */}
         {testeResult && (
           <div
-            className="rounded-xl px-3 py-2.5 mb-3 text-[12.5px] font-semibold"
+            className="rounded-xl px-3 py-2.5 mb-3 text-[12.5px]"
             style={{
-              background: testeResult.ok ? '#E6F4EE' : '#FEF2F2',
-              color: testeResult.ok ? '#F04E3E' : '#991B1B',
+              background: testeResult.ok ? '#E6F4EE' : testeResult.isGoogleAlerts ? '#FFFBEB' : '#FEF2F2',
+              color:      testeResult.ok ? '#166534' : testeResult.isGoogleAlerts ? '#92400E' : '#991B1B',
             }}
           >
-            {testeResult.ok
-              ? `✓ Sincronizada — ${testeResult.count} itens encontrados${testeResult.rssUrl ? ' (RSS detectado automaticamente)' : ''}`
-              : `✗ Erro: ${testeResult.erro}`}
+            {testeResult.ok ? (
+              <span className="font-semibold">
+                ✓ Sincronizada — {testeResult.count} itens encontrados
+                {testeResult.rssUrl ? ' (RSS detectado automaticamente)' : ''}
+              </span>
+            ) : testeResult.isGoogleAlerts ? (
+              <div>
+                <p className="font-semibold mb-1">Feed do Google Alerts exige login do Google.</p>
+                {testeResult.suggestedNewsUrl ? (
+                  <p className="leading-relaxed">
+                    Sugestão:{' '}
+                    <button
+                      onClick={() => { setNovaUrl(testeResult.suggestedNewsUrl!); setNovaKind('rss'); setTesteResult(null); }}
+                      className="underline font-semibold"
+                    >
+                      usar Google News — &quot;{testeResult.alertsQuery}&quot;
+                    </button>
+                  </p>
+                ) : (
+                  <p className="leading-relaxed">
+                    Não foi possível detectar o termo automaticamente. Busque o termo no Google News e cole o link RSS aqui.
+                  </p>
+                )}
+              </div>
+            ) : (
+              <span className="font-semibold">✗ Erro: {testeResult.erro}</span>
+            )}
           </div>
         )}
 
@@ -682,7 +793,7 @@ export default function Configuracoes() {
           <div className="flex items-center gap-2 mb-1">
             {p.ativo && (
               <span className="text-[10.5px] font-bold px-2 py-0.5 rounded-full"
-                style={{ background: '#F0E8FA', color: '#8B2FC9' }}>✓ Ativo</span>
+                style={{ background: '#E1F5EE', color: '#0F6E56' }}>✓ Ativo</span>
             )}
             {p.radarAtivo && (
               <span className="text-[10.5px] font-bold px-2 py-0.5 rounded-full"
@@ -819,14 +930,14 @@ export default function Configuracoes() {
             <div className="flex-1 min-w-0">
               <p className="text-[13.5px] font-semibold text-ink">{item.label}</p>
               <p className="text-[11.5px] mt-0.5"
-                style={{ color: item.configured ? '#F04E3E' : '#C97F16' }}>
+                style={{ color: item.configured ? '#0F6E56' : '#C97F16' }}>
                 {item.configured ? '✓ Configurada no .env' : '⚠ Faltando no .env'}
               </p>
             </div>
             <span
               className="text-[11px] font-bold px-2.5 py-1 rounded-full flex-shrink-0"
               style={item.configured
-                ? { background: '#E6F4EE', color: '#F04E3E' }
+                ? { background: '#E1F5EE', color: '#0F6E56' }
                 : { background: '#FBF1DE', color: '#C97F16' }}
             >
               {item.configured ? '✓ OK' : '✗'}

@@ -10,6 +10,8 @@ type RadarItem = {
   usedAt: string | null; createdAt: string;
 };
 
+type Perfil = { id: string; displayName: string; ativo: boolean; pausado: boolean };
+
 type AutoStatus = {
   lastAt: string;
   resultado: { novosItens: number; postsGerados: number; erros: string[] } | null;
@@ -159,6 +161,8 @@ function AutoRadar({ onPostsGerados }: { onPostsGerados: () => void }) {
 // ---------- componente principal ----------
 export default function Radar() {
   const [itens, setItens] = useState<RadarItem[]>([]);
+  const [perfis, setPerfis] = useState<Perfil[]>([]);
+  const [profileId, setProfileId] = useState<string>('');
   const [carregando, setCarregando] = useState(true);
   const [atualizando, setAtualizando] = useState(false);
   const [gerando, setGerando] = useState<string | null>(null);
@@ -167,11 +171,14 @@ export default function Radar() {
   const [erroGerar, setErroGerar] = useState<string | null>(null);
   const router = useRouter();
 
-  async function buscar(mostrarSpin = false) {
+  const perfilAtual = perfis.find(p => p.id === profileId);
+
+  async function buscar(pid?: string, mostrarSpin = false) {
     if (mostrarSpin) setAtualizando(true);
     else setCarregando(true);
     try {
-      const r = await fetch('/api/radar');
+      const qs = pid ? `?profileId=${pid}` : '';
+      const r = await fetch(`/api/radar${qs}`);
       if (r.ok) setItens(await r.json());
     } finally {
       setCarregando(false);
@@ -179,7 +186,18 @@ export default function Radar() {
     }
   }
 
-  useEffect(() => { buscar(); }, []);
+  useEffect(() => {
+    fetch('/api/perfis').then(r => r.ok ? r.json() : []).then((lista: Perfil[]) => {
+      setPerfis(lista);
+      const ativo = lista.find(p => p.ativo) ?? lista[0];
+      if (ativo) {
+        setProfileId(ativo.id);
+        buscar(ativo.id);
+      } else {
+        buscar();
+      }
+    });
+  }, []);
 
   async function deletarItem(id: string) {
     setDeletando(id);
@@ -203,7 +221,7 @@ export default function Radar() {
       const r = await fetch('/api/radar/gerar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ radarItemId: item.id })
+        body: JSON.stringify({ radarItemId: item.id, profileId: profileId || undefined })
       });
       const data = await r.json();
       if (!r.ok) {
@@ -224,29 +242,53 @@ export default function Radar() {
   return (
     <main className="px-4">
       {/* Header */}
-      <header className="pt-6 pb-4 flex items-center justify-between gap-2">
-        <div>
-          <p className="text-xs text-soft">Monitoramento em tempo real</p>
-          <h1 className="font-disp text-[23px] font-bold">Radar</h1>
+      <header className="pt-6 pb-4">
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <div>
+            <p className="text-xs text-soft">Monitoramento em tempo real</p>
+            <h1 className="font-disp text-[23px] font-bold">Radar</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => buscar(profileId || undefined, true)}
+              disabled={atualizando}
+              className="text-[13px] font-semibold px-3.5 py-1.5 rounded-full transition active:scale-95"
+              style={{ background: '#F0E8FA', color: '#8B2FC9' }}
+            >
+              {atualizando ? '…' : '↻ Atualizar'}
+            </button>
+            <Link
+              href="/configuracoes"
+              className="w-9 h-9 flex items-center justify-center rounded-full text-mut hover:text-brand transition"
+              style={{ background: '#F0F4F5' }}
+              title="Configurações"
+            >
+              ⚙️
+            </Link>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => buscar(true)}
-            disabled={atualizando}
-            className="text-[13px] font-semibold px-3.5 py-1.5 rounded-full transition active:scale-95"
-            style={{ background: '#F0E8FA', color: '#8B2FC9' }}
-          >
-            {atualizando ? '…' : '↻ Atualizar'}
-          </button>
-          <Link
-            href="/configuracoes"
-            className="w-9 h-9 flex items-center justify-center rounded-full text-mut hover:text-brand transition"
-            style={{ background: '#F0F4F5' }}
-            title="Configurações"
-          >
-            ⚙️
-          </Link>
-        </div>
+
+        {/* Seletor de cenário */}
+        {perfis.filter(p => !p.pausado).length > 1 && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[11.5px] text-mut font-medium flex-shrink-0">Exibindo pautas de:</span>
+            <div className="flex gap-1.5 flex-wrap">
+              {perfis.filter(p => !p.pausado).map(p => (
+                <button
+                  key={p.id}
+                  onClick={() => { setProfileId(p.id); buscar(p.id); }}
+                  className="px-3 py-1 rounded-full text-[12px] font-semibold transition"
+                  style={{
+                    background: profileId === p.id ? '#8B2FC9' : '#F0E8FA',
+                    color: profileId === p.id ? '#fff' : '#8B2FC9',
+                  }}
+                >
+                  {p.displayName}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Banner sucesso */}
@@ -277,7 +319,7 @@ export default function Radar() {
       )}
 
       {/* Automação */}
-      <AutoRadar onPostsGerados={() => { setSucesso('auto'); buscar(true); }} />
+      <AutoRadar onPostsGerados={() => { setSucesso('auto'); buscar(profileId || undefined, true); }} />
 
       {/* Loading */}
       {carregando && (
@@ -289,8 +331,10 @@ export default function Radar() {
         <div className="text-center text-mut py-12">
           <p className="text-4xl mb-2">📭</p>
           <p className="font-disp font-semibold text-ink">Nenhuma notícia encontrada</p>
-          <p className="text-[13px] mt-1 max-w-[260px] mx-auto">
-            Adicione fontes acima e toque em <b>Atualizar</b>.
+          <p className="text-[13px] mt-1 max-w-[280px] mx-auto">
+            {perfilAtual
+              ? <>Adicione fontes para <b>{perfilAtual.displayName}</b> em Configurações e toque em <b>Atualizar</b>.</>
+              : <>Adicione fontes em Configurações e toque em <b>Atualizar</b>.</>}
           </p>
         </div>
       )}
@@ -328,6 +372,12 @@ export default function Radar() {
                   <p className="text-[11.5px] text-soft mt-1.5">
                     {item.sourceName}{item.sourceName && ' · '}
                     {new Date(item.createdAt).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })}
+                    {perfilAtual && (
+                      <span className="ml-1.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                        style={{ background: '#F0E8FA', color: '#8B2FC9' }}>
+                        via Radar · {perfilAtual.displayName}
+                      </span>
+                    )}
                   </p>
                 </div>
               </div>
