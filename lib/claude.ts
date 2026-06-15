@@ -4,6 +4,41 @@ import { getSetting } from './radar-auto';
 
 const anthropic = new Anthropic();
 
+// ── Seleção inteligente de modelo ─────────────────────────────────────────────
+
+const MODELS = {
+  fast:     'claude-haiku-4-5-20251001',  // triagem — muitas chamadas, decisão simples
+  balanced: 'claude-sonnet-4-6',           // conteúdo padrão — equilíbrio custo/qualidade
+  powerful: 'claude-opus-4-6',             // brief e planejamento — máxima qualidade
+} as const;
+
+export type ModelTask =
+  | 'radar_filter'    // triagem de relevância — Haiku
+  | 'radar_post'      // gerar post a partir de notícia — Sonnet
+  | 'brief_post'      // gerar post a partir de brief — Opus
+  | 'campaign_plan'   // plano de campanha completo — Opus
+  | 'chat_cmo'        // responder pergunta no painel — Sonnet
+  | 'quality_check';  // verificar [verificar] e dados suspeitos — Haiku
+
+export function getModel(task: ModelTask): string {
+  const forced = process.env.FORCE_MODEL?.trim();
+  const auto = (): string => {
+    switch (task) {
+      case 'radar_filter':  return MODELS.fast;
+      case 'quality_check': return MODELS.fast;
+      case 'radar_post':    return MODELS.balanced;
+      case 'chat_cmo':      return MODELS.balanced;
+      case 'brief_post':    return MODELS.powerful;
+      case 'campaign_plan': return MODELS.powerful;
+      default:              return MODELS.balanced;
+    }
+  };
+  const model = forced || auto();
+  const tag = forced ? 'FORCE_MODEL' : task;
+  console.log(`🤖 IA [${tag}] → ${model}`);
+  return model;
+}
+
 // ── Perfil de marca ──────────────────────────────────────────────────────────
 
 export type BrandProfile = {
@@ -151,7 +186,7 @@ export async function gerarPostDoRadar(
 ): Promise<GeneratedPost> {
   const system = await getSystemPrompt(perfil);
   const msg = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: getModel('radar_post'),
     max_tokens: 1200,
     system,
     messages: [{
@@ -177,7 +212,7 @@ export async function gerarPostsDoBrief(
 ): Promise<GeneratedPost[]> {
   const system = await getSystemPrompt(perfil);
   const msg = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: getModel('brief_post'),
     max_tokens: 2500,
     system,
     messages: [{

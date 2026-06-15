@@ -1,7 +1,8 @@
 import { db } from './db';
 import { lerRadar, isTituloLixo } from './rss';
-import { gerarPostDoRadar, BrandProfile } from './claude';
+import { gerarPostDoRadar, getModel, BrandProfile } from './claude';
 import { buscarFotoPexels } from './pexels';
+import { proximoSlot } from './cadencia';
 import Anthropic from '@anthropic-ai/sdk';
 
 const VALID_CHANNELS = ['instagram', 'facebook', 'linkedin'];
@@ -35,7 +36,7 @@ async function avaliarRelevancia(
   try {
     const anthropic = new Anthropic();
     const msg = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001', // modelo rápido/barato para avaliação
+      model: getModel('radar_filter'),
       max_tokens: 50,
       messages: [{
         role: 'user',
@@ -48,6 +49,8 @@ ${perfil.objetivo ? `Objetivo: ${perfil.objetivo}` : ''}
 
 Notícia: "${item.title}"
 ${item.summary ? `Resumo: ${item.summary}` : ''}
+
+IMPORTANTE: Se a notícia for vaga de emprego, recrutamento, contratação, "we are hiring", "join our team", ou qualquer oportunidade de trabalho, retorne 0 obrigatoriamente.
 
 Relevância (0-100):`,
       }],
@@ -109,6 +112,8 @@ export async function executarRadarAuto(): Promise<AutoResult> {
   }
 
   const maxPosts = parseInt(await getSetting('radarMaxPostsPerRun', '2'), 10);
+  const horariosJson = await getSetting('publicacaoHorarios', '["09:00","14:00","19:00"]');
+  const horariosConfig: string[] = JSON.parse(horariosJson);
   let postsGerados = 0;
 
   // 4. Para cada item novo × cada perfil, avalia relevância ≥ 60 antes de gerar
@@ -125,6 +130,9 @@ export async function executarRadarAuto(): Promise<AutoResult> {
         const stage    = VALID_STAGES.find(s => post.stage?.toLowerCase().includes(s)) ?? 'atrair';
         const hashtags = Array.isArray(post.hashtags) ? post.hashtags.join(' ') : (post.hashtags ?? '');
 
+        // Usa próximo slot de cadência como data sugerida (aguarda aprovação humana)
+        const slotSugerido = proximoSlot(horariosConfig);
+
         const campaign = await db.campaign.create({
           data: {
             name:  `Radar: ${item.title.slice(0, 40)}`,
@@ -139,6 +147,7 @@ export async function executarRadarAuto(): Promise<AutoResult> {
             channel, format: post.format ?? 'post', stage,
             title: post.title, caption: post.caption, hashtags,
             whyNow: post.whyNow, mediaUrl, status: 'pending',
+            scheduledAt: slotSugerido ?? undefined,
           },
         });
 
