@@ -10,6 +10,10 @@
 - Radar: "Gerar post de pauta" → Sonnet → post pending na fila
 - Radar: deletar item → marca deletedAt permanente
 - Radar: Google Alerts detectados automaticamente → banner de aviso → botão "Converter para Google News"
+- Radar por cenário: cada cenário tem suas próprias fontes (RadarSource.profileId), suas próprias pautas (RadarItem.profileId), relevância avaliada com DNA do cenário ✓ (2026-06-15)
+- Configurações: seletor de cenário no topo das fontes do Radar — fontes e sincronização isoladas por cenário ✓ (2026-06-15)
+- Radar /radar: seletor de cenário no cabeçalho, badge "via Radar · [nome]" em cada pauta ✓ (2026-06-15)
+- Home ColumnA: pautas filtradas pelo cenário ativo, badge "via Radar · [nome]" nos cards ✓ (2026-06-15)
 - Cenários: criar/editar (wizard 4 passos), pausar, duplicar, trocar ativo
 - Cenários: botão "—" → modal confirmação → DELETE → fade-out
 - Studio: busca Pexels, upload de arquivos, banco de mídia salvos
