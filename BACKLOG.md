@@ -57,7 +57,7 @@
 - [ ] Cadastro/multiusuário + login com Google (OAuth real)
 - [ ] Arquitetura multi-tenant: workspaces isolados, Postgres, autenticação
 - [ ] Modo agência: gerencia N clientes, cada um com filas e contas próprias
-- [ ] Ayrshare Business — cada cenário com suas próprias contas de redes sociais (User Profiles). Permite Giselle ter IG/FB/LI dela separado do Francisco, tudo gerenciado na mesma plataforma. Custo: ~$300/mês no plano Business ou migrar para APIs nativas da Meta/LinkedIn.
+- [ ] CONTAS POR CENÁRIO — cada cenário com suas próprias contas de redes sociais independentes. Hoje todos os cenários compartilham as mesmas contas conectadas no Ayrshare. Solução: migrar para Ayrshare Business (User Profiles, ~$300/mês) OU APIs nativas Meta/LinkedIn onde cada cenário tem seu próprio token de acesso. Caso de uso: Francisco tem suas contas pessoais, Giselle tem as dela, Vip Insurance tem as da empresa — tudo gerenciado na mesma plataforma sem conflito. Pré-requisito para venda do produto como SaaS multi-cliente.
 - [ ] White-label OAuth de conexão de contas (Ayrshare Business user profiles)
 - [ ] Avaliar migração para APIs nativas Meta/LinkedIn para independência total
 - [ ] Planos e cobrança (Stripe): Free / Pro $20 / Business $50
