@@ -8,6 +8,7 @@
     "start": "next start",
     "db:push": "prisma db push",
     "db:seed": "tsx scripts/seed.ts",
+    "db:seed-admin": "tsx scripts/seed-admin.ts",
     "db:studio": "prisma studio"
   },
   "dependencies": {

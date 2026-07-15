@@ -1,37 +1,34 @@
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-
-const adminEmail = process.env.ADMIN_EMAIL ?? '';
-const adminPassword = process.env.ADMIN_PASSWORD ?? '';
+import bcrypt from 'bcryptjs';
+import { db } from '@/lib/db';
 
 const handler = NextAuth({
   secret: process.env.NEXTAUTH_SECRET,
   session: { strategy: 'jwt' },
-  pages: {
-    signIn: '/login',
-  },
+  pages: { signIn: '/login' },
   providers: [
     CredentialsProvider({
       name: 'credentials',
       credentials: {
-        email: { label: 'Email', type: 'email' },
+        email:  { label: 'Email', type: 'email' },
         password: { label: 'Senha', type: 'password' },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
-        if (
-          credentials.email.toLowerCase() === adminEmail.toLowerCase() &&
-          credentials.password === adminPassword
-        ) {
-          return { id: '1', email: adminEmail, name: 'Francisco Dabus' };
-        }
-        return null;
+        const usuario = await db.user.findUnique({
+          where: { email: credentials.email.toLowerCase() },
+        });
+        if (!usuario) return null;
+        const senhaValida = await bcrypt.compare(credentials.password, usuario.passwordHash);
+        if (!senhaValida) return null;
+        return { id: usuario.id, email: usuario.email, name: usuario.name ?? '' };
       },
     }),
   ],
   callbacks: {
     async jwt({ token, user }) {
-      if (user) token.email = user.email;
+      if (user) { token.id = user.id; token.email = user.email; }
       return token;
     },
     async session({ session, token }) {

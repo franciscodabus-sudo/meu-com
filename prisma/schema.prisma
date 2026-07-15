@@ -93,11 +93,12 @@ model Setting {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  role      String   @default("admin") // admin | viewer
-  createdAt DateTime @default(now())
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  role         String   @default("admin")
+  passwordHash String
+  createdAt    DateTime @default(now())
 }
 
 model AdSettings {
