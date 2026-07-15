@@ -148,7 +148,9 @@ model Article {
   // saída de cada agente (JSON)
   researchJson String?
   planJson     String?
+  copyJson     String?       // opções de título+gancho do Copywriter
   draftJson    String?
+  editJson     String?       // rascunho ajustado ao tom de voz pelo Editor
   qaJson       String?       // inclui retryCount + issues
 
   // campos desnormalizados para exibição rápida

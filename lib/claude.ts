@@ -22,7 +22,9 @@ export type ModelTask =
   | 'video_script'      // roteiro de vídeo curto — Opus
   | 'article_research'  // pesquisador com web search — Sonnet
   | 'article_plan'      // estrategista de artigo — Sonnet
+  | 'article_copy'      // copywriter de título e gancho — Sonnet
   | 'article_write'     // redator de artigo longo — Opus
+  | 'article_edit'      // editor de tom de voz — Sonnet
   | 'article_qa';       // revisor de artigo — Haiku
 
 export function getModel(task: ModelTask): string {
@@ -39,6 +41,8 @@ export function getModel(task: ModelTask): string {
       case 'article_write':     return MODELS.powerful;
       case 'article_research':  return MODELS.balanced;
       case 'article_plan':      return MODELS.balanced;
+      case 'article_copy':      return MODELS.balanced;
+      case 'article_edit':      return MODELS.balanced;
       case 'article_qa':        return MODELS.fast;
       default:                  return MODELS.balanced;
     }
@@ -275,6 +279,34 @@ function extrairJSON<T>(text: string): T {
   return JSON.parse(match[0]) as T;
 }
 
+// ── Skills fixas dos agentes ─────────────────────────────────────────────────
+
+const SKILL_COPYWRITER = `Você é o Copywriter de um pipeline de redação de conteúdo. Seu único trabalho é criar títulos e ganchos persuasivos.
+
+Recebe um brief, um outline e o perfil do público-alvo. Devolve 3 opções de título + gancho de abertura, cada uma usando uma técnica diferente:
+  opção A — curiosidade ou pergunta provocadora: instiga o leitor a continuar para descobrir a resposta
+  opção B — dado ou estatística surpreendente: abre com um número ou fato concreto que choca
+  opção C — urgência ou consequência concreta: mostra o que o leitor perde ao não agir
+
+REGRAS:
+- Títulos: máximo 60 caracteres, específicos e verificáveis
+- Ganchos: primeira frase do artigo — deve ser a frase mais forte de todo o texto
+- Proibido clickbait vago ("você não vai acreditar", "isso vai mudar sua vida")
+- Use a linguagem e o nível de formalidade do público-alvo declarado
+- Pontue cada opção de 1 a 10 em persuasão para o público declarado
+- Responda SOMENTE com JSON válido, sem markdown, sem explicações fora do JSON`;
+
+const SKILL_EDITOR = `Você é o Editor de tom de voz de um pipeline de redação de conteúdo. Você recebe um rascunho completo e o calibra para a voz da marca que irá publicá-lo.
+
+REGRAS ABSOLUTAS:
+- Preserve 100% dos fatos, dados, fontes, estrutura e ordem das seções
+- Altere SOMENTE vocabulário, nível de formalidade, ritmo e voz narrativa
+- Aplique rigorosamente as palavras a usar e a evitar definidas no perfil da marca
+- Não encurte, não expanda, não reordene, não adicione nem remova seções ou parágrafos
+- Se o perfil não tiver tom de voz definido, retorne o rascunho idêntico ao recebido
+- Retorne o rascunho completo no MESMO formato JSON recebido, sem campos extras ou faltando
+- Responda SOMENTE com JSON válido, sem markdown, sem explicações fora do JSON`;
+
 // ── Pipeline de Artigo ───────────────────────────────────────────────────────
 
 export type ResearchFact = {
@@ -313,6 +345,17 @@ export type ArticleQA = {
   issues: string[];
   retryCount: number;
   draftCorrigido?: ArticleDraft;
+};
+
+export type ArticleCopyOption = {
+  titulo: string;
+  gancho: string;
+  tecnica: string;
+  pontuacao: number;
+};
+
+export type ArticleCopy = {
+  opcoes: ArticleCopyOption[];
 };
 
 // 1. Pesquisador — Sonnet + web search (server-side tool Anthropic)
@@ -421,12 +464,62 @@ Responda SOMENTE com JSON válido (sem markdown):
   return extrairJSON<ArticlePlan>(txt.text);
 }
 
-// 3. Redator — Opus: escreve o artigo completo
+// 3. Copywriter — Sonnet: gera 3 opções de título + gancho para aprovação humana
+export async function copiarArtigo(
+  brief: string,
+  plan: ArticlePlan,
+  research: ArticleResearch,
+  perfil?: BrandProfile | null,
+): Promise<ArticleCopy> {
+  const perfilCtx = perfil ? [
+    perfil.publicoAlvo && `Público-alvo: ${perfil.publicoAlvo}`,
+    perfil.tomDeVoz    && `Tom de voz: ${perfil.tomDeVoz}`,
+    `Idioma: ${perfil.idioma}`,
+  ].filter(Boolean).join('\n') : 'Público-alvo: profissionais independentes em Orlando, FL.';
+
+  const msg = await anthropic.messages.create({
+    model: getModel('article_copy'),
+    max_tokens: 1500,
+    system: SKILL_COPYWRITER,
+    messages: [{
+      role: 'user',
+      content: `BRIEF: "${brief}"
+
+PERFIL:
+${perfilCtx}
+
+OUTLINE:
+Título sugerido: ${plan.titulo}
+Ângulo: ${plan.angulo}
+Seções: ${plan.outline.map(s => s.secao).join(', ')}
+
+FATOS DISPONÍVEIS (para embasar os ganchos):
+${research.fatos.slice(0, 3).map(f => `• ${f.fato}`).join('\n')}
+
+Gere 3 opções de título + gancho seguindo as técnicas A, B e C.
+
+Responda SOMENTE com JSON válido neste formato:
+{
+  "opcoes": [
+    { "titulo": "Título até 60 chars", "gancho": "Primeira frase do artigo", "tecnica": "curiosidade", "pontuacao": 8 },
+    { "titulo": "Título alternativo",  "gancho": "Outra primeira frase",     "tecnica": "dado",         "pontuacao": 7 },
+    { "titulo": "Terceiro título",     "gancho": "Terceira opção de gancho", "tecnica": "urgência",     "pontuacao": 9 }
+  ]
+}`,
+    }],
+  });
+  const txt = msg.content.find(b => b.type === 'text');
+  if (!txt || txt.type !== 'text') throw new Error('Copywriter não retornou texto');
+  return extrairJSON<ArticleCopy>(txt.text);
+}
+
+// 4. Redator — Opus: escreve o artigo completo
 export async function redigirArtigo(
   brief: string,
   plan: ArticlePlan,
   research: ArticleResearch,
   perfil?: BrandProfile | null,
+  ganchoEscolhido?: ArticleCopyOption | null,
 ): Promise<ArticleDraft> {
   const system = await getSystemPrompt(perfil);
   const fatosFormatados = research.fatos
@@ -442,7 +535,8 @@ export async function redigirArtigo(
       content: `Você é o Redator de um pipeline de redação de artigos. Escreva o artigo completo.
 
 BRIEF: "${brief}"
-TÍTULO: ${plan.titulo}
+TÍTULO: ${ganchoEscolhido?.titulo ?? plan.titulo}
+${ganchoEscolhido ? `GANCHO DE ABERTURA (use como primeira frase da primeira seção, sem modificar): "${ganchoEscolhido.gancho}"` : ''}
 SUBTÍTULO: ${plan.subtitulo}
 ÂNGULO: ${plan.angulo}
 PÚBLICO: ${plan.publicoAlvo}
@@ -463,7 +557,7 @@ REGRAS CRÍTICAS:
 
 Responda SOMENTE com JSON válido (sem markdown no envelope — o corpo das seções pode ter markdown):
 {
-  "titulo": "${plan.titulo}",
+  "titulo": "${ganchoEscolhido?.titulo ?? plan.titulo}",
   "subtitulo": "${plan.subtitulo}",
   "secoes": [
     {
@@ -563,6 +657,39 @@ OU se reprovado:
   }
 
   return resultado;
+}
+
+// 5. Editor — Sonnet: calibra tom de voz por marca, preserva fatos e estrutura
+export async function editarArtigo(
+  draft: ArticleDraft,
+  perfil?: BrandProfile | null,
+): Promise<ArticleDraft> {
+  if (!perfil?.tomDeVoz && !perfil?.tomEvitar) return draft;
+
+  const tomCtx = [
+    perfil.tomDeVoz   && `Tom a usar: ${perfil.tomDeVoz}`,
+    perfil.tomEvitar  && `Palavras/expressões a EVITAR: ${perfil.tomEvitar}`,
+    perfil.publicoAlvo && `Público-alvo: ${perfil.publicoAlvo}`,
+  ].filter(Boolean).join('\n');
+
+  const msg = await anthropic.messages.create({
+    model: getModel('article_edit'),
+    max_tokens: 6000,
+    system: SKILL_EDITOR,
+    messages: [{
+      role: 'user',
+      content: `PERFIL DE TOM DE VOZ:
+${tomCtx}
+
+RASCUNHO A EDITAR:
+${JSON.stringify(draft)}
+
+Retorne o rascunho ajustado ao tom de voz acima, no mesmo formato JSON. Nenhuma outra alteração.`,
+    }],
+  });
+  const txt = msg.content.find(b => b.type === 'text');
+  if (!txt || txt.type !== 'text') throw new Error('Editor não retornou texto');
+  return extrairJSON<ArticleDraft>(txt.text);
 }
 
 export async function gerarRoteiroDeVideo(
