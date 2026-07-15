@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { getModel } from '@/lib/claude';
 
+export const maxDuration = 30;
+
 const anthropic = new Anthropic();
 
 export async function POST(req: Request) {

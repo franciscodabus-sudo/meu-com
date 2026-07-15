@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { executarPipelineArtigo } from '@/lib/pipeline-artigo';
 
+export const maxDuration = 60;
+
 // POST /api/artigo  { brief, profileId? }
 export async function POST(req: Request) {
   try {

@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { continuarPipelineArtigo } from '@/lib/pipeline-artigo';
 
+export const maxDuration = 60;
+
 type Params = { params: { id: string } };
 
 // GET /api/artigo/:id — estado atual do artigo (usado para polling)

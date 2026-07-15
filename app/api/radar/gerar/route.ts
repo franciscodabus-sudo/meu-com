@@ -4,6 +4,8 @@ import { gerarPostDoRadar } from '@/lib/claude';
 import { buscarFotoPexels } from '@/lib/pexels';
 import { buscarCanaisAtivos } from '@/lib/ayrshare';
 
+export const maxDuration = 60;
+
 // POST /api/radar/gerar  { radarItemId, profileId?, canal? }
 export async function POST(req: Request) {
   try {

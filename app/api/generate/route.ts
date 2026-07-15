@@ -5,6 +5,8 @@ import { buscarFotoPexels } from '@/lib/pexels';
 import { buscarCanaisAtivos } from '@/lib/ayrshare';
 import { comporImagemPost } from '@/lib/composicao-imagem';
 
+export const maxDuration = 60;
+
 // ── Validação de lista numerada ────────────────────────────────────────────────
 // Conta itens numerados no caption (emoji keycap ou dígito+ponto/paren por linha).
 function contarItensNumerados(caption: string): number {
@@ -99,8 +101,8 @@ export async function POST(req: Request) {
       });
     }));
 
-    // Composição de imagem em paralelo (adiciona ~1-2s ao tempo de geração)
-    await Promise.all(criados.map(async (post) => {
+    // Composição de imagem — fire-and-forget para não bloquear a resposta
+    void Promise.all(criados.map(async (post) => {
       if (!post.mediaUrl) return;
       const composedUrl = await comporImagemPost({
         postId:   post.id,
@@ -112,7 +114,7 @@ export async function POST(req: Request) {
       if (composedUrl) {
         await db.post.update({ where: { id: post.id }, data: { mediaUrl: composedUrl } });
       }
-    }));
+    })).catch(() => {});
 
     return NextResponse.json({ campaignId: campaign.id, criados: posts.length });
   } catch (err: unknown) {

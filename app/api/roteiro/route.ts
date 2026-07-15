@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { gerarRoteiroDeVideo, getPerfilAtivo } from '@/lib/claude';
 import { db } from '@/lib/db';
 
+export const maxDuration = 60;
+
 // POST /api/roteiro  { brief, profileId? }
 export async function POST(req: Request) {
   try {
