@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { db } from '@/lib/db';
+import { getModel } from '@/lib/claude';
 
 const anthropic = new Anthropic();
 
@@ -15,7 +16,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'ANTHROPIC_API_KEY não configurada' }, { status: 500 });
 
   const msg = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: getModel('quality_check'),
     max_tokens: 700,
     system: `Você é um editor de conteúdo de marketing. Sua única função nesta chamada é reescrever a legenda removendo marcações "[verificar]". Substitua cada dado marcado com [verificar] por uma afirmação qualitativa segura — sem número específico, sem inventar estatística. Mantenha o tom, o CTA e o estilo original. Responda APENAS com o texto corrigido, sem explicação, sem marcação.`,
     messages: [{

@@ -2,6 +2,9 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import PreviewModal from '@/components/PreviewModal';
 import type { PreviewPost } from '@/components/PreviewModal';
+import RoteiroModal from '@/components/RoteiroModal';
+import ArtigoModal from '@/components/ArtigoModal';
+import type { VideoScript } from '@/lib/claude';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -20,6 +23,7 @@ type JourneyPost = {
   id: string; title: string; channel: string;
   stage: string | null; status: string;
   scheduledAt: string | null; publishedAt: string | null;
+  ayrshareId: string | null;
 };
 
 type Campaign = { id: string; name: string; posts: JourneyPost[] };
@@ -62,6 +66,7 @@ const CANAL_GRAD: Record<string, string> = {
   instagram: 'linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045)',
   facebook:  'linear-gradient(135deg,#1877F2,#0551B5)',
   linkedin:  'linear-gradient(135deg,#0A66C2,#084B8A)',
+  tiktok:    'linear-gradient(135deg,#010101,#69C9D0)',
 };
 const STAGE_COR: Record<string, { bg: string; text: string }> = {
   atrair:    { bg: '#FEF8DC', text: '#854F0B' },
@@ -119,9 +124,9 @@ function TopBar({ perfil, allPerfis, onSwitch }: {
           <div className="absolute top-full left-0 mt-1 w-[192px] bg-white rounded-2xl shadow-lg z-50 overflow-hidden"
             style={{ border: '1px solid var(--color-border-subtle)' }}>
             {allPerfis.map(p => {
-              const initials = p.displayName.split(/\s+/).map((w: string) => w[0]).slice(0, 2).join('').toUpperCase();
-              const isF = p.displayName.toLowerCase().includes('francisco');
-              const isV = p.displayName.toLowerCase().includes('vip');
+              const initials = (p.displayName ?? '').split(/\s+/).map((w: string) => w[0]).slice(0, 2).join('').toUpperCase();
+              const isF = (p.displayName ?? '').toLowerCase().includes('francisco');
+              const isV = (p.displayName ?? '').toLowerCase().includes('vip');
               const avatarBg = isF ? 'linear-gradient(135deg,#8B2FC9,#F04E3E)' : isV ? '#1D9E75' : (p.avatarColor || '#8B2FC9');
               return (
                 <button key={p.id}
@@ -149,17 +154,41 @@ function TopBar({ perfil, allPerfis, onSwitch }: {
 
 // ─── BriefBar ──────────────────────────────────────────────────────────────────
 
-function BriefBar({ onGerar, gerando }: {
-  onGerar: (b: string) => Promise<void>;
+const CANAL_LABEL: Record<string, string> = {
+  instagram: 'IG', facebook: 'FB', linkedin: 'LI', tiktok: 'TT',
+};
+
+function BriefBar({ onGerar, onRoteiro, onArtigo, gerando, canaisAtivos }: {
+  onGerar: (b: string, canal?: string) => Promise<void>;
+  onRoteiro: (b: string) => Promise<void>;
+  onArtigo: (b: string) => void;
   gerando: boolean;
+  canaisAtivos: string[];
 }) {
   const [brief, setBrief] = useState('');
+  const [gerandoRoteiro, setGerandoRoteiro] = useState(false);
+  const [canalPin, setCanalPin] = useState<string | null>(null);
 
   async function submit() {
     if (!brief.trim() || gerando) return;
     const b = brief;
     setBrief('');
-    await onGerar(b);
+    await onGerar(b, canalPin ?? undefined);
+  }
+
+  async function submitRoteiro() {
+    if (!brief.trim() || gerandoRoteiro) return;
+    const b = brief;
+    setBrief('');
+    setGerandoRoteiro(true);
+    try { await onRoteiro(b); } finally { setGerandoRoteiro(false); }
+  }
+
+  function submitArtigo() {
+    if (!brief.trim()) return;
+    const b = brief;
+    setBrief('');
+    onArtigo(b);
   }
 
   return (
@@ -174,16 +203,63 @@ function BriefBar({ onGerar, gerando }: {
           onKeyDown={e => e.key === 'Enter' && submit()}
           placeholder="Diga ao seu CMO o que você precisa…"
           className="flex-1 text-[13px] outline-none bg-transparent"
-          disabled={gerando}
+          disabled={gerando || gerandoRoteiro}
         />
+        {/* Botão artigo */}
+        <button
+          onClick={submitArtigo}
+          disabled={gerando || gerandoRoteiro || !brief.trim()}
+          title="Escrever artigo longo com pesquisa real"
+          className="flex-shrink-0 px-2.5 py-1.5 rounded-xl text-[13px] font-semibold transition disabled:opacity-40 active:scale-95"
+          style={{ background: '#E8F4FF', color: '#0A66C2' }}
+        >
+          📄
+        </button>
+        {/* Botão roteiro */}
+        <button
+          onClick={submitRoteiro}
+          disabled={gerandoRoteiro || gerando || !brief.trim()}
+          title="Gerar roteiro de vídeo"
+          className="flex-shrink-0 px-2.5 py-1.5 rounded-xl text-[13px] font-semibold transition disabled:opacity-40 active:scale-95"
+          style={{ background: '#F0E8FA', color: '#8B2FC9' }}
+        >
+          {gerandoRoteiro ? '…' : '🎬'}
+        </button>
+        {/* Botão posts */}
         <button
           onClick={submit}
-          disabled={gerando || !brief.trim()}
+          disabled={gerando || gerandoRoteiro || !brief.trim()}
           className="flex-shrink-0 px-3 py-1.5 rounded-xl text-white text-[13px] font-semibold transition disabled:opacity-40 active:scale-95"
           style={{ background: 'linear-gradient(135deg,#8B2FC9,#F04E3E)' }}
         >
           {gerando ? '…' : '→'}
         </button>
+      </div>
+      <div className="flex items-center gap-1.5 mt-1.5 justify-center">
+        <span className="text-[10px] text-soft">→ posts</span>
+        {canaisAtivos.length > 1 && (
+          <>
+            <span className="text-[10px] text-soft">·</span>
+            {canaisAtivos.map(c => (
+              <button key={c}
+                onClick={() => setCanalPin(prev => prev === c ? null : c)}
+                className="text-[9.5px] font-bold px-2 py-0.5 rounded-full transition"
+                style={{
+                  background: canalPin === c ? (CANAL_COR[c] ?? '#8B2FC9') : 'var(--color-bg-tertiary)',
+                  color: canalPin === c ? '#fff' : (CANAL_COR[c] ?? '#9CA3AF'),
+                }}>
+                {CANAL_LABEL[c] ?? c}
+              </button>
+            ))}
+            {canalPin && (
+              <button onClick={() => setCanalPin(null)}
+                className="text-[9px] text-soft underline leading-none">
+                auto
+              </button>
+            )}
+          </>
+        )}
+        <span className="text-[10px] text-soft">· <span className="font-semibold">🎬</span> roteiro · <span className="font-semibold">📄</span> artigo</span>
       </div>
     </div>
   );
@@ -213,9 +289,10 @@ function ApprovalCard({ post, onAprovar, onSkip }: {
               style={{ background: 'linear-gradient(180deg,rgba(10,10,20,.08) 20%,rgba(10,10,20,.78))' }} />
           </>
         )}
-        <span className="absolute top-2 left-2 text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase z-10"
+        <span className="absolute top-2 left-2 flex items-center gap-1 text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase z-10"
           style={{ background: 'rgba(0,0,0,.45)' }}>
-          {post.channel}
+          {post.format === 'story' && <span>📱</span>}
+          {post.channel}{post.format === 'story' ? ' · Story' : ''}
         </span>
         <p className="relative text-white font-semibold text-[12px] leading-snug line-clamp-2 z-10">
           {post.title}
@@ -239,13 +316,17 @@ function ApprovalCard({ post, onAprovar, onSkip }: {
 
 // ─── Radar Pauta Card ──────────────────────────────────────────────────────────
 
-function RadarCard({ item, perfilNome, onGerar }: { item: RadarItem; perfilNome?: string; onGerar: () => void }) {
+function RadarCard({ item, perfilNome, canaisAtivos, onGerar }: {
+  item: RadarItem; perfilNome?: string; canaisAtivos: string[];
+  onGerar: (canal: string) => void;
+}) {
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
+  const [canal, setCanal] = useState<string>(() => canaisAtivos[0] ?? 'instagram');
 
   async function handle() {
     setLoading(true);
-    await onGerar();
+    await onGerar(canal);
     setDone(true);
     setLoading(false);
   }
@@ -267,8 +348,22 @@ function RadarCard({ item, perfilNome, onGerar }: { item: RadarItem; perfilNome?
             <span className="font-semibold" style={{ color: '#8B2FC9' }}>via Radar · {perfilNome}</span>
           )}
         </p>
+        {canaisAtivos.length > 1 && !done && (
+          <div className="flex gap-1 mt-1.5">
+            {canaisAtivos.map(c => (
+              <button key={c} onClick={() => setCanal(c)}
+                className="text-[9px] font-bold px-1.5 py-0.5 rounded-full transition"
+                style={{
+                  background: canal === c ? (CANAL_COR[c] ?? '#8B2FC9') : 'var(--color-bg-tertiary)',
+                  color: canal === c ? '#fff' : (CANAL_COR[c] ?? '#9CA3AF'),
+                }}>
+                {CANAL_LABEL[c] ?? c}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
-      <button onClick={handle} disabled={loading || done}
+      <button onClick={handle} disabled={loading || done || canaisAtivos.length === 0}
         className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold transition active:scale-95 disabled:opacity-60"
         style={{ background: done ? '#E6F4EE' : '#F0E8FA', color: done ? '#17996B' : '#8B2FC9', fontSize: 14 }}>
         {loading ? '…' : done ? '✓' : '✦'}
@@ -279,13 +374,14 @@ function RadarCard({ item, perfilNome, onGerar }: { item: RadarItem; perfilNome?
 
 // ─── Column A ──────────────────────────────────────────────────────────────────
 
-function ColumnA({ posts, radarItems, perfilNome, onAprovar, onSkip, onGerarDoRadar, gerando }: {
+function ColumnA({ posts, radarItems, perfilNome, canaisAtivos, onAprovar, onSkip, onGerarDoRadar, gerando }: {
   posts: PendingPost[];
   radarItems: RadarItem[];
   perfilNome?: string;
+  canaisAtivos: string[];
   onAprovar: (p: PendingPost) => void;
   onSkip: (id: string) => void;
-  onGerarDoRadar: (id: string) => Promise<void>;
+  onGerarDoRadar: (id: string, canal: string) => Promise<void>;
   gerando: boolean;
 }) {
   return (
@@ -339,7 +435,8 @@ function ColumnA({ posts, radarItems, perfilNome, onAprovar, onSkip, onGerarDoRa
               key={item.id}
               item={item}
               perfilNome={perfilNome}
-              onGerar={() => onGerarDoRadar(item.id)}
+              canaisAtivos={canaisAtivos}
+              onGerar={(canal) => onGerarDoRadar(item.id, canal)}
             />
           ))}
         </>
@@ -350,7 +447,53 @@ function ColumnA({ posts, radarItems, perfilNome, onAprovar, onSkip, onGerarDoRa
 
 // ─── Column B ──────────────────────────────────────────────────────────────────
 
-function ColumnB({ campaign }: { campaign: Campaign | null }) {
+function ColumnB({ campaign, onDeletar }: {
+  campaign: Campaign | null;
+  onDeletar: (postId: string) => Promise<void>;
+}) {
+  const [verificando, setVerificando] = useState(false);
+  const [verificarMsg, setVerificarMsg] = useState<{ ok: boolean; texto: string } | null>(null);
+  const [deletandoId, setDeletandoId] = useState<string | null>(null);
+
+  async function verificarStatus() {
+    setVerificando(true);
+    setVerificarMsg(null);
+    try {
+      const r = await fetch('/api/posts/verificar', { method: 'POST' });
+      const data = await r.json() as { verificados?: number; fantasmas?: number; error?: string };
+      if (!r.ok) {
+        setVerificarMsg({ ok: false, texto: data.error ?? 'Erro ao verificar' });
+        return;
+      }
+      const v = data.verificados ?? 0;
+      const f = data.fantasmas ?? 0;
+      setVerificarMsg({
+        ok: true,
+        texto: v === 0
+          ? 'Nenhum post publicado para verificar'
+          : f > 0
+            ? `${f} removido${f > 1 ? 's' : ''} externamente (de ${v} verificado${v > 1 ? 's' : ''})`
+            : `${v} post${v > 1 ? 's' : ''} verificado${v > 1 ? 's' : ''} — tudo ok`,
+      });
+      if (f > 0) window.dispatchEvent(new Event('cenario-changed'));
+    } catch {
+      setVerificarMsg({ ok: false, texto: 'Falha de conexão' });
+    } finally {
+      setVerificando(false);
+      setTimeout(() => setVerificarMsg(null), 6000);
+    }
+  }
+
+  async function handleDeletar(postId: string, titulo: string) {
+    if (!window.confirm(`Apagar "${titulo}" das redes sociais?\n\nEsta ação não pode ser desfeita.`)) return;
+    setDeletandoId(postId);
+    try {
+      await onDeletar(postId);
+    } finally {
+      setDeletandoId(null);
+    }
+  }
+
   if (!campaign) {
     return (
       <div className="overflow-y-auto p-3.5 border-r no-scrollbar"
@@ -364,7 +507,7 @@ function ColumnB({ campaign }: { campaign: Campaign | null }) {
     );
   }
 
-  const posts = campaign.posts.filter(p => p.status !== 'skipped');
+  const posts = campaign.posts.filter(p => p.status !== 'skipped' && p.status !== 'deleted');
   const publicados = posts.filter(p => p.status === 'published').length;
   const pct = posts.length > 0 ? Math.round((publicados / posts.length) * 100) : 0;
 
@@ -373,7 +516,7 @@ function ColumnB({ campaign }: { campaign: Campaign | null }) {
       style={{ borderColor: 'var(--color-border-subtle)', background: 'var(--color-bg-tertiary)' }}>
 
       {/* Campaign header */}
-      <div className="rounded-2xl p-3.5 mb-4"
+      <div className="rounded-2xl p-3.5 mb-3"
         style={{ background: 'linear-gradient(135deg,#8B2FC9,#F04E3E)' }}>
         <p className="text-[9.5px] font-semibold mb-0.5" style={{ color: 'rgba(255,255,255,.75)' }}>
           Campanha ativa
@@ -387,11 +530,28 @@ function ColumnB({ campaign }: { campaign: Campaign | null }) {
         </p>
       </div>
 
+      {/* Verificar status */}
+      <div className="flex items-center gap-2 mb-3.5">
+        <button
+          onClick={verificarStatus}
+          disabled={verificando}
+          className="text-[10px] font-semibold px-2.5 py-1 rounded-full transition disabled:opacity-50"
+          style={{ background: '#F3F0F9', color: '#8B2FC9' }}>
+          {verificando ? 'Verificando…' : '↻ Verificar status'}
+        </button>
+        {verificarMsg && (
+          <span className="text-[10px] font-medium" style={{ color: verificarMsg.ok ? '#0F6E56' : '#F04E3E' }}>
+            {verificarMsg.texto}
+          </span>
+        )}
+      </div>
+
       {/* Journey timeline */}
       {posts.map((p, idx) => {
-        const isDone = p.status === 'published';
-        const isNow  = p.status === 'pending' || p.status === 'approved';
-        const isLast = idx === posts.length - 1;
+        const isDelExt = p.status === 'deleted_externally';
+        const isDone   = p.status === 'published';
+        const isNow    = p.status === 'pending' || p.status === 'approved';
+        const isLast   = idx === posts.length - 1;
         const dt = p.scheduledAt ?? p.publishedAt;
         const dtLabel = dt
           ? new Date(dt).toLocaleDateString('pt-BR', {
@@ -400,18 +560,18 @@ function ColumnB({ campaign }: { campaign: Campaign | null }) {
             })
           : null;
         const stage = STAGE_COR[p.stage ?? ''] ?? { bg: '#F3F0F9', text: '#9CA3AF' };
+        const dotBorder = isDelExt ? '#D1D5DB' : isDone ? '#1D9E75' : isNow ? '#F04E3E' : '#D1D5DB';
+        const dotBg     = isDelExt ? '#F9FAFB' : isDone ? '#1D9E75' : isNow ? 'rgba(240,78,62,.1)' : '#fff';
 
         return (
           <div key={p.id} className="flex gap-2">
             {/* Dot + line */}
             <div className="flex flex-col items-center flex-shrink-0">
               <div className="w-[14px] h-[14px] rounded-full border-2 flex items-center justify-center"
-                style={{
-                  borderColor: isDone ? '#1D9E75' : isNow ? '#F04E3E' : '#D1D5DB',
-                  background:  isDone ? '#1D9E75' : isNow ? 'rgba(240,78,62,.1)' : '#fff',
-                }}>
-                {isDone && <span className="text-[7px] text-white font-bold">✓</span>}
-                {isNow  && <span className="w-[4px] h-[4px] rounded-full block" style={{ background: '#F04E3E' }} />}
+                style={{ borderColor: dotBorder, background: dotBg }}>
+                {isDone   && <span className="text-[7px] text-white font-bold">✓</span>}
+                {isNow    && <span className="w-[4px] h-[4px] rounded-full block" style={{ background: '#F04E3E' }} />}
+                {isDelExt && <span className="text-[7px] font-bold" style={{ color: '#9CA3AF' }}>✕</span>}
               </div>
               {!isLast && <div className="w-px flex-1 mt-0.5" style={{ background: '#E5E7EB' }} />}
             </div>
@@ -419,22 +579,46 @@ function ColumnB({ campaign }: { campaign: Campaign | null }) {
             {/* Content */}
             <div className="flex-1 pb-3 pt-0.5 min-w-0">
               <div className="flex items-center gap-1 mb-0.5 flex-wrap">
-                {p.stage && (
+                {p.stage && !isDelExt && (
                   <span className="text-[8.5px] font-bold px-1.5 py-0.5 rounded-full"
                     style={{ background: stage.bg, color: stage.text }}>
                     {p.stage}
                   </span>
                 )}
-                <span className="text-[8.5px] font-semibold capitalize"
-                  style={{ color: CANAL_COR[p.channel] ?? '#9CA3AF' }}>
-                  {p.channel}
-                </span>
+                {isDelExt && (
+                  <span className="text-[8.5px] font-semibold px-1.5 py-0.5 rounded-full"
+                    style={{ background: '#FEF8DC', color: '#854F0B' }}>
+                    Removido no Instagram
+                  </span>
+                )}
+                {!isDelExt && (
+                  <span className="text-[8.5px] font-semibold capitalize"
+                    style={{ color: CANAL_COR[p.channel] ?? '#9CA3AF' }}>
+                    {p.channel}
+                  </span>
+                )}
               </div>
-              <p className="text-[12px] font-semibold text-ink leading-snug line-clamp-2">{p.title}</p>
+              <p className={`text-[12px] font-semibold leading-snug line-clamp-2 ${isDelExt ? 'line-through opacity-50' : 'text-ink'}`}>
+                {p.title}
+              </p>
               <p className="text-[10px] text-mut mt-0.5">
-                {dtLabel ?? (isNow ? 'Aguardando aprovação' : 'Sem data')}
+                {isDelExt
+                  ? 'Removido manualmente fora do app'
+                  : dtLabel ?? (isNow ? 'Aguardando aprovação' : 'Sem data')}
               </p>
             </div>
+
+            {/* Botão apagar — só para posts publicados com ayrshareId */}
+            {isDone && p.ayrshareId && (
+              <button
+                onClick={() => handleDeletar(p.id, p.title)}
+                disabled={deletandoId === p.id}
+                title="Apagar publicação"
+                className="flex-shrink-0 mt-1 w-[22px] h-[22px] rounded-full flex items-center justify-center transition hover:bg-red-50 disabled:opacity-40"
+                style={{ color: '#D1D5DB', fontSize: 11 }}>
+                {deletandoId === p.id ? '…' : '🗑'}
+              </button>
+            )}
           </div>
         );
       })}
@@ -865,17 +1049,21 @@ export default function Hoje() {
   const [stats, setStats] = useState<PanelStats | null>(null);
   const [perfil, setPerfil] = useState<Perfil | null>(null);
   const [allPerfis, setAllPerfis] = useState<Perfil[]>([]);
+  const [canaisAtivos, setCanaisAtivos] = useState<string[]>([]);
   const [gerando, setGerando] = useState(false);
   const [erroGerar, setErroGerar] = useState<string | null>(null);
   const [previewPost, setPreviewPost] = useState<PendingPost | null>(null);
+  const [roteiro, setRoteiro] = useState<VideoScript | null>(null);
+  const [artigoId, setArtigoId] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     // Fetch profiles + other data in parallel first
-    const [postsR, agendaR, painelR, perfisR] = await Promise.allSettled([
+    const [postsR, agendaR, painelR, perfisR, canaisR] = await Promise.allSettled([
       fetch('/api/posts?status=pending').then(r => r.ok ? r.json() : []),
       fetch('/api/agenda').then(r => r.ok ? r.json() : null),
       fetch('/api/painel').then(r => r.ok ? r.json() : null),
       fetch('/api/perfis').then(r => r.ok ? r.json() : []),
+      fetch('/api/canais/contas').then(r => r.ok ? r.json() : []),
     ]);
 
     let activeProfileId: string | undefined;
@@ -891,6 +1079,13 @@ export default function Hoje() {
       setCampaign(agendaR.value.campaigns[0]);
     }
     if (painelR.status === 'fulfilled') setStats(painelR.value);
+    if (canaisR.status === 'fulfilled' && Array.isArray(canaisR.value)) {
+      setCanaisAtivos(
+        (canaisR.value as { platform: string; status: string }[])
+          .filter(c => c.status === 'connected')
+          .map(c => c.platform)
+      );
+    }
 
     // Fetch radar with the active profile's id so we get only relevant pautas
     const radarUrl = activeProfileId ? `/api/radar?profileId=${activeProfileId}` : '/api/radar';
@@ -913,14 +1108,14 @@ export default function Hoje() {
     await fetchData();
   }
 
-  async function gerarPosts(brief: string) {
+  async function gerarPosts(brief: string, canal?: string) {
     setGerando(true);
     setErroGerar(null);
     try {
       const r = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ brief }),
+        body: JSON.stringify({ brief, canal }),
       });
       if (r.ok) {
         const novos = await fetch('/api/posts?status=pending').then(r => r.json());
@@ -945,11 +1140,77 @@ export default function Hoje() {
     setPendingPosts(ps => ps.filter(p => p.id !== id));
   }
 
-  async function gerarDoRadar(itemId: string) {
+  async function gerarRoteiro(brief: string) {
+    setErroGerar(null);
+    try {
+      const r = await fetch('/api/roteiro', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ brief, profileId: perfil?.id }),
+      });
+      if (r.ok) {
+        const data = await r.json();
+        setRoteiro(data);
+      } else {
+        const d = await r.json();
+        setErroGerar(d.error ?? 'Erro ao gerar roteiro.');
+      }
+    } catch {
+      setErroGerar('Falha de conexão.');
+    }
+  }
+
+  async function aprovarPost(post: PendingPost) {
+    await fetch('/api/posts', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: post.id, action: 'approve' }),
+    });
+    setPreviewPost(post);
+  }
+
+  async function criarPostDoRoteiro(legenda: string, hashtags: string, canal: string) {
+    const r = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ brief: legenda, canal, formato: 'reel' }),
+    });
+    if (r.ok) {
+      const novos = await fetch('/api/posts?status=pending').then(res => res.json());
+      setPendingPosts(novos);
+    }
+  }
+
+  function iniciarArtigo(brief: string) {
+    fetch('/api/artigo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ brief, profileId: perfil?.id }),
+    })
+      .then(r => r.json())
+      .then(d => { if (d.articleId) setArtigoId(d.articleId); })
+      .catch(() => setErroGerar('Erro ao iniciar pipeline de artigo.'));
+  }
+
+  async function deletarPublicado(postId: string) {
+    const r = await fetch('/api/posts', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: postId }),
+    });
+    if (r.ok) {
+      await fetchData();
+    } else {
+      const d = await r.json() as { error?: string };
+      setErroGerar(d.error ?? 'Erro ao apagar publicação.');
+    }
+  }
+
+  async function gerarDoRadar(itemId: string, canal: string) {
     await fetch('/api/radar/gerar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ radarItemId: itemId, profileId: perfil?.id }),
+      body: JSON.stringify({ radarItemId: itemId, profileId: perfil?.id, canal }),
     });
     const novos = await fetch('/api/posts?status=pending').then(r => r.json());
     setPendingPosts(novos);
@@ -968,7 +1229,7 @@ export default function Hoje() {
           </div>
         )}
 
-        <BriefBar onGerar={gerarPosts} gerando={gerando} />
+        <BriefBar onGerar={gerarPosts} onRoteiro={gerarRoteiro} onArtigo={iniciarArtigo} gerando={gerando} canaisAtivos={canaisAtivos} />
 
         {/* Content: grid on desktop, stack on mobile */}
         <div
@@ -979,12 +1240,13 @@ export default function Hoje() {
             posts={pendingPosts}
             radarItems={radarItems}
             perfilNome={perfil?.displayName}
-            onAprovar={p => setPreviewPost(p)}
+            canaisAtivos={canaisAtivos}
+            onAprovar={aprovarPost}
             onSkip={skipPost}
             onGerarDoRadar={gerarDoRadar}
             gerando={gerando}
           />
-          <ColumnB campaign={campaign} />
+          <ColumnB campaign={campaign} onDeletar={deletarPublicado} />
           <ColumnC stats={stats} />
         </div>
       </div>
@@ -996,6 +1258,25 @@ export default function Hoje() {
           onDone={id => {
             setPendingPosts(ps => ps.filter(p => p.id !== id));
             setPreviewPost(null);
+          }}
+        />
+      )}
+
+      {roteiro && (
+        <RoteiroModal
+          roteiro={roteiro}
+          onClose={() => setRoteiro(null)}
+          onCriarPost={criarPostDoRoteiro}
+        />
+      )}
+
+      {artigoId && (
+        <ArtigoModal
+          articleId={artigoId}
+          onClose={() => setArtigoId(null)}
+          onAprovado={() => {
+            setArtigoId(null);
+            fetch('/api/posts?status=pending').then(r => r.json()).then(setPendingPosts);
           }}
         />
       )}

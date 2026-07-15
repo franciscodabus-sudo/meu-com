@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
+import { getModel } from '@/lib/claude';
 
 const anthropic = new Anthropic();
 
@@ -22,7 +23,7 @@ Dados do usuário (Francisco Dabus, Orlando FL):
 `.trim();
 
   const msg = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: getModel('chat_cmo'),
     max_tokens: 400,
     system: `Você é o CMO pessoal de Francisco Dabus. Responda perguntas sobre os dados de marketing dele de forma direta, consultiva e em PT-BR. Use os dados fornecidos. Seja conciso (máximo 3 parágrafos). Nunca invente dados além dos fornecidos.`,
     messages: [{ role: 'user', content: `${contexto}\n\nPergunta: ${pergunta}` }]

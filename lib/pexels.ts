@@ -13,11 +13,17 @@ export async function buscarFotoPexels(query: string): Promise<string | null> {
   const key = process.env.PEXELS_API_KEY;
   if (!key) return null;
   try {
-    const url = `${BASE}/search?query=${encodeURIComponent(query)}&per_page=1&orientation=landscape`;
+    // Busca portrait para Instagram (4:5) — evita faixa preta do letterboxing landscape
+    const url = `${BASE}/search?query=${encodeURIComponent(query)}&per_page=1&orientation=portrait`;
     const res = await fetch(url, { headers: { Authorization: key } });
     if (!res.ok) return null;
     const data = await res.json() as { photos?: PexelsPhoto[] };
-    return data.photos?.[0]?.src?.large ?? null;
+    const largeUrl = data.photos?.[0]?.src?.large;
+    if (!largeUrl) return null;
+    // Constrói crop exato 4:5 (1080×1350) via parâmetros Imgix do CDN Pexels.
+    // Sem isso, h=650&w=940 força landscape e o Instagram preenche o resto com faixa preta.
+    const base = largeUrl.split('?')[0];
+    return `${base}?auto=compress&cs=tinysrgb&fit=crop&w=1080&h=1350`;
   } catch {
     return null;
   }

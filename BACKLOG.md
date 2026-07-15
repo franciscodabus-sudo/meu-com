@@ -52,9 +52,10 @@
 - [x] Cron real para radar automático — vercel.json + /api/cron/radar (a cada 6h)
 - [x] WhatsApp CTA — wa.me injetado no prompt quando número configurado
 - [ ] **PRÓXIMO**: Lógica "Impulsionar vencedores" — detectar 2× engajamento e criar anúncio via Meta API (bloqueado: requer META_ACCESS_TOKEN)
-- [ ] Instagram Stories (Ayrshare suporta, precisa endpoint separado + formato 'story' no schema)
-- [ ] Posts de vídeo (Reels/MP4): requer upload de vídeo + Ayrshare video endpoint
-- [ ] Canal TikTok (ícone e cor já no código; requer conta TikTok no Ayrshare)
+- [x] IDENTIDADE VISUAL NOS POSTS: composição automática com sharp+SVG — 3 paletas (petróleo/terracota/marinho) escolhidas por canal+stage, degradê de contraste, tag, título e CTA embutidos na imagem 4:5 — PreviewModal mostra arte composta sem double-gradient ✓ (2026-06-18)
+- [x] STORIES DO INSTAGRAM: format='story' suportado end-to-end — IA sugere quando usar (notícia urgente, bastidores, checklist), prévia 9:16 no PreviewModal, badge "📱 Story" na fila de aprovação, publicação via Ayrshare com instagramOptions.mediaFeedType='story' ✓ (2026-06-16)
+- [x] TIKTOK — POSTS E VÍDEOS: canal 'tiktok' ativo end-to-end — IA gera com tom casual/trending, mockup dark 9:16 no PreviewModal, badge tiktok na fila, publicação via Ayrshare ✓ (2026-06-16)
+- [x] GERAÇÃO DE ROTEIRO PARA VÍDEO: botão 🎬 no BriefBar → /api/roteiro → Opus gera título+gancho+roteiro por tempo+CTA+legenda+hashtags+música → RoteiroModal com copiar por seção, copiar tudo e "Criar post da legenda" ✓ (2026-06-16)
 - [ ] Múltiplas contas por usuário (seletor de conta ao aprovar)
 
 ## FASE 3 — Virar SaaS (multi-cliente)

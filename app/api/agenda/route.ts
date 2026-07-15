@@ -16,8 +16,8 @@ export async function GET(req: Request) {
     where.OR = [
       { scheduledAt: { gte: new Date(from), lte: new Date(to + 'T23:59:59Z') } },
       { publishedAt: { gte: new Date(from), lte: new Date(to + 'T23:59:59Z') } },
-      // pending/approved (no date yet) always show if no date filter or if looking at current week
-      ...((!from) ? [{ scheduledAt: null }] : [])
+      // posts sem data (pending/approved) aparecem sempre na seção "Sem data"
+      { scheduledAt: null, publishedAt: null, status: { in: ['pending', 'approved'] } },
     ];
   }
 
@@ -32,7 +32,7 @@ export async function GET(req: Request) {
     where: { status: 'ativa' },
     include: {
       posts: {
-        where: { status: { not: 'skipped' } },
+        where: { status: { notIn: ['skipped', 'deleted'] } },
         orderBy: { createdAt: 'asc' }
       }
     },

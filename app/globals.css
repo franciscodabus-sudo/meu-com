@@ -41,15 +41,37 @@ body { @apply bg-fundo text-ink font-sans; }
   .toggle-on { @apply bg-brand; }
 }
 
-/* ─── Safe-area bottom padding — clears fixed BottomNav on mobile ─────────── */
+/* ─── Scroll e safe-area para páginas com menu fixo ────────────────────────── */
+
+/* Mobile: clearance acima do BottomNav (altura real: ~70px + safe-area) */
 @media (max-width: 1023px) {
   main, [data-main], .page-content {
-    padding-bottom: max(80px, calc(64px + env(safe-area-inset-bottom)));
+    padding-bottom: max(120px, calc(80px + env(safe-area-inset-bottom)));
   }
 }
+
+/* Desktop: main precisa de flex:1 + overflow-y:auto para rolar dentro do
+   AppShell que usa overflow:hidden nos dois wrappers externos */
 @media (min-width: 1024px) {
   main, [data-main], .page-content {
-    padding-bottom: 24px;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-bottom: 40px;
+  }
+}
+
+/* Classe utilitária para wrappers que não usam <main> */
+.page-scroll {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: max(120px, calc(80px + env(safe-area-inset-bottom)));
+}
+@media (min-width: 1024px) {
+  .page-scroll {
+    flex: 1;
+    min-height: 0;
+    padding-bottom: 40px;
   }
 }
 

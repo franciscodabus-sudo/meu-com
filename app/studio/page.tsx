@@ -39,6 +39,7 @@ export default function Studio() {
   const [erroUpload, setErroUpload] = useState<string | null>(null);
   const [salvandoFoto, setSalvandoFoto] = useState<number | null>(null);
   const [salvoSucesso, setSalvoSucesso] = useState<number | null>(null);
+  const [fotoPreview, setFotoPreview] = useState<PexelsPhoto | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -108,6 +109,46 @@ export default function Studio() {
   }
 
   return (
+    <>
+    {/* Modal de preview de foto — permite verificar orientação antes de salvar */}
+    {fotoPreview && (
+      <div
+        className="fixed inset-0 z-50 flex flex-col items-center justify-center px-4"
+        style={{ background: 'rgba(10,10,20,.85)' }}
+        onClick={() => setFotoPreview(null)}
+      >
+        <div className="w-full max-w-[520px]" onClick={e => e.stopPropagation()}>
+          {/* Imagem grande para verificar orientação */}
+          <img
+            src={fotoPreview.src.large}
+            alt={fotoPreview.alt}
+            className="w-full rounded-2xl object-contain"
+            style={{ maxHeight: '65vh' }}
+          />
+          <div className="mt-3 flex items-center gap-2">
+            <div className="flex-1">
+              <p className="text-white text-[12px] leading-snug line-clamp-2">{fotoPreview.alt}</p>
+              <p className="text-white/50 text-[11px] mt-0.5">📷 {fotoPreview.photographer}</p>
+            </div>
+            <button
+              onClick={() => setFotoPreview(null)}
+              className="px-4 py-2.5 rounded-2xl text-[13px] font-semibold"
+              style={{ background: 'rgba(255,255,255,.12)', color: '#fff' }}
+            >
+              Fechar
+            </button>
+            <button
+              onClick={() => { salvarFoto(fotoPreview); setFotoPreview(null); }}
+              disabled={salvandoFoto === fotoPreview.id}
+              className="px-4 py-2.5 rounded-2xl text-white text-[13px] font-semibold disabled:opacity-60"
+              style={{ background: '#8B2FC9' }}
+            >
+              {salvoSucesso === fotoPreview.id ? '✓ Salvo' : '+ Salvar'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
     <main className="px-4">
       {/* Header */}
       <header className="pt-6 pb-4 flex items-center justify-between">
@@ -208,7 +249,8 @@ export default function Studio() {
                 const salvo = salvoSucesso === foto.id;
                 const salvando = salvandoFoto === foto.id;
                 return (
-                  <div key={foto.id} className="rounded-xl overflow-hidden relative">
+                  <div key={foto.id} className="rounded-xl overflow-hidden relative cursor-pointer"
+                    onClick={() => setFotoPreview(foto)}>
                     <img
                       src={foto.src.medium}
                       alt={foto.alt}
@@ -216,7 +258,7 @@ export default function Studio() {
                       loading="lazy"
                     />
                     <button
-                      onClick={() => salvarFoto(foto)}
+                      onClick={e => { e.stopPropagation(); salvarFoto(foto); }}
                       disabled={salvando || salvo}
                       className="absolute bottom-1.5 right-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full transition active:scale-95 disabled:opacity-70"
                       style={{
@@ -280,5 +322,6 @@ export default function Studio() {
         </>
       )}
     </main>
+    </>
   );
 }

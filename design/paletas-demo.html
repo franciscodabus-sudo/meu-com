@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Identidade Visual — Proposta de Composição · Meu CMO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      padding: 48px 32px 80px;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    .header {
+      max-width: 1200px;
+      margin: 0 auto 56px;
+    }
+    .header-tag {
+      display: inline-block;
+      background: rgba(139,47,201,0.18);
+      color: #c084fc;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 5px 12px;
+      border-radius: 100px;
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-size: 32px;
+      font-weight: 700;
+      line-height: 1.2;
+      letter-spacing: -0.5px;
+      margin-bottom: 10px;
+    }
+    .subtitle { font-size: 15px; color: #8b949e; max-width: 600px; line-height: 1.6; }
+
+    /* ── Grid de paletas ── */
+    .paletas {
+      max-width: 1200px;
+      margin: 0 auto 72px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+    }
+
+    .paleta-col { display: flex; flex-direction: column; gap: 20px; }
+
+    .paleta-name {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #8b949e;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .paleta-name::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--dot-color);
+    }
+
+    .card {
+      width: 100%;
+      aspect-ratio: 4/5;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 24px 64px rgba(0,0,0,0.5);
+      cursor: pointer;
+      transition: transform .2s ease, box-shadow .2s ease;
+    }
+    .card:hover {
+      transform: translateY(-4px) scale(1.01);
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.10), 0 32px 80px rgba(0,0,0,0.6);
+    }
+    .card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* ── Metadados da paleta ── */
+    .meta {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 12px;
+      line-height: 1.5;
+      gap: 12px;
+    }
+    .meta-row:last-child { border-bottom: none; }
+    .meta-key { color: #6e7681; flex-shrink: 0; width: 72px; }
+    .meta-val { color: #e6edf3; font-weight: 500; text-align: right; }
+    .swatch {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      vertical-align: middle;
+      margin-right: 4px;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+
+    /* ── Proposta técnica ── */
+    .proposta {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .proposta h2 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .proposta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+
+    .card-info {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px;
+      padding: 24px;
+    }
+    .card-info h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-info ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .card-info li {
+      font-size: 13px;
+      color: #8b949e;
+      line-height: 1.5;
+      display: flex;
+      gap: 8px;
+    }
+    .card-info li::before { content: '→'; color: #6e7681; flex-shrink: 0; }
+    .card-info li b { color: #e6edf3; font-weight: 600; }
+
+    .badge {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+    .badge-green { background: rgba(35,134,54,0.2); color: #3fb950; }
+    .badge-yellow { background: rgba(187,128,9,0.2); color: #d29922; }
+
+    .pipeline {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .pipeline h3 { font-size: 14px; font-weight: 600; margin-bottom: 16px; }
+    .pipeline-steps {
+      display: flex;
+      gap: 0;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .step {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 12px;
+      color: #e6edf3;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .step-arrow {
+      color: #3fb950;
+      font-size: 16px;
+      padding: 0 8px;
+    }
+
+    .nota {
+      background: rgba(187,128,9,0.1);
+      border: 1px solid rgba(187,128,9,0.25);
+      border-radius: 12px;
+      padding: 16px 20px;
+      font-size: 13px;
+      color: #d29922;
+      line-height: 1.6;
+    }
+    .nota b { color: #e3b341; }
+
+    .regra-paleta {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .regra-paleta h3 { font-size: 14px; font-weight: 600; margin-bottom: 16px; }
+    .regra-row {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 13px;
+    }
+    .regra-row:last-child { border-bottom: none; }
+    .regra-cond { color: #8b949e; flex: 1; line-height: 1.5; }
+    .regra-cond code {
+      background: rgba(255,255,255,0.08);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      color: #c9d1d9;
+    }
+    .regra-resultado {
+      flex-shrink: 0;
+      font-weight: 600;
+      color: #e6edf3;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .dot-paleta {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    @media (max-width: 900px) {
+      .paletas { grid-template-columns: 1fr; }
+      .proposta-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Header ── -->
+  <div class="header">
+    <div class="header-tag">Proposta de design · Para aprovação</div>
+    <h1>Identidade visual automática nos posts</h1>
+    <p class="subtitle">
+      Cada post gerado terá texto sobreposto diretamente na foto — paleta escolhida automaticamente pelo canal/stage.
+      Clique em qualquer imagem para ver em tamanho real (1080×1350px).
+    </p>
+  </div>
+
+  <!-- ── As 3 paletas ── -->
+  <div class="paletas">
+
+    <!-- PETRÓLEO -->
+    <div class="paleta-col">
+      <div class="paleta-name" style="--dot-color: #FF7A59">Petróleo — Institucional / Educar</div>
+      <a href="http://localhost:3000/test-paletas/paleta-petroleo.jpg" target="_blank">
+        <div class="card">
+          <img src="http://localhost:3000/test-paletas/paleta-petroleo.jpg" alt="Paleta Petróleo" loading="lazy">
+        </div>
+      </a>
+      <div class="meta">
+        <div class="meta-row">
+          <span class="meta-key">Fundo</span>
+          <span class="meta-val"><span class="swatch" style="background:#0B3D3A"></span>#0B3D3A</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-key">Texto</span>
+          <span class="meta-val"><span class="swatch" style="background:#fff"></span>Branco</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-key">Destaque</span>
+          <span class="meta-val"><span class="swatch" style="background:#FF7A59"></span>#FF7A59</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-key">Quando</span>
+          <span class="meta-val" style="text-align:right">IG/FB · atrair · educar</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-key">Tom</span>
+          <span class="meta-val" style="text-align:right">Consultivo, confiança</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TERRACOTA -->
+    <div class="paleta-col">
+      <div class="paleta-name" style="--dot-color: #D85A30">Terracota — Conexão / Pessoal</div>
+      <a href="http://localhost:3000/test-paletas/paleta-terracota.jpg" target="_blank">
+        <div class="card">
+          <img src="http://localhost:3000/test-paletas/paleta-terracota.jpg" alt="Paleta Terracota" loading="lazy">
+        </div>
+      </a>
+      <div class="meta">
+        <div class="meta-row">
+          <span class="meta-key">Fundo</span>
+          <span class="meta-val"><span class="swatch" style="background:#FAEEDA; border:1px solid rgba(255,255,255,.15)"></span>#FAEEDA</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-key">Texto</span>
+          <span class="meta-val"><span class="swatch" style="background:#412402"></span>#412402</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-key">Destaque</span>
+          <span class="meta-val"><span class="swatch" style="background:#D85A30"></span>#D85A30</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-key">Quando</span>
+          <span class="meta-val" style="text-align:right">IG · conectar · converter</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-key">Tom</span>
+          <span class="meta-val" style="text-align:right">Empático, próximo, pessoal</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- MARINHO -->
+    <div class="paleta-col">
+      <div class="paleta-name" style="--dot-color: #5b9bd5">Marinho — LinkedIn / Autoridade</div>
+      <a href="http://localhost:3000/test-paletas/paleta-marinho.jpg" target="_blank">
+        <div class="card">
+          <img src="http://localhost:3000/test-paletas/paleta-marinho.jpg" alt="Paleta Marinho" loading="lazy">
+        </div>
+      </a>
+      <div class="meta">
+        <div class="meta-row">
+          <span class="meta-key">Fundo</span>
+          <span class="meta-val"><span class="swatch" style="background:#042C53"></span>#042C53</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-key">Texto</span>
+          <span class="meta-val"><span class="swatch" style="background:#fff"></span>Branco</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-key">Destaque</span>
+          <span class="meta-val"><span class="swatch" style="background:#fff"></span>Branco sobre azul</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-key">Quando</span>
+          <span class="meta-val" style="text-align:right">LinkedIn · todos os stages</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-key">Tom</span>
+          <span class="meta-val" style="text-align:right">Autoridade, B2B, técnico</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Proposta técnica ── -->
+  <div class="proposta">
+    <h2>Proposta técnica — aguardando aprovação do visual para implementar</h2>
+
+    <!-- Regra de seleção automática -->
+    <div class="regra-paleta">
+      <h3>⚙️ Regra de seleção automática de paleta</h3>
+      <div class="regra-row">
+        <span class="regra-cond">Canal = <code>linkedin</code> (qualquer stage)</span>
+        <span class="regra-resultado"><span class="dot-paleta" style="background:#042C53"></span>Marinho</span>
+      </div>
+      <div class="regra-row">
+        <span class="regra-cond">Stage = <code>educar</code> ou <code>atrair</code> (IG/FB)</span>
+        <span class="regra-resultado"><span class="dot-paleta" style="background:#0B3D3A"></span>Petróleo</span>
+      </div>
+      <div class="regra-row">
+        <span class="regra-cond">Stage = <code>conectar</code> ou <code>converter</code> (IG/FB)</span>
+        <span class="regra-resultado"><span class="dot-paleta" style="background:#FF7A59"></span>Terracota</span>
+      </div>
+      <div class="regra-row">
+        <span class="regra-cond">Fallback (caso não encaixe em nenhuma regra)</span>
+        <span class="regra-resultado"><span class="dot-paleta" style="background:#0B3D3A"></span>Petróleo</span>
+      </div>
+    </div>
+
+    <!-- Pipeline -->
+    <div class="pipeline">
+      <h3>🔄 Pipeline de composição (por post)</h3>
+      <div class="pipeline-steps">
+        <div class="step">IA gera post</div>
+        <div class="step-arrow">→</div>
+        <div class="step">buscarFotoPexels (portrait)</div>
+        <div class="step-arrow">→</div>
+        <div class="step">sharp .rotate() + resize 4:5</div>
+        <div class="step-arrow">→</div>
+        <div class="step">determinarPaleta(canal, stage)</div>
+        <div class="step-arrow">→</div>
+        <div class="step">gerarSVGOverlay(tag, título, cta, paleta)</div>
+        <div class="step-arrow">→</div>
+        <div class="step">sharp .composite(svgBuffer)</div>
+        <div class="step-arrow">→</div>
+        <div class="step">salvar /uploads/post-ID.jpg</div>
+      </div>
+    </div>
+
+    <div class="proposta-grid">
+
+      <!-- Abordagem técnica -->
+      <div class="card-info">
+        <h3>🛠️ Biblioteca: sharp + SVG overlay <span class="badge badge-green">Recomendado</span></h3>
+        <ul>
+          <li><b>sharp já está instalado</b> — sem dependência nova</li>
+          <li><b>librsvg 2.62.3 + pango</b> já embutidos no sharp: renderiza texto, gradientes, formas, tudo via SVG</li>
+          <li>~<b>150–300ms</b> por composição (rápido, roda no request de geração)</li>
+          <li>Font Inter será <b>embarcada como arquivo em /public/fonts/</b> para rendering consistente em qualquer servidor</li>
+          <li>Texto longo: função JS quebra em linhas (no máximo 22 caracteres por linha), gera múltiplos &lt;text&gt; no SVG</li>
+        </ul>
+      </div>
+
+      <!-- Alternativas descartadas -->
+      <div class="card-info">
+        <h3>❌ Alternativas avaliadas e descartadas</h3>
+        <ul>
+          <li><b>node-canvas / @napi-rs/canvas</b> — Canvas API mais familiar, mas requer libcairo como dependência nativa: compilação frágil no deploy <span class="badge badge-yellow">Descartado</span></li>
+          <li><b>Puppeteer (headless Chrome)</b> — mais flexível mas +300MB, startup lento, overkill para composição simples <span class="badge badge-yellow">Descartado</span></li>
+          <li><b>Bannerbear / Cloudinary</b> — qualidade alta mas externa, paga, viola princípio de tela única <span class="badge badge-yellow">Descartado</span></li>
+        </ul>
+      </div>
+
+      <!-- Fundo: degradê vs filtro -->
+      <div class="card-info">
+        <h3>🌄 Foto de fundo: degradê de contraste <span class="badge badge-green">Recomendado</span></h3>
+        <ul>
+          <li><b>Degradê semi-transparente</b> (cor de fundo da paleta) sobre a metade inferior da foto — garante legibilidade em QUALQUER foto do Pexels</li>
+          <li>Pexels não tem parâmetro para "áreas limpas" — filtrar por cor dominante é impreciso e adiciona latência extra</li>
+          <li><b>Combinação aplicada:</b> já buscamos <code>orientation=portrait</code> (foto mais alta, mais espaço vertical), + degradê como seguro</li>
+          <li>As 3 imagens de demo acima usam este método — o resultado já mostra a qualidade final</li>
+        </ul>
+      </div>
+
+      <!-- Publicação: URL pública -->
+      <div class="card-info">
+        <h3>⚠️ Constraint de publicação</h3>
+        <ul>
+          <li>Imagens compostas são salvas em <code>/public/uploads/</code> como os uploads do usuário</li>
+          <li>Ayrshare precisa de uma <b>URL pública</b> para baixar a imagem — em produção com domínio público, funciona direto</li>
+          <li>Em dev local: a prévia aparece no card de aprovação, mas para publicar no Instagram precisa de túnel (ngrok) ou deploy</li>
+          <li>Rota de publicação receberá ajuste para montar URL completa usando <code>NEXTAUTH_URL</code></li>
+        </ul>
+      </div>
+
+    </div>
+
+    <div class="nota">
+      <b>Próximo passo:</b> aprove ou ajuste o visual das 3 paletas acima (cores, tamanho do texto, posicionamento do CTA, opacidade do degradê). Depois da sua confirmação, implemento o pipeline completo — as imagens compostas passarão a ser geradas automaticamente a cada post novo e exibidas no card de aprovação antes de publicar.
+    </div>
+  </div>
+
+</body>
+</html>

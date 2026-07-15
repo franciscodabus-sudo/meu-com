@@ -37,18 +37,26 @@ type PublishInput = {
   platforms: string[];
   mediaUrls?: string[];
   scheduleDate?: string; // ISO — omitir = publica agora
+  mediaFeedType?: 'story' | 'feed'; // Instagram: 'story' ou 'feed' (padrão)
 };
 
 export async function publicar(input: PublishInput) {
+  const body: Record<string, unknown> = {
+    post:        input.caption,
+    platforms:   input.platforms,
+    mediaUrls:   input.mediaUrls,
+    scheduleDate: input.scheduleDate,
+  };
+
+  // Stories do Instagram — Ayrshare usa instagramOptions.mediaFeedType
+  if (input.mediaFeedType === 'story' && input.platforms.includes('instagram')) {
+    body.instagramOptions = { mediaFeedType: 'story' };
+  }
+
   const res = await fetch(`${BASE}/post`, {
     method: 'POST',
     headers: headers(),
-    body: JSON.stringify({
-      post: input.caption,
-      platforms: input.platforms,
-      mediaUrls: input.mediaUrls,
-      scheduleDate: input.scheduleDate,
-    }),
+    body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(traduzirErro(await res.text()));
   return res.json();
@@ -76,36 +84,32 @@ export type PerfilCanal = {
 };
 
 export async function buscarCanais(): Promise<PerfilCanal[]> {
-  const res = await fetch(`${BASE}/user`, { headers: headers() });
+  const res = await fetch(`${BASE}/user`, {
+    headers: headers(),
+    cache: 'no-store',
+  });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json() as {
     activeSocialAccounts?: string[];
-    profiles?: Record<string, {
-      userDetails?: {
-        username?: string;
-        name?: string;
-        profilePicUrl?: string;
-        picture?: { url?: string };
-      };
-      errors?: { message: string }[];
-    }>;
+    displayNames?: {
+      platform: string;
+      username?: string;
+      displayName?: string;
+      userImage?: string;
+    }[];
   };
 
   const ativos = data.activeSocialAccounts ?? [];
-  const profiles = data.profiles ?? {};
+  const displayMap = new Map((data.displayNames ?? []).map(d => [d.platform, d]));
 
   return ativos.map(platform => {
-    const p = profiles[platform];
-    const det = p?.userDetails;
-    const avatarUrl = det?.profilePicUrl ?? det?.picture?.url;
-    const erros = p?.errors;
+    const d = displayMap.get(platform);
     return {
       platform,
-      username:    det?.username,
-      displayName: det?.name,
-      avatarUrl,
-      status: erros?.length ? 'error' : 'connected',
-      error:  erros?.length ? traduzirErro(erros[0].message) : undefined,
+      username:    d?.username,
+      displayName: d?.displayName,
+      avatarUrl:   d?.userImage || undefined,
+      status:      'connected',
     } satisfies PerfilCanal;
   });
 }
@@ -121,7 +125,10 @@ export type HistoricoItem = {
 };
 
 export async function buscarHistorico(limit = 20): Promise<HistoricoItem[]> {
-  const res = await fetch(`${BASE}/post/history?limit=${limit}`, { headers: headers() });
+  const res = await fetch(`${BASE}/post/history?limit=${limit}`, {
+    headers: headers(),
+    cache: 'no-store',
+  });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json() as {
     history?: {
@@ -145,6 +152,38 @@ export async function buscarHistorico(limit = 20): Promise<HistoricoItem[]> {
       error:    s.errors ? traduzirErro(s.errors) : undefined,
     })),
   }));
+}
+
+// ── canais ativos (fonte de verdade para geração de posts) ────────────────────
+// Retorna plataformas conectadas. null = chave não configurada ou erro de rede → sem restrição.
+// [] = chave válida mas nenhum canal conectado → bloquear geração.
+export async function buscarCanaisAtivos(): Promise<string[] | null> {
+  if (!process.env.AYRSHARE_API_KEY) return null;
+  try {
+    const contas = await buscarCanais();
+    return contas.filter(c => c.status === 'connected').map(c => c.platform);
+  } catch {
+    return null; // falha de rede → não bloquear geração
+  }
+}
+
+// ── verificação de existência de post ──────────────────────────────────────────
+// Retorna 'deletado' se o post não existe mais no Ayrshare,
+// 'existe' se ainda está lá, 'incerto' em caso de erro de rede/auth.
+export async function verificarStatusPost(id: string): Promise<'existe' | 'deletado' | 'incerto'> {
+  try {
+    const res = await fetch(`${BASE}/post?id=${encodeURIComponent(id)}`, {
+      headers: headers(),
+      cache: 'no-store',
+    });
+    if (res.status === 400 || res.status === 404) return 'deletado';
+    if (!res.ok) return 'incerto';
+    const data = await res.json() as Record<string, unknown>;
+    if (data?.status === 'error') return 'deletado';
+    return 'existe';
+  } catch {
+    return 'incerto';
+  }
 }
 
 // ── painel de gerenciamento de contas ─────────────────────────────────────────

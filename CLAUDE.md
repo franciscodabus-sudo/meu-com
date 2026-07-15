@@ -24,6 +24,17 @@ npm install && npx prisma db push && npm run db:seed && npm run dev
 - Nunca publicar sem post.status === "approved" | "scheduled"
 - Respostas da IA sempre em JSON validado; nunca inventar estatística (usar [verificar])
 
+## Seleção de modelo de IA
+Usar sempre `getModel(task)` exportada de `lib/claude.ts`. **Nunca hardcodar nome de modelo em outros arquivos.**
+- `radar_filter` → Haiku (triagem, muitas chamadas, decisão simples)
+- `quality_check` → Haiku (remover [verificar], edição leve)
+- `radar_post`   → Sonnet (gerar post de notícia, equilíbrio custo/qualidade)
+- `chat_cmo`     → Sonnet (responder pergunta no painel)
+- `brief_post`   → Opus (gerar posts do brief do usuário, máxima qualidade)
+- `campaign_plan`→ Opus (plano de campanha completo)
+- Para qualquer nova chamada de IA, adicionar o tipo em `ModelTask` e usar `getModel()`.
+- `FORCE_MODEL` no `.env` sobrescreve tudo (útil para testes de custo).
+
 ## Regras de qualidade
 - Ao final de qualquer mudança, SEMPRE verificar que http://localhost:3000 carrega sem erro (HTTP 200, sem crash no terminal) antes de declarar a tarefa concluída.
 - Todo container com scroll deve ter padding-bottom suficiente para compensar menus fixos. Mobile: min 80px. Desktop: min 24px. Usar sempre calc() e env(safe-area-inset-bottom) para iPhones. O globals.css já tem a regra global para `main` e `[data-main]`; páginas sem `<main>` devem adicionar `pb-28 lg:pb-0` ao wrapper mais externo.

@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { publicar } from '@/lib/ayrshare';
+import { publicar, buscarCanais } from '@/lib/ayrshare';
+
+const CANAL_LABEL: Record<string, string> = {
+  instagram: 'Instagram', facebook: 'Facebook',
+  linkedin: 'LinkedIn', tiktok: 'TikTok',
+};
 
 // POST /api/publish  { postId, agora?: boolean, scheduleDate?: string }
 export async function POST(req: Request) {
@@ -15,12 +20,36 @@ export async function POST(req: Request) {
     const { postId, agora, scheduleDate } = await req.json();
     const post = await db.post.findUnique({ where: { id: postId } });
     if (!post) return NextResponse.json({ error: 'post não encontrado' }, { status: 404 });
+    if (!['approved', 'scheduled'].includes(post.status)) {
+      return NextResponse.json({ error: 'O post precisa ser aprovado antes de ser publicado.' }, { status: 403 });
+    }
+
+    // Verifica se o canal está realmente conectado antes de tentar publicar
+    try {
+      const canais = await buscarCanais();
+      const conectado = canais.some(c => c.platform === post.channel && c.status === 'connected');
+      if (!conectado) {
+        const nome = CANAL_LABEL[post.channel] ?? post.channel;
+        return NextResponse.json({
+          error: `A conta do ${nome} não está conectada. Acesse a tela de Canais, conecte a conta e tente novamente.`,
+        }, { status: 422 });
+      }
+    } catch { /* Se a verificação falhar, tentamos publicar assim mesmo */ }
+
+    // URL composta é relativa (/uploads/...) — Ayrshare precisa de URL absoluta
+    let mediaUrlFinal = post.mediaUrl;
+    if (post.mediaUrl?.startsWith('/uploads/')) {
+      const base = process.env.NEXTAUTH_URL
+        ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+      mediaUrlFinal = `${base}${post.mediaUrl}`;
+    }
 
     const result = await publicar({
       caption: `${post.caption}\n\n${post.hashtags ?? ''}`.trim(),
       platforms: [post.channel],
-      mediaUrls: post.mediaUrl ? [post.mediaUrl] : undefined,
-      scheduleDate: agora ? undefined : scheduleDate
+      mediaUrls: mediaUrlFinal ? [mediaUrlFinal] : undefined,
+      scheduleDate: agora ? undefined : scheduleDate,
+      mediaFeedType: post.format === 'story' ? 'story' : undefined,
     });
 
     await db.post.update({

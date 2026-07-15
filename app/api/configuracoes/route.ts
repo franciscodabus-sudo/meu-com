@@ -17,12 +17,14 @@ async function garantirCanais() {
 export async function GET() {
   await garantirCanais();
 
-  const [perfil, intervalHoras, maxPostsPerRun, whatsappNumero, canais] = await Promise.all([
+  const [perfil, intervalHoras, maxPostsPerRun, whatsappNumero, canais, publicacaoHorarios, publicacaoPorSemana] = await Promise.all([
     getSetting('perfilContexto', ''),
     getSetting('radarIntervalHoras', '6'),
     getSetting('radarMaxPostsPerRun', '2'),
     getSetting('whatsappNumero', ''),
     db.channel.findMany({ orderBy: { name: 'asc' } }),
+    getSetting('publicacaoHorarios', '["09:00","14:00","19:00"]'),
+    getSetting('publicacaoPorSemana', '5'),
   ]);
 
   const chaves = {
@@ -31,7 +33,7 @@ export async function GET() {
     pexels:    !!process.env.PEXELS_API_KEY,
   };
 
-  return NextResponse.json({ perfil, whatsappNumero, intervalHoras, maxPostsPerRun, canais, chaves });
+  return NextResponse.json({ perfil, whatsappNumero, intervalHoras, maxPostsPerRun, canais, chaves, publicacaoHorarios, publicacaoPorSemana });
 }
 
 export async function POST(req: Request) {
@@ -43,14 +45,18 @@ export async function POST(req: Request) {
       intervalHoras?: string;
       maxPostsPerRun?: string;
       canais?: { name: string; active: boolean }[];
+      publicacaoHorarios?: string;
+      publicacaoPorSemana?: string;
     };
 
     const saves: Promise<unknown>[] = [];
 
-    if (body.perfil !== undefined)          saves.push(setSetting('perfilContexto',    body.perfil));
-    if (body.whatsappNumero !== undefined)  saves.push(setSetting('whatsappNumero',    body.whatsappNumero));
-    if (body.intervalHoras !== undefined)   saves.push(setSetting('radarIntervalHoras', body.intervalHoras));
-    if (body.maxPostsPerRun !== undefined)  saves.push(setSetting('radarMaxPostsPerRun', body.maxPostsPerRun));
+    if (body.perfil !== undefined)                saves.push(setSetting('perfilContexto',       body.perfil));
+    if (body.whatsappNumero !== undefined)        saves.push(setSetting('whatsappNumero',        body.whatsappNumero));
+    if (body.intervalHoras !== undefined)         saves.push(setSetting('radarIntervalHoras',    body.intervalHoras));
+    if (body.maxPostsPerRun !== undefined)        saves.push(setSetting('radarMaxPostsPerRun',   body.maxPostsPerRun));
+    if (body.publicacaoHorarios !== undefined)    saves.push(setSetting('publicacaoHorarios',    body.publicacaoHorarios));
+    if (body.publicacaoPorSemana !== undefined)   saves.push(setSetting('publicacaoPorSemana',   body.publicacaoPorSemana));
 
     if (body.canais) {
       for (const c of body.canais) {

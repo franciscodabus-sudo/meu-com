@@ -713,6 +713,7 @@ export default function Cenarios() {
           })();
           const freqLabel = parseFrequencia(p.frequencia, canais);
           const avStyle = avatarStyle(p.displayName, p.avatarColor || AVATAR_COLORS[idx % AVATAR_COLORS.length]);
+          const semCanais = canais.length === 0;
 
           const isDeleting = deletingId === p.id;
           return (
@@ -723,9 +724,11 @@ export default function Cenarios() {
                 border: p.ativo ? '2px solid #8B2FC9' : '2px solid transparent',
                 opacity: isDeleting ? 0 : p.pausado ? 0.65 : 1,
                 transform: isDeleting ? 'scale(0.95)' : 'scale(1)',
-                transition: 'opacity .3s ease, transform .3s ease',
+                transition: 'opacity .3s ease, transform .3s ease, border-color .15s ease',
                 pointerEvents: isDeleting ? 'none' : undefined,
+                cursor: p.ativo ? 'default' : 'pointer',
               }}
+              onClick={() => { if (!p.ativo) ativar(p.id); }}
             >
               {/* Main row */}
               <div className="flex items-start gap-3 px-4 py-3.5">
@@ -752,27 +755,36 @@ export default function Cenarios() {
                   </div>
 
                   <p className="text-[11.5px] text-mut mb-1.5">
-                    {p.objetivo === 'leads' ? 'Geração de leads'
-                      : p.objetivo === 'autoridade' ? 'Autoridade'
-                      : 'Engajamento'}
+                    {p.objetivo === 'leads' ? '🎯 Leads'
+                      : p.objetivo === 'autoridade' ? '🏆 Autoridade'
+                      : '💬 Engajamento'}
                   </p>
 
                   <div className="flex items-center gap-1 flex-wrap">
-                    {canais.map(canal => (
-                      <span key={canal}
-                        className="text-[9.5px] font-bold px-2 py-0.5 rounded-full text-white"
-                        style={{ background: CANAL_COR[canal] ?? '#9CA3AF' }}>
-                        {CANAL_LABEL[canal] ?? canal}
+                    {semCanais ? (
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                        style={{ background: '#FEF3C7', color: '#92400E' }}>
+                        ⚙ configurar canais
                       </span>
-                    ))}
-                    {freqLabel && (
-                      <span className="text-[10.5px] text-soft ml-0.5">{freqLabel}</span>
+                    ) : (
+                      <>
+                        {canais.map(canal => (
+                          <span key={canal}
+                            className="text-[9.5px] font-bold px-2 py-0.5 rounded-full text-white"
+                            style={{ background: CANAL_COR[canal] ?? '#9CA3AF' }}>
+                            {CANAL_LABEL[canal] ?? canal}
+                          </span>
+                        ))}
+                        {freqLabel && (
+                          <span className="text-[10.5px] text-soft ml-0.5">{freqLabel}</span>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
 
                 <div className="flex items-center gap-1 flex-shrink-0">
-                  <button onClick={() => setWizard(p)}
+                  <button onClick={e => { e.stopPropagation(); setWizard(p); }}
                     className="text-[11.5px] font-semibold px-2.5 py-1.5 rounded-xl transition"
                     style={{ background: '#F0F4F5', color: '#7B6B8A' }}>
                     Editar
@@ -816,12 +828,13 @@ export default function Cenarios() {
 
               {/* Radar toggle */}
               <div className="flex items-center justify-between px-4 py-3"
-                style={{ borderTop: '1px solid #EDE6F5', background: '#FAFAFF' }}>
+                style={{ borderTop: '1px solid #EDE6F5', background: '#FAFAFF' }}
+                onClick={e => e.stopPropagation()}>
                 <div>
                   <p className="text-[12px] font-semibold text-ink">Radar automático</p>
                   <p className="text-[10.5px] text-mut">gera posts e envia para aprovação</p>
                 </div>
-                <button onClick={() => toggleRadar(p)}
+                <button onClick={e => { e.stopPropagation(); toggleRadar(p); }}
                   className="relative w-[42px] h-[24px] rounded-full transition-colors flex-shrink-0"
                   style={{ background: p.radarAtivo ? '#8B2FC9' : '#D4B8EF' }}>
                   <span className="absolute top-[3px] w-[18px] h-[18px] rounded-full bg-white shadow transition-all"

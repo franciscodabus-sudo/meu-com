@@ -5,7 +5,7 @@ import { buscarFotoPexels } from './pexels';
 import { proximoSlot } from './cadencia';
 import Anthropic from '@anthropic-ai/sdk';
 
-const VALID_CHANNELS = ['instagram', 'facebook', 'linkedin'];
+const VALID_CHANNELS = ['instagram', 'facebook', 'linkedin', 'tiktok'];
 const VALID_STAGES   = ['atrair', 'educar', 'conectar', 'converter'];
 
 // ---------- helpers de configuração ----------
@@ -127,6 +127,7 @@ export async function executarRadarAuto(): Promise<AutoResult> {
     for (const item of novos.slice(0, maxPosts)) {
       try {
         const relevancia = await avaliarRelevancia(item, perfil as BrandProfile);
+        await db.radarItem.update({ where: { id: item.id }, data: { heat: relevancia } });
         if (relevancia < 60) continue;
 
         const post = await gerarPostDoRadar(item, perfil as BrandProfile);

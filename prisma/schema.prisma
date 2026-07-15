@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Campaign {
@@ -131,5 +132,34 @@ model BrandProfile {
   posts          Post[]
   radarSources   RadarSource[]
   radarItems     RadarItem[]
+  articles       Article[]
   createdAt      DateTime @default(now())
+}
+
+model Article {
+  id           String        @id @default(cuid())
+  profile      BrandProfile? @relation(fields: [profileId], references: [id], onDelete: SetNull)
+  profileId    String?
+  brief        String
+  // generating | rascunho | aprovado | erro
+  status       String        @default("generating")
+
+  // saída de cada agente (JSON)
+  researchJson String?
+  planJson     String?
+  draftJson    String?
+  qaJson       String?       // inclui retryCount + issues
+
+  // campos desnormalizados para exibição rápida
+  titulo       String?
+  subtitulo    String?
+  corpo        String?       // markdown completo (seções concatenadas)
+  cta          String?
+  legendaRedes String?
+  hashtags     String?
+
+  postId       String?       // Post criado quando aprovado
+
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 }

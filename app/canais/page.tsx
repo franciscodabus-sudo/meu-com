@@ -101,7 +101,7 @@ function ModalConectar({
         <div className="px-4">
           {/* Instrução */}
           <div className="rounded-2xl px-4 py-4 mb-4" style={{ background: '#F0F4F5' }}>
-            <p className="text-[13.5px] font-semibold text-ink mb-2">Como conectar uma rede social</p>
+            <p className="text-[13.5px] font-semibold text-ink mb-2">Conectar ou desconectar uma conta</p>
             <ol className="space-y-2 text-[13px] text-ink leading-relaxed">
               <li className="flex gap-2">
                 <span className="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold text-white flex-shrink-0 mt-0.5"
@@ -111,12 +111,12 @@ function ModalConectar({
               <li className="flex gap-2">
                 <span className="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold text-white flex-shrink-0 mt-0.5"
                   style={{ background: '#8B2FC9' }}>2</span>
-                <span>Na nova aba, vá em <b>Social Accounts</b> e conecte a rede desejada</span>
+                <span>Na nova aba, vá em <b>Social Accounts</b> e conecte ou remova a rede</span>
               </li>
               <li className="flex gap-2">
                 <span className="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold text-white flex-shrink-0 mt-0.5"
                   style={{ background: '#8B2FC9' }}>3</span>
-                <span>Volte aqui e toque em <b>"Já conectei — verificar"</b></span>
+                <span>Volte para esta aba — a lista atualiza sozinha. Se preferir, toque em <b>"Verificar agora"</b></span>
               </li>
             </ol>
           </div>
@@ -163,7 +163,7 @@ function ModalConectar({
               className="flex-[2] py-3.5 rounded-2xl text-white text-[14px] font-semibold transition active:scale-95 disabled:opacity-60"
               style={{ background: '#8B2FC9' }}
             >
-              {verificando ? '↻ Verificando…' : 'Já conectei — verificar'}
+              {verificando ? '↻ Verificando…' : 'Verificar agora'}
             </button>
           </div>
         </div>
@@ -209,7 +209,13 @@ export default function Canais() {
     }
   }
 
-  useEffect(() => { carregar(); }, []);
+  useEffect(() => {
+    carregar();
+    // Re-busca quando o usuário volta da aba do Ayrshare
+    function onFocus() { carregar(); }
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function verificarConexao() {
     setVerificando(true);
@@ -261,7 +267,7 @@ export default function Canais() {
           onVerificar={verificarConexao}
           verificando={verificando}
           feedbackVerificar={feedbackVerificar}
-          onFechar={() => { setModalAberto(false); setFeedbackVerificar(null); }}
+          onFechar={() => { setModalAberto(false); setFeedbackVerificar(null); carregar(); }}
         />
       )}
 

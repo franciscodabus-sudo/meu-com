@@ -8,7 +8,7 @@ import { proximoSlot, formatarSlot } from '@/lib/cadencia';
 
 type BrandPerfil = {
   id: string; name: string; displayName: string;
-  descricao: string; publicoAlvo: string; tomDeVoz: string;
+  descricao: string; publicoAlvo: string; tomDeVoz: string; tomEvitar: string;
   idioma: string; contato: string; produtos: string;
   frequencia: string; objetivo: string; notasLivres: string;
   ativo: boolean; pausado: boolean; radarAtivo: boolean;
@@ -383,7 +383,7 @@ export default function Configuracoes() {
   // ── perfis de marca ────────────────────────────────────────────────────────
   const PERFIL_VAZIO: Omit<BrandPerfil, 'id' | 'ativo' | 'pausado' | 'radarAtivo'> = {
     name: '', displayName: '', descricao: '', publicoAlvo: '',
-    tomDeVoz: '', idioma: 'pt-BR', contato: '',
+    tomDeVoz: '', tomEvitar: '', idioma: 'pt-BR', contato: '',
     produtos: '', frequencia: '', objetivo: '', notasLivres: '',
   };
 
@@ -465,9 +465,9 @@ export default function Configuracoes() {
     setPerfilEditando(p);
     setPerfilForm({
       name: p.name, displayName: p.displayName, descricao: p.descricao,
-      publicoAlvo: p.publicoAlvo, tomDeVoz: p.tomDeVoz, idioma: p.idioma,
-      contato: p.contato, produtos: p.produtos, frequencia: p.frequencia,
-      objetivo: p.objetivo, notasLivres: p.notasLivres,
+      publicoAlvo: p.publicoAlvo, tomDeVoz: p.tomDeVoz, tomEvitar: p.tomEvitar ?? '',
+      idioma: p.idioma, contato: p.contato, produtos: p.produtos,
+      frequencia: p.frequencia, objetivo: p.objetivo, notasLivres: p.notasLivres,
     });
   }
 
@@ -835,7 +835,8 @@ export default function Configuracoes() {
           { key: 'publicoAlvo', label: 'Público-alvo', placeholder: 'Ex.: Brasileiros em Orlando, 30-55 anos.' },
           { key: 'produtos',    label: 'Produtos / serviços', placeholder: 'Ex.: Seguro auto, residencial, vida, saúde.' },
           { key: 'objetivo',    label: 'Objetivo de marketing', placeholder: 'Ex.: Gerar leads, aumentar autoridade, awareness.' },
-          { key: 'tomDeVoz',    label: 'Tom de voz', placeholder: 'Ex.: Consultivo, caloroso, sem juridiquês.' },
+          { key: 'tomDeVoz',    label: 'Tom de voz (usar)', placeholder: 'Ex.: Consultivo, caloroso, sem juridiquês.' },
+          { key: 'tomEvitar',   label: 'Tom de voz (evitar)', placeholder: 'Ex.: Formal demais, gírias, promessas exageradas.' },
           { key: 'frequencia',  label: 'Frequência de posts', placeholder: 'Ex.: 3x por semana, diário.' },
           { key: 'contato',     label: 'Site / link de contato', placeholder: 'https://…' },
           { key: 'notasLivres', label: 'Notas para o CMO', placeholder: 'Qualquer contexto adicional que a IA deve saber.' },
@@ -944,6 +945,14 @@ export default function Configuracoes() {
             </span>
           </div>
         ))}
+      </div>
+
+      {/* Aviso plano gratuito Ayrshare */}
+      <div className="mt-2 rounded-xl px-4 py-3 text-[12px] leading-snug"
+        style={{ background: '#FEF8DC', color: '#854F0B' }}>
+        <span className="font-bold">⚠ Atenção — Ayrshare plano gratuito:</span> posts publicados recebem a marca
+        d&apos;água <span className="font-mono bg-amber-100 px-1 rounded">[Sent with Free Plan]</span> no final da
+        legenda. Faça upgrade no painel do Ayrshare antes de publicar conteúdo oficial para clientes.
       </div>
 
       <p className="text-[11.5px] text-soft text-center mt-3 mb-2">
