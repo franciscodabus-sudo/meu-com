@@ -302,8 +302,7 @@ export default function Login() {
           </form>
 
           <p className="text-center text-[12px] mt-8" style={{ color: '#7B6B8A' }}>
-            Não tem conta?{' '}
-            <span className="font-semibold" style={{ color: '#8B2FC9' }}>Criar conta</span>
+            Acesso restrito. Fale com o administrador.
           </p>
         </div>
       </div>
