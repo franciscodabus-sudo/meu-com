@@ -8,9 +8,15 @@ export type PreviewPost = {
   hashtags: string | null; format: string; mediaUrl: string | null;
 };
 
+type ProfileHint = { handle: string; name: string };
+
+function getInitials(name: string): string {
+  return name.split(/\s+/).map(w => w[0]?.toUpperCase() ?? '').join('').slice(0, 2) || 'MP';
+}
+
 // ─── Instagram mockup ────────────────────────────────────────────────────────
 
-function IgMockup({ post }: { post: PreviewPost }) {
+function IgMockup({ post, p }: { post: PreviewPost; p: ProfileHint }) {
   // Imagem composta (gerada pelo pipeline sharp+SVG) já tem gradiente e texto embutidos
   const isComposed = post.mediaUrl?.includes('/composed-');
   return (
@@ -19,10 +25,9 @@ function IgMockup({ post }: { post: PreviewPost }) {
       {/* Header */}
       <div className="flex items-center gap-2.5 px-3 py-2.5">
         <div className="w-[34px] h-[34px] rounded-full flex items-center justify-center text-white font-bold text-[12.5px] font-disp flex-shrink-0"
-          style={{ background: 'linear-gradient(135deg,#8B2FC9,#F04E3E)' }}>FD</div>
+          style={{ background: 'linear-gradient(135deg,#8B2FC9,#F04E3E)' }}>{getInitials(p.name)}</div>
         <div>
-          <b className="text-[13px] block leading-tight">francisco.dabus</b>
-          <small className="text-[11px] text-mut">Orlando, Florida</small>
+          <b className="text-[13px] block leading-tight">{p.handle}</b>
         </div>
         <span className="ml-auto text-mut font-bold tracking-widest">···</span>
       </div>
@@ -65,7 +70,7 @@ function IgMockup({ post }: { post: PreviewPost }) {
       {/* Curtidas + legenda COMPLETA */}
       <p className="px-3 pb-1 text-[12.5px] font-semibold">Curtido por você e outras pessoas</p>
       <div className="px-3 pb-4 text-[12.5px]" style={{ whiteSpace: 'pre-line' }}>
-        <b>francisco.dabus</b>{' '}
+        <b>{p.handle}</b>{' '}
         {post.caption}
         {post.hashtags && (
           <span className="text-[#0A66C2]"> {post.hashtags}</span>
@@ -77,7 +82,7 @@ function IgMockup({ post }: { post: PreviewPost }) {
 
 // ─── TikTok mockup ───────────────────────────────────────────────────────────
 
-function TikTokMockup({ post }: { post: PreviewPost }) {
+function TikTokMockup({ post, p }: { post: PreviewPost; p: ProfileHint }) {
   return (
     <div className="flex justify-center mb-3">
       {/* Frame 9:16 */}
@@ -98,7 +103,7 @@ function TikTokMockup({ post }: { post: PreviewPost }) {
           {/* Avatar */}
           <div className="relative">
             <div className="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-white font-bold text-[10px]"
-              style={{ background: 'linear-gradient(135deg,#8B2FC9,#F04E3E)' }}>FD</div>
+              style={{ background: 'linear-gradient(135deg,#8B2FC9,#F04E3E)' }}>{getInitials(p.name)}</div>
             <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-[#FE2C55] flex items-center justify-center text-white text-[9px] font-bold">+</span>
           </div>
           {/* Curtir */}
@@ -131,7 +136,7 @@ function TikTokMockup({ post }: { post: PreviewPost }) {
 
         {/* Info à esquerda/baixo */}
         <div className="absolute left-3 bottom-12 right-14 z-10">
-          <p className="text-white font-bold text-[10.5px] mb-1">@francisco.dabus</p>
+          <p className="text-white font-bold text-[10.5px] mb-1">@{p.handle}</p>
           <p className="text-white text-[10px] leading-snug mb-1.5" style={{
             display: '-webkit-box', WebkitLineClamp: 4,
             WebkitBoxOrient: 'vertical', overflow: 'hidden', whiteSpace: 'pre-line',
@@ -147,7 +152,7 @@ function TikTokMockup({ post }: { post: PreviewPost }) {
         <div className="absolute bottom-0 left-0 right-0 flex items-center gap-2 px-3 py-2 z-10"
           style={{ background: 'linear-gradient(0deg,rgba(0,0,0,.6),transparent)' }}>
           <span className="text-[10px]">🎵</span>
-          <p className="text-white text-[9px] truncate flex-1">Som original · francisco.dabus</p>
+          <p className="text-white text-[9px] truncate flex-1">Som original · {p.handle}</p>
           <div className="w-6 h-6 rounded-full border border-white/30 flex items-center justify-center"
             style={{ background: '#111' }}>
             <span className="text-[8px]">♪</span>
@@ -164,7 +169,7 @@ function TikTokMockup({ post }: { post: PreviewPost }) {
 
 // ─── Instagram Story mockup (9:16) ───────────────────────────────────────────
 
-function StoryMockup({ post }: { post: PreviewPost }) {
+function StoryMockup({ post, p }: { post: PreviewPost; p: ProfileHint }) {
   return (
     <div className="flex justify-center mb-3">
       {/* Frame 9:16 — largura fixa 220px, altura 391px */}
@@ -190,8 +195,8 @@ function StoryMockup({ post }: { post: PreviewPost }) {
         {/* Header */}
         <div className="relative flex items-center gap-1.5 px-2.5 pt-2 pb-1 z-10">
           <div className="w-[22px] h-[22px] rounded-full flex items-center justify-center text-white font-bold text-[8px] flex-shrink-0"
-            style={{ background: 'linear-gradient(135deg,#8B2FC9,#F04E3E)' }}>FD</div>
-          <span className="text-white font-semibold text-[9.5px]">francisco.dabus</span>
+            style={{ background: 'linear-gradient(135deg,#8B2FC9,#F04E3E)' }}>{getInitials(p.name)}</div>
+          <span className="text-white font-semibold text-[9.5px]">{p.handle}</span>
           <span className="text-white/60 text-[9px] ml-0.5">· Agora</span>
         </div>
 
@@ -228,7 +233,7 @@ function StoryMockup({ post }: { post: PreviewPost }) {
 
 // ─── Artigo mockup (LinkedIn Article / blog) ──────────────────────────────────
 
-function ArtigoMockup({ post }: { post: PreviewPost }) {
+function ArtigoMockup({ post, p }: { post: PreviewPost; p: ProfileHint }) {
   const sections = post.caption.split(/\n## |\n# /).filter(Boolean);
   return (
     <div className="bg-white rounded-[18px] overflow-hidden mb-3"
@@ -242,9 +247,9 @@ function ArtigoMockup({ post }: { post: PreviewPost }) {
         {/* Author */}
         <div className="flex gap-2 items-center mb-3">
           <div className="w-[32px] h-[32px] rounded-full flex items-center justify-center text-white text-[11px] font-bold"
-            style={{ background: 'linear-gradient(135deg,#8B2FC9,#F04E3E)' }}>FD</div>
+            style={{ background: 'linear-gradient(135deg,#8B2FC9,#F04E3E)' }}>{getInitials(p.name)}</div>
           <div>
-            <p className="text-[12px] font-semibold leading-none">Francisco Dabus</p>
+            <p className="text-[12px] font-semibold leading-none">{p.name}</p>
             <p className="text-[10px] text-mut">Artigo · LinkedIn</p>
           </div>
         </div>
@@ -269,15 +274,15 @@ function ArtigoMockup({ post }: { post: PreviewPost }) {
 
 // ─── LinkedIn mockup ──────────────────────────────────────────────────────────
 
-function LiMockup({ post }: { post: PreviewPost }) {
+function LiMockup({ post, p }: { post: PreviewPost; p: ProfileHint }) {
   return (
     <div className="bg-white rounded-[18px] overflow-hidden mb-3"
       style={{ boxShadow: '0 1px 3px rgba(23,38,44,.06),0 4px 14px rgba(23,38,44,.05)' }}>
       <div className="flex gap-2.5 px-3 pt-3 pb-2">
         <div className="w-[40px] h-[40px] rounded-full flex items-center justify-center text-white font-bold text-[13px] font-disp flex-shrink-0"
-          style={{ background: 'linear-gradient(135deg,#8B2FC9,#F04E3E)' }}>FD</div>
+          style={{ background: 'linear-gradient(135deg,#8B2FC9,#F04E3E)' }}>{getInitials(p.name)}</div>
         <div>
-          <b className="text-[13.5px] block">Francisco Dabus</b>
+          <b className="text-[13.5px] block">{p.name}</b>
           {process.env.NEXT_PUBLIC_USER_HEADLINE && (
             <small className="text-[11px] text-mut leading-snug block">{process.env.NEXT_PUBLIC_USER_HEADLINE}</small>
           )}
@@ -312,11 +317,13 @@ function LiMockup({ post }: { post: PreviewPost }) {
 
 type Fase = 'preview' | 'agendar' | 'enviando' | 'ok' | 'erro';
 
-export default function PreviewModal({ post, onClose, onDone }: {
+export default function PreviewModal({ post, onClose, onDone, profile }: {
   post: PreviewPost;
   onClose: () => void;
   onDone: (id: string) => void;
+  profile?: ProfileHint;
 }) {
+  const p: ProfileHint = profile ?? { handle: 'meu.perfil', name: 'Perfil' };
   const [fase, setFase]               = useState<Fase>('preview');
   const [dataHora, setDataHora]       = useState('');
   const [erroMsg, setErroMsg]         = useState('');
@@ -462,14 +469,14 @@ export default function PreviewModal({ post, onClose, onDone }: {
               <>
                 {/* Mockup (legenda completa dentro) */}
                 {post.format === 'artigo'
-                  ? <ArtigoMockup post={postAtual} />
+                  ? <ArtigoMockup post={postAtual} p={p} />
                   : post.channel === 'linkedin'
-                    ? <LiMockup post={postAtual} />
+                    ? <LiMockup post={postAtual} p={p} />
                     : post.channel === 'tiktok'
-                      ? <TikTokMockup post={postAtual} />
+                      ? <TikTokMockup post={postAtual} p={p} />
                       : post.format === 'story'
-                        ? <StoryMockup post={postAtual} />
-                        : <IgMockup post={postAtual} />
+                        ? <StoryMockup post={postAtual} p={p} />
+                        : <IgMockup post={postAtual} p={p} />
                 }
 
                 {/* Edição de legenda */}

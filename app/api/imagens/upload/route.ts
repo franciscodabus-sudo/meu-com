@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { uploadToStorage } from '@/lib/storage';
-import sharp from 'sharp';
 
 const IMAGE_EXTS = ['jpg', 'jpeg', 'png', 'webp'];
 
@@ -21,11 +20,13 @@ export async function POST(req: Request) {
     // (e qualquer outro serviço headless) veja a orientação correta nos pixels.
     // Fotos de celular chegam com EXIF Orientation ≠ 1 — sem isso aparecem
     // giradas no Instagram mesmo parecendo corretas no browser.
+    // Dynamic import: sharp usa binário nativo que não pode ser importado staticamente na Vercel.
     const rawBuffer = Buffer.from(await file.arrayBuffer());
     let finalBuffer: Buffer;
     let finalExt: string;
     let contentType: string;
     if (IMAGE_EXTS.includes(ext)) {
+      const sharp = (await import('sharp')).default;
       finalBuffer = await sharp(rawBuffer)
         .rotate()
         .jpeg({ quality: 90 })

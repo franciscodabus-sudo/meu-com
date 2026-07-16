@@ -3,8 +3,12 @@ import { useState, useEffect, useRef } from 'react';
 
 type ArticleStatus =
   | 'generating'
+  | 'pesquisado'
+  | 'planejado'
   | 'aguardando_gancho'
   | 'gerando_artigo'
+  | 'redigido'
+  | 'editado'
   | 'rascunho'
   | 'aprovado'
   | 'erro';
@@ -56,12 +60,21 @@ const TECNICA_LABEL: Record<string, string> = {
   urgencia:    'Urgência',
 };
 
+// Statuses that require automatic advancement
+const IN_PROGRESS: ArticleStatus[] = [
+  'generating', 'pesquisado', 'planejado',
+  'gerando_artigo', 'redigido', 'editado',
+];
+
+// Statuses that stop the advance loop
+const TERMINAL: ArticleStatus[] = ['aguardando_gancho', 'rascunho', 'aprovado', 'erro'];
+
 function stepDoneIndex(article: ArticleData): number {
-  if (article.qaJson)    return 6;
-  if (article.editJson)  return 5;
-  if (article.draftJson) return 4;
-  if (article.copyJson)  return 3;
-  if (article.planJson)  return 2;
+  if (article.qaJson)       return 6;
+  if (article.editJson)     return 5;
+  if (article.draftJson)    return 4;
+  if (article.copyJson)     return 3;
+  if (article.planJson)     return 2;
   if (article.researchJson) return 1;
   return 0;
 }
@@ -97,33 +110,45 @@ export default function ArtigoModal({
   const [escolhendo, setEscolhendo]   = useState(false);
   const [opcaoSelecionada, setOpcao]  = useState<number | null>(null);
   const [erro, setErro]               = useState<string | null>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [retentando, setRetentando]   = useState(false);
+  const abortedRef = useRef(false);
 
-  function iniciarPolling() {
-    if (pollRef.current) clearInterval(pollRef.current);
-    pollRef.current = setInterval(async () => {
-      const r = await window.fetch(`/api/artigo/${articleId}`);
-      if (!r.ok) return;
-      const data: ArticleData = await r.json();
-      setArticle(data);
-      if (['rascunho', 'aguardando_gancho', 'erro'].includes(data.status)) {
-        clearInterval(pollRef.current!);
+  // Advances pipeline one agent per call until a terminal status is reached
+  async function avancarSequencialmente(startStatus: ArticleStatus) {
+    let currentStatus = startStatus;
+    while (!TERMINAL.includes(currentStatus)) {
+      if (abortedRef.current) break;
+      const r = await window.fetch(`/api/artigo/${articleId}`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ action: 'avancar' }),
+      });
+      if (abortedRef.current) break;
+      const data = await r.json();
+      if (!r.ok) {
+        setErro(data.error ?? 'Erro ao gerar artigo');
+        break;
       }
-    }, 3000);
+      setArticle(data as ArticleData);
+      currentStatus = (data as ArticleData).status;
+    }
   }
 
   useEffect(() => {
+    abortedRef.current = false;
     async function carregar() {
       const r = await window.fetch(`/api/artigo/${articleId}`);
-      if (!r.ok) return;
+      if (!r.ok || abortedRef.current) return;
       const data: ArticleData = await r.json();
       setArticle(data);
-      if (!['rascunho', 'aguardando_gancho', 'erro'].includes(data.status)) {
-        iniciarPolling();
+      if (IN_PROGRESS.includes(data.status)) {
+        await avancarSequencialmente(data.status).catch(err => {
+          if (!abortedRef.current) setErro(err instanceof Error ? err.message : 'Erro de conexão');
+        });
       }
     }
     carregar();
-    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+    return () => { abortedRef.current = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [articleId]);
 
@@ -132,9 +157,9 @@ export default function ArtigoModal({
     setEscolhendo(true);
     setErro(null);
     const r = await window.fetch(`/api/artigo/${article.id}`, {
-      method: 'PATCH',
+      method:  'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'escolher_gancho', opcaoIndex: opcaoSelecionada }),
+      body:    JSON.stringify({ action: 'escolher_gancho', opcaoIndex: opcaoSelecionada }),
     });
     const data = await r.json();
     if (!r.ok) {
@@ -142,19 +167,44 @@ export default function ArtigoModal({
       setEscolhendo(false);
       return;
     }
-    // Atualiza estado local imediatamente e retoma polling
     setArticle(prev => prev ? { ...prev, status: 'gerando_artigo' } : prev);
     setEscolhendo(false);
-    iniciarPolling();
+    avancarSequencialmente('gerando_artigo').catch(err => {
+      if (!abortedRef.current) setErro(err instanceof Error ? err.message : 'Erro de conexão');
+    });
+  }
+
+  async function tentarNovamente() {
+    if (!article) return;
+    setRetentando(true);
+    setErro(null);
+    const r = await window.fetch(`/api/artigo/${article.id}`, {
+      method:  'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ action: 'retry' }),
+    });
+    const data = await r.json();
+    setRetentando(false);
+    if (!r.ok) {
+      setErro(data.error ?? 'Erro ao retomar');
+      return;
+    }
+    setArticle(data as ArticleData);
+    const status = (data as ArticleData).status;
+    if (IN_PROGRESS.includes(status)) {
+      avancarSequencialmente(status).catch(err => {
+        if (!abortedRef.current) setErro(err instanceof Error ? err.message : 'Erro de conexão');
+      });
+    }
   }
 
   async function aprovar() {
     if (!article) return;
     setAprovando(true);
     const r = await window.fetch(`/api/artigo/${article.id}`, {
-      method: 'PATCH',
+      method:  'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'aprovar' }),
+      body:    JSON.stringify({ action: 'aprovar' }),
     });
     const data = await r.json();
     setAprovando(false);
@@ -166,11 +216,11 @@ export default function ArtigoModal({
     }
   }
 
-  const doneIdx        = article ? stepDoneIndex(article) : 0;
-  const isGenerating   = !article || article.status === 'generating' || article.status === 'gerando_artigo';
-  const isAguardando   = article?.status === 'aguardando_gancho';
-  const isDone         = article?.status === 'rascunho';
-  const isErro         = article?.status === 'erro';
+  const doneIdx      = article ? stepDoneIndex(article) : 0;
+  const isGenerating = !article || IN_PROGRESS.includes(article.status);
+  const isAguardando = article?.status === 'aguardando_gancho';
+  const isDone       = article?.status === 'rascunho';
+  const isErro       = article?.status === 'erro';
 
   const qaData = article?.qaJson ? (() => {
     try { return JSON.parse(article.qaJson); } catch { return null; }
@@ -211,7 +261,7 @@ export default function ArtigoModal({
             {STEPS.map((step, i) => {
               const done    = i < doneIdx;
               const running = i === doneIdx && isGenerating;
-              const waiting = isAguardando && i === 2; // Copywriter = aguardando input
+              const waiting = isAguardando && i === 2;
               return (
                 <div key={step.key} className="flex items-start gap-3 mb-3">
                   <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-[13px]"
@@ -263,8 +313,8 @@ export default function ArtigoModal({
           {/* ── Seleção de gancho ─────────────────────────────────────────── */}
           {isAguardando && copyOpcoes.length > 0 && (
             <div className="mb-4">
-              <p className="text-[12px] text-mut mb-3">
-                O Copywriter gerou 3 opções. Escolha a que mais combina com o que você quer comunicar:
+              <p className="text-[12px] text-mut mb-3 leading-relaxed">
+                Escolha o ângulo de abertura do seu artigo. O <span className="font-semibold text-ink">gancho</span> é a primeira frase que prende o leitor — cada opção abaixo usa uma abordagem diferente.
               </p>
               <div className="space-y-2 mb-4">
                 {copyOpcoes.map((op, i) => (
@@ -319,10 +369,19 @@ export default function ArtigoModal({
 
           {/* Erro */}
           {isErro && (
-            <div className="rounded-2xl px-4 py-3 mb-4 text-[13px]"
-              style={{ background: '#FEE2E2', color: '#7F1D1D' }}>
-              Erro no pipeline: {qaData?.erro ?? 'Verifique o terminal'}
-            </div>
+            <>
+              <div className="rounded-2xl px-4 py-3 mb-3 text-[13px]"
+                style={{ background: '#FEE2E2', color: '#7F1D1D' }}>
+                Erro ao gerar o artigo: {qaData?.erro ?? 'falha inesperada'}
+              </div>
+              <button
+                onClick={tentarNovamente}
+                disabled={retentando}
+                className="w-full py-3 rounded-2xl text-white font-semibold text-[14px] mb-4 transition active:scale-95 disabled:opacity-60"
+                style={{ background: '#8B2FC9' }}>
+                {retentando ? '✦ Retomando…' : '↻ Tentar novamente'}
+              </button>
+            </>
           )}
 
           {/* Artigo completo */}

@@ -47,7 +47,7 @@ const PLATAFORMA_COR: Record<string, string> = {
 const AYRSHARE_URL = 'https://app.ayrshare.com';
 
 function statusLabel(s: string): { text: string; cor: string } {
-  if (s === 'success' || s === 'published') return { text: 'Publicado', cor: '#F04E3E' };
+  if (s === 'success' || s === 'published') return { text: 'Publicado', cor: '#1D9E75' };
   if (s === 'scheduled') return { text: 'Agendado', cor: '#8B2FC9' };
   if (s === 'error' || s === 'failed') return { text: 'Falhou', cor: '#DC2626' };
   return { text: s, cor: '#7B6B8A' };

@@ -21,7 +21,8 @@ export async function middleware(req: NextRequest) {
   return NextResponse.next();
 }
 
-// Protege todas as rotas exceto /login, /api/auth/* e assets estáticos
+// Protege todas as rotas exceto /login, /api/auth/* e assets estáticos.
+// /api/stats é público intencionalmente: usado pelo widget do dashboard antes do login.
 export const config = {
   matcher: ['/((?!login|api/auth|api/stats|_next|favicon\\.ico|.*\\.png|.*\\.svg|.*\\.jpg|.*\\.webp|.*\\.ico).*)'],
 };

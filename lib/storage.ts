@@ -21,7 +21,8 @@ export async function uploadToStorage(
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`Falha no upload de mídia: ${text}`);
+    console.error('[storage] upload falhou:', res.status, text);
+    throw new Error('Falha no upload de mídia. Tente novamente ou use outra imagem.');
   }
 
   return `${baseUrl}/storage/v1/object/public/${BUCKET}/${filename}`;

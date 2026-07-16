@@ -4,9 +4,8 @@ import { getModel } from '@/lib/claude';
 
 export const maxDuration = 30;
 
-const anthropic = new Anthropic();
-
 export async function POST(req: Request) {
+  const anthropic = new Anthropic();
   const { pergunta, stats } = await req.json();
   if (!pergunta) return NextResponse.json({ error: 'pergunta obrigatória' }, { status: 400 });
   if (!process.env.ANTHROPIC_API_KEY)

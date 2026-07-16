@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { verificarStatusPost } from '@/lib/ayrshare';
 
+export const maxDuration = 60;
+
 // POST /api/posts/verificar
 // Verifica todos os posts publicados contra o Ayrshare.
 // Posts não encontrados são marcados como 'deleted_externally'.

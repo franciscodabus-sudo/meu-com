@@ -12,25 +12,21 @@ async function main() {
     process.exit(1);
   }
 
-  const existente = await db.user.findUnique({ where: { email: email.toLowerCase() } });
-
-  if (existente) {
-    console.log(`Usuário já existe: ${email}`);
-    console.log('Nenhuma alteração feita.');
-    return;
-  }
-
   const passwordHash = await bcrypt.hash(senha, 12);
-  const usuario = await db.user.create({
-    data: {
+
+  const usuario = await db.user.upsert({
+    where:  { email: email.toLowerCase() },
+    update: { passwordHash, role: 'admin' },
+    create: {
       email: email.toLowerCase(),
       name: 'Francisco Dabus',
       passwordHash,
+      role: 'admin',
     },
   });
 
-  console.log(`Usuário admin criado com sucesso: ${usuario.email} (id: ${usuario.id})`);
-  console.log('Você já pode fazer login com o email e senha do .env.');
+  console.log(`Usuário admin pronto: ${usuario.email} (id: ${usuario.id})`);
+  console.log('Você pode fazer login com o email e senha do .env.');
 }
 
 main()

@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { verificarAdmin } from '@/lib/authz';
 
 export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+  if (!(await verificarAdmin())) {
+    return NextResponse.json({ error: 'Acesso restrito a administradores' }, { status: 403 });
+  }
   try {
     const total = await db.user.count();
     if (total <= 1) {

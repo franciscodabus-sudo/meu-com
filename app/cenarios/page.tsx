@@ -112,7 +112,7 @@ function TagsInput({ tags, onChange, placeholder }: {
               style={{ background: '#F0E8FA', color: '#8B2FC9' }}>
               {t}
               <button type="button" onClick={() => onChange(tags.filter(x => x !== t))}
-                className="opacity-60 hover:opacity-100 ml-0.5 text-[13px] leading-none">×</button>
+                className="opacity-60 hover:opacity-100 ml-0.5 text-[13px] leading-none px-1 py-1 -my-1">×</button>
             </span>
           ))}
         </div>
@@ -294,7 +294,8 @@ function Wizard({ perfil, onClose, onSalvo }: {
         </div>
 
         {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto px-5 pb-4 no-scrollbar">
+        <div className="flex-1 overflow-y-auto px-5 pb-4 no-scrollbar"
+          style={{ maskImage: 'linear-gradient(to bottom, black calc(100% - 40px), transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, black calc(100% - 40px), transparent 100%)' }}>
 
           {/* ── Passo 1: Identidade ── */}
           {step === 0 && (
@@ -468,12 +469,23 @@ function Wizard({ perfil, onClose, onSalvo }: {
                               <span className="text-[11px] text-mut">Frequência</span>
                               <span className="text-[12px] font-bold" style={{ color: cor }}>{freq}× /sem</span>
                             </div>
-                            <input type="range" min={1} max={7} value={freq}
-                              onChange={e => set('freqCanal', { ...form.freqCanal, [canal]: Number(e.target.value) })}
-                              className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
-                              style={{ accentColor: cor }} />
-                            <div className="flex justify-between text-[9.5px] text-soft mt-1">
-                              <span>1×</span><span>4×</span><span>7×</span>
+                            <div className="flex items-center justify-between gap-2 mt-1">
+                              <button type="button"
+                                onClick={() => set('freqCanal', { ...form.freqCanal, [canal]: Math.max(1, freq - 1) })}
+                                className="w-[44px] h-[44px] rounded-xl flex items-center justify-center font-bold text-[20px] transition active:scale-95 flex-shrink-0"
+                                style={{ background: '#F0F4F5', color: '#7B6B8A' }}>
+                                −
+                              </button>
+                              <div className="flex-1 text-center">
+                                <span className="text-[24px] font-bold" style={{ color: cor }}>{freq}</span>
+                                <span className="text-[11px] text-mut block">× por semana</span>
+                              </div>
+                              <button type="button"
+                                onClick={() => set('freqCanal', { ...form.freqCanal, [canal]: Math.min(7, freq + 1) })}
+                                className="w-[44px] h-[44px] rounded-xl flex items-center justify-center font-bold text-[20px] transition active:scale-95 flex-shrink-0"
+                                style={{ background: '#F0F4F5', color: '#7B6B8A' }}>
+                                +
+                              </button>
                             </div>
                           </div>
                         )}
@@ -770,7 +782,7 @@ export default function Cenarios() {
                       <>
                         {canais.map(canal => (
                           <span key={canal}
-                            className="text-[9.5px] font-bold px-2 py-0.5 rounded-full text-white"
+                            className="text-[11px] font-bold px-2 py-0.5 rounded-full text-white"
                             style={{ background: CANAL_COR[canal] ?? '#9CA3AF' }}>
                             {CANAL_LABEL[canal] ?? canal}
                           </span>
@@ -791,7 +803,7 @@ export default function Cenarios() {
                   </button>
                   <button
                     onClick={e => { e.stopPropagation(); pedirExclusao(p); }}
-                    className="w-8 h-8 rounded-xl flex items-center justify-center font-bold text-[18px] transition active:scale-95"
+                    className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center font-bold text-[18px] transition active:scale-95"
                     style={{ background: '#FDE8E7', color: '#E24B4A' }}
                     title="Excluir cenário"
                   >
@@ -799,7 +811,7 @@ export default function Cenarios() {
                   </button>
                   <div className="relative" onClick={e => e.stopPropagation()}>
                     <button onClick={() => setMenuId(menuId === p.id ? null : p.id)}
-                      className="w-8 h-8 rounded-xl flex items-center justify-center text-mut font-bold text-[16px]"
+                      className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-mut font-bold text-[16px]"
                       style={{ background: '#F0F4F5' }}>
                       ···
                     </button>

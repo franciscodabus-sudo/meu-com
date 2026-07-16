@@ -3,9 +3,8 @@ import Anthropic from '@anthropic-ai/sdk';
 import { db } from '@/lib/db';
 import { getModel } from '@/lib/claude';
 
-const anthropic = new Anthropic();
-
 export async function POST(req: Request) {
+  const anthropic = new Anthropic();
   const { postId } = await req.json();
   if (!postId) return NextResponse.json({ error: 'postId obrigatório' }, { status: 400 });
 

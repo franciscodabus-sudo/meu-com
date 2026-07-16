@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { executarPipelineArtigo } from '@/lib/pipeline-artigo';
 
 export const maxDuration = 60;
 
@@ -24,9 +23,7 @@ export async function POST(req: Request) {
       },
     });
 
-    // Fire-and-forget: pipeline roda em background; cliente faz polling no GET
-    executarPipelineArtigo(article.id, brief.trim(), profileId).catch(() => {});
-
+    // O cliente avança o pipeline passo a passo via PATCH /api/artigo/:id (action: 'avancar')
     return NextResponse.json({ articleId: article.id });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Erro ao iniciar pipeline';

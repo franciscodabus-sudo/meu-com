@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import bcrypt from 'bcryptjs';
+import { verificarAdmin } from '@/lib/authz';
 
 export async function GET() {
+  if (!(await verificarAdmin())) {
+    return NextResponse.json({ error: 'Acesso restrito a administradores' }, { status: 403 });
+  }
   const usuarios = await db.user.findMany({
     select: { id: true, name: true, email: true, createdAt: true },
     orderBy: { createdAt: 'asc' },
@@ -11,6 +15,9 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  if (!(await verificarAdmin())) {
+    return NextResponse.json({ error: 'Acesso restrito a administradores' }, { status: 403 });
+  }
   try {
     const { nome, email, senha } = await req.json();
     if (!email?.trim() || !senha?.trim()) {

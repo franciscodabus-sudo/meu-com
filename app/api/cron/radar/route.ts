@@ -6,6 +6,10 @@ import { executarRadarAuto } from '@/lib/radar-auto';
 // Docs: https://vercel.com/docs/cron-jobs/manage-cron-jobs
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET?.trim();
+  if (!secret && process.env.NODE_ENV === 'production') {
+    console.error('[cron/radar] CRON_SECRET não configurada — recusando chamada');
+    return NextResponse.json({ error: 'CRON_SECRET não configurada' }, { status: 500 });
+  }
   if (secret) {
     const auth = req.headers.get('authorization');
     if (auth !== `Bearer ${secret}`) {

@@ -71,15 +71,23 @@ function detectarKind(url: string): 'rss' | 'website' | 'instagram' {
 
 // ─── sub-componente: cabeçalho de seção ──────────────────────────────────────
 
-function SecHeader({ icon, title, count }: { icon: string; title: string; count?: number }) {
+function SecHeader({ icon, title, count, open, onToggle }: { icon: string; title: string; count?: number; open?: boolean; onToggle?: () => void }) {
+  const isAccordion = onToggle !== undefined;
   return (
-    <div className="flex items-center gap-2 mb-3 mt-6 first:mt-0">
+    <button
+      type="button"
+      onClick={isAccordion ? onToggle : undefined}
+      className={`flex items-center gap-2 mb-3 mt-6 first:mt-0 w-full text-left ${isAccordion ? 'cursor-pointer' : 'cursor-default'}`}
+    >
       <span className="text-[18px]">{icon}</span>
-      <h2 className="font-disp font-bold text-[16px]">{title}</h2>
+      <h2 className="font-disp font-bold text-[16px] flex-1">{title}</h2>
       {count !== undefined && (
-        <span className="ml-auto text-[12px] font-semibold text-mut">{count}</span>
+        <span className="text-[12px] font-semibold text-mut">{count}</span>
       )}
-    </div>
+      {isAccordion && (
+        <span className="text-[14px] text-mut transition-transform ml-1" style={{ display: 'inline-block', transform: open ? 'rotate(0deg)' : 'rotate(-90deg)' }}>▾</span>
+      )}
+    </button>
   );
 }
 
@@ -169,6 +177,24 @@ export default function Configuracoes() {
   const [fontes, setFontes] = useState<Fonte[]>([]);
   const [salvando, setSalvando] = useState(false);
   const [toast, setToast] = useState('');
+  // Default: só a primeira seção aberta; escolha do usuário persiste entre visitas
+  const [openSecs, setOpenSecs] = useState<Set<string>>(new Set(['radar']));
+
+  useEffect(() => {
+    try {
+      const salvo = localStorage.getItem('config-secoes-abertas');
+      if (salvo) setOpenSecs(new Set(JSON.parse(salvo)));
+    } catch { /* primeiro acesso ou storage indisponível */ }
+  }, []);
+
+  function toggleSec(key: string) {
+    setOpenSecs(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      try { localStorage.setItem('config-secoes-abertas', JSON.stringify(Array.from(next))); } catch { /* ignora */ }
+      return next;
+    });
+  }
 
   // seletor de cenário para fontes
   const [fontesProfileId, setFontesProfileId] = useState<string>('');
@@ -494,8 +520,9 @@ export default function Configuracoes() {
       </header>
 
       {/* ── SEÇÃO 1: Fontes do Radar ─────────────────────────────────────── */}
-      <SecHeader icon="📡" title="Fontes do Radar" count={`${ativas} ativa${ativas !== 1 ? 's' : ''} de ${fontes.length}` as unknown as number} />
+      <SecHeader icon="📡" title="Fontes do Radar" count={fontes.length} open={openSecs.has('radar')} onToggle={() => toggleSec('radar')} />
 
+      {openSecs.has('radar') && <>
       {/* seletor de cenário */}
       {perfis.length > 1 && (
         <div className="mb-3">
@@ -663,10 +690,12 @@ export default function Configuracoes() {
         </div>
       </div>
 
-      {/* ── SEÇÃO 2: Automação ────────────────────────────────────────────── */}
-      <SecHeader icon="⏱" title="Automação do Radar" />
+      </>}
 
-      <div className="bg-white rounded-2xl px-4 py-4" style={{ boxShadow: '0 1px 3px rgba(23,38,44,.06),0 4px 14px rgba(23,38,44,.05)' }}>
+      {/* ── SEÇÃO 2: Automação ────────────────────────────────────────────── */}
+      <SecHeader icon="⏱" title="Automação do Radar" open={openSecs.has('automacao')} onToggle={() => toggleSec('automacao')} />
+
+      {openSecs.has('automacao') && <div className="bg-white rounded-2xl px-4 py-4" style={{ boxShadow: '0 1px 3px rgba(23,38,44,.06),0 4px 14px rgba(23,38,44,.05)' }}>
         <p className="text-[12px] font-semibold text-mut mb-2">Frequência de varredura</p>
         <div className="flex gap-1.5 mb-5">
           {INTERVALOS.map(op => (
@@ -700,12 +729,12 @@ export default function Configuracoes() {
             </button>
           ))}
         </div>
-      </div>
+      </div>}
 
       {/* ── SEÇÃO 2b: Cadência de publicação ─────────────────────────────── */}
-      <SecHeader icon="🕐" title="Cadência de publicação" />
+      <SecHeader icon="🕐" title="Cadência de publicação" open={openSecs.has('cadencia')} onToggle={() => toggleSec('cadencia')} />
 
-      <div className="bg-white rounded-2xl px-4 py-4 mb-3" style={{ boxShadow: '0 1px 3px rgba(23,38,44,.06),0 4px 14px rgba(23,38,44,.05)' }}>
+      {openSecs.has('cadencia') && <div className="bg-white rounded-2xl px-4 py-4 mb-3" style={{ boxShadow: '0 1px 3px rgba(23,38,44,.06),0 4px 14px rgba(23,38,44,.05)' }}>
         <p className="text-[12px] font-semibold text-mut mb-2">Horários preferidos</p>
         <p className="text-[11.5px] text-soft mb-3 leading-relaxed">
           A IA vai sugerir esses horários ao agendar e usará o próximo slot livre ao gerar posts pelo Radar.
@@ -764,12 +793,12 @@ export default function Configuracoes() {
             </p>
           );
         })()}
-      </div>
+      </div>}
 
       {/* ── SEÇÃO 3: Canais ───────────────────────────────────────────────── */}
-      <SecHeader icon="📱" title="Canais ativos" />
+      <SecHeader icon="📱" title="Canais ativos" open={openSecs.has('canais')} onToggle={() => toggleSec('canais')} />
 
-      <div className="bg-white rounded-2xl overflow-hidden" style={{ boxShadow: '0 1px 3px rgba(23,38,44,.06),0 4px 14px rgba(23,38,44,.05)' }}>
+      {openSecs.has('canais') && <div className="bg-white rounded-2xl overflow-hidden" style={{ boxShadow: '0 1px 3px rgba(23,38,44,.06),0 4px 14px rgba(23,38,44,.05)' }}>
         {config.canais.map((c, i) => (
           <div
             key={c.name}
@@ -781,111 +810,26 @@ export default function Configuracoes() {
             <Toggle on={c.active} onChange={v => setCanal(c.name, v)} />
           </div>
         ))}
-      </div>
+      </div>}
 
-      {/* ── SEÇÃO 4: Perfis de Marca (DNA de Campanha) ───────────────────── */}
-      <SecHeader icon="🎯" title="Perfis de Marca" count={perfis.length} />
+      {/* ── SEÇÃO 4: Perfis de Marca → /cenarios ────────────────────────── */}
+      <SecHeader icon="🎯" title="Cenários de Marca" />
 
-      {/* Cards de perfis existentes */}
-      {perfis.map(p => (
-        <div key={p.id} className="bg-white rounded-2xl px-4 py-3.5 mb-2.5"
-          style={{ boxShadow: '0 1px 3px rgba(23,38,44,.06),0 4px 14px rgba(23,38,44,.05)', opacity: p.ativo ? 1 : 0.75 }}>
-          <div className="flex items-center gap-2 mb-1">
-            {p.ativo && (
-              <span className="text-[10.5px] font-bold px-2 py-0.5 rounded-full"
-                style={{ background: '#E1F5EE', color: '#0F6E56' }}>✓ Ativo</span>
-            )}
-            {p.radarAtivo && (
-              <span className="text-[10.5px] font-bold px-2 py-0.5 rounded-full"
-                style={{ background: '#EEF2FF', color: '#4338CA' }}>📡 Radar</span>
-            )}
-            <p className="text-[14px] font-semibold text-ink flex-1 truncate">{p.displayName}</p>
-            <button onClick={() => editarPerfil(p)}
-              className="text-[12px] font-semibold px-2.5 py-1 rounded-full transition"
-              style={{ background: '#F0F4F5', color: '#7B6B8A' }}>Editar</button>
-            {!p.ativo && (
-              <button onClick={() => ativarPerfil(p.id)}
-                className="text-[12px] font-semibold px-2.5 py-1 rounded-full transition"
-                style={{ background: '#F0E8FA', color: '#8B2FC9' }}>Usar</button>
-            )}
-            <button onClick={() => excluirPerfil(p.id)}
-              disabled={excluindoPerfil === p.id}
-              className="text-soft hover:text-red-400 text-[18px] leading-none transition disabled:opacity-40">
-              {excluindoPerfil === p.id ? '…' : '×'}
-            </button>
-          </div>
-          {p.descricao && <p className="text-[12px] text-mut truncate">{p.descricao}</p>}
-          <div className="flex items-center gap-2 mt-2">
-            <span className="text-[11.5px] text-mut">Radar automático</span>
-            <Toggle on={p.radarAtivo} onChange={v => toggleRadarPerfil(p.id, v)} />
-          </div>
-        </div>
-      ))}
-
-      {/* Formulário de criação/edição */}
-      <div className="bg-white rounded-2xl px-4 py-4 mb-3"
+      <Link href="/cenarios"
+        className="flex items-center gap-3 bg-white rounded-2xl px-4 py-3.5 mb-3 transition active:scale-[.98]"
         style={{ boxShadow: '0 1px 3px rgba(23,38,44,.06),0 4px 14px rgba(23,38,44,.05)' }}>
-        <p className="text-[13px] font-semibold text-ink mb-3">
-          {perfilEditando ? `Editar — ${perfilEditando.displayName}` : '+ Novo perfil de marca'}
-        </p>
-
-        {([
-          { key: 'displayName', label: 'Nome do perfil *', placeholder: 'Ex.: Francisco Dabus, Vip Insurance…' },
-          { key: 'descricao',   label: 'Sobre o negócio', placeholder: 'O que você faz e onde atua.' },
-          { key: 'publicoAlvo', label: 'Público-alvo', placeholder: 'Ex.: Brasileiros em Orlando, 30-55 anos.' },
-          { key: 'produtos',    label: 'Produtos / serviços', placeholder: 'Ex.: Seguro auto, residencial, vida, saúde.' },
-          { key: 'objetivo',    label: 'Objetivo de marketing', placeholder: 'Ex.: Gerar leads, aumentar autoridade, awareness.' },
-          { key: 'tomDeVoz',    label: 'Tom de voz (usar)', placeholder: 'Ex.: Consultivo, caloroso, sem juridiquês.' },
-          { key: 'tomEvitar',   label: 'Tom de voz (evitar)', placeholder: 'Ex.: Formal demais, gírias, promessas exageradas.' },
-          { key: 'frequencia',  label: 'Frequência de posts', placeholder: 'Ex.: 3x por semana, diário.' },
-          { key: 'contato',     label: 'Site / link de contato', placeholder: 'https://…' },
-          { key: 'notasLivres', label: 'Notas para o CMO', placeholder: 'Qualquer contexto adicional que a IA deve saber.' },
-        ] as const).map(({ key, label, placeholder }) => (
-          <div key={key} className="mb-3">
-            <label className="text-[11.5px] font-semibold text-mut uppercase tracking-wide block mb-1">{label}</label>
-            {key === 'descricao' || key === 'notasLivres' ? (
-              <textarea
-                value={perfilForm[key]}
-                onChange={e => setPerfilForm(f => ({ ...f, [key]: e.target.value }))}
-                placeholder={placeholder}
-                rows={3}
-                className="w-full border border-[#E0E8EA] rounded-xl px-3 py-2.5 text-[13px] outline-none focus:border-[#8B2FC9] resize-none font-sans leading-relaxed"
-                style={{ background: '#FDF8FF' }}
-              />
-            ) : (
-              <input
-                type="text"
-                value={perfilForm[key]}
-                onChange={e => setPerfilForm(f => ({ ...f, [key]: e.target.value }))}
-                placeholder={placeholder}
-                className="w-full border border-[#E0E8EA] rounded-xl px-3 py-2.5 text-[13px] outline-none focus:border-[#8B2FC9]"
-                style={{ background: '#FDF8FF' }}
-              />
-            )}
-          </div>
-        ))}
-
-        <div className="flex gap-2 mt-1">
-          {perfilEditando && (
-            <button onClick={() => { setPerfilEditando(null); setPerfilForm(PERFIL_VAZIO); }}
-              className="flex-1 py-2.5 rounded-xl text-[13px] font-semibold transition"
-              style={{ background: '#F0F4F5', color: '#7B6B8A' }}>
-              Cancelar
-            </button>
-          )}
-          <button
-            onClick={salvarPerfil}
-            disabled={salvandoPerfil || !perfilForm.displayName.trim()}
-            className="flex-[2] py-2.5 rounded-xl text-[13px] font-semibold text-white transition active:scale-95 disabled:opacity-60"
-            style={{ background: '#8B2FC9' }}>
-            {salvandoPerfil ? 'Salvando…' : perfilEditando ? 'Atualizar perfil' : 'Criar perfil'}
-          </button>
+        <div className="flex-1">
+          <p className="text-[13.5px] font-semibold text-ink">
+            {perfis.length > 0 ? `${perfis.length} cenário${perfis.length !== 1 ? 's' : ''} configurado${perfis.length !== 1 ? 's' : ''}` : 'Nenhum cenário ainda'}
+          </p>
+          <p className="text-[11.5px] text-mut mt-0.5">Gerencie marca, canais e frequência em Cenários</p>
         </div>
-      </div>
+        <span className="text-[18px] text-mut">›</span>
+      </Link>
 
       {/* WhatsApp */}
-      <SecHeader icon="📲" title="WhatsApp CTA" />
-      <div className="bg-white rounded-2xl px-4 py-4 mb-3" style={{ boxShadow: '0 1px 3px rgba(23,38,44,.06),0 4px 14px rgba(23,38,44,.05)' }}>
+      <SecHeader icon="📲" title="WhatsApp CTA" open={openSecs.has('whatsapp')} onToggle={() => toggleSec('whatsapp')} />
+      {openSecs.has('whatsapp') && <div className="bg-white rounded-2xl px-4 py-4 mb-3" style={{ boxShadow: '0 1px 3px rgba(23,38,44,.06),0 4px 14px rgba(23,38,44,.05)' }}>
         <p className="text-[12px] text-mut mb-3 leading-relaxed">
           A IA inclui seu link <code className="bg-[#F0F4F5] px-1 rounded">wa.me</code> automaticamente nos posts com CTA de contato direto.
         </p>
@@ -914,10 +858,12 @@ export default function Configuracoes() {
         )}
       </div>
 
-      {/* ── SEÇÃO 5: Chaves e integrações ────────────────────────────────── */}
-      <SecHeader icon="🔑" title="Chaves e integrações" />
+      }
 
-      <div className="bg-white rounded-2xl overflow-hidden" style={{ boxShadow: '0 1px 3px rgba(23,38,44,.06),0 4px 14px rgba(23,38,44,.05)' }}>
+      {/* ── SEÇÃO 5: Chaves e integrações ────────────────────────────────── */}
+      <SecHeader icon="🔑" title="Chaves e integrações" open={openSecs.has('chaves')} onToggle={() => toggleSec('chaves')} />
+
+      {openSecs.has('chaves') && <><div className="bg-white rounded-2xl overflow-hidden" style={{ boxShadow: '0 1px 3px rgba(23,38,44,.06),0 4px 14px rgba(23,38,44,.05)' }}>
         {([
           { key: 'anthropic', label: 'Anthropic AI (geração de posts)', configured: config.chaves.anthropic },
           { key: 'ayrshare',  label: 'Ayrshare (publicação nas redes)',  configured: config.chaves.ayrshare  },
@@ -957,7 +903,7 @@ export default function Configuracoes() {
 
       <p className="text-[11.5px] text-soft text-center mt-3 mb-2">
         Para adicionar ou alterar chaves, edite o arquivo <code className="bg-[#F0F4F5] px-1 rounded">.env</code> e reinicie o servidor.
-      </p>
+      </p></>}
 
       {/* Botão Sair */}
       <div className="mt-6 pt-5" style={{ borderTop: '1px solid #EDE6F5' }}>

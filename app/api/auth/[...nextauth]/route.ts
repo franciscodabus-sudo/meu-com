@@ -33,7 +33,7 @@ const handler = NextAuth({
             console.warn('[auth] senha incorreta para:', credentials.email);
             return null;
           }
-          return { id: usuario.id, email: usuario.email, name: usuario.name ?? '' };
+          return { id: usuario.id, email: usuario.email, name: usuario.name ?? '', role: usuario.role } as any;
         } catch (err) {
           console.error('[auth] erro no authorize:', err instanceof Error ? err.message : err);
           return null;
@@ -43,11 +43,18 @@ const handler = NextAuth({
   ],
   callbacks: {
     async jwt({ token, user }) {
-      if (user) { token.id = user.id; token.email = user.email; }
+      if (user) {
+        token.id = user.id;
+        token.email = user.email;
+        token.role = (user as any).role;
+      }
       return token;
     },
     async session({ session, token }) {
-      if (token?.email) session.user = { ...session.user, email: token.email as string };
+      if (token?.email) {
+        session.user = { ...session.user, email: token.email as string };
+        (session.user as any).role = token.role;
+      }
       return session;
     },
   },

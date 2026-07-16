@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState, useRef, useCallback } from 'react';
+import Link from 'next/link';
 import PreviewModal from '@/components/PreviewModal';
 import type { PreviewPost } from '@/components/PreviewModal';
 import RoteiroModal from '@/components/RoteiroModal';
@@ -109,16 +110,18 @@ function TopBar({ perfil, allPerfis, onSwitch }: {
       </span>
       <div className="relative flex-shrink-0" ref={popoverRef}>
         <button
-          className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full transition"
-          style={{ background: '#F0E8FA' }}
-          onClick={() => setShowPopover(v => !v)}>
-          <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#F04E3E' }} />
-          <span className="text-[11px] font-semibold" style={{ color: '#8B2FC9' }}>
-            {perfil?.displayName ?? ''}
+          className="flex items-center min-h-[44px] -my-2"
+          onClick={() => setShowPopover(v => !v)}
+          aria-label="Trocar perfil de marca">
+          <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full" style={{ background: '#F0E8FA' }}>
+            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#F04E3E' }} />
+            <span className="text-[11px] font-semibold" style={{ color: '#8B2FC9' }}>
+              {perfil?.displayName ?? ''}
+            </span>
+            {allPerfis.length > 1 && (
+              <span className="text-[9px] leading-none" style={{ color: '#8B2FC9' }}>▾</span>
+            )}
           </span>
-          {allPerfis.length > 1 && (
-            <span className="text-[9px] leading-none" style={{ color: '#8B2FC9' }}>▾</span>
-          )}
         </button>
         {showPopover && allPerfis.length > 1 && (
           <div className="absolute top-full left-0 mt-1 w-[192px] bg-white rounded-2xl shadow-lg z-50 overflow-hidden"
@@ -169,15 +172,18 @@ function BriefBar({ onGerar, onRoteiro, onArtigo, gerando, canaisAtivos }: {
   const [gerandoRoteiro, setGerandoRoteiro] = useState(false);
   const [canalPin, setCanalPin] = useState<string | null>(null);
 
+  const MIN_CHARS = 10;
+  const briefValido = brief.trim().length >= MIN_CHARS;
+
   async function submit() {
-    if (!brief.trim() || gerando) return;
+    if (!briefValido || gerando) return;
     const b = brief;
     setBrief('');
     await onGerar(b, canalPin ?? undefined);
   }
 
   async function submitRoteiro() {
-    if (!brief.trim() || gerandoRoteiro) return;
+    if (!briefValido || gerandoRoteiro) return;
     const b = brief;
     setBrief('');
     setGerandoRoteiro(true);
@@ -185,7 +191,7 @@ function BriefBar({ onGerar, onRoteiro, onArtigo, gerando, canaisAtivos }: {
   }
 
   function submitArtigo() {
-    if (!brief.trim()) return;
+    if (!briefValido) return;
     const b = brief;
     setBrief('');
     onArtigo(b);
@@ -194,6 +200,11 @@ function BriefBar({ onGerar, onRoteiro, onArtigo, gerando, canaisAtivos }: {
   return (
     <div className="px-3 py-2 flex-shrink-0 border-b"
       style={{ background: '#fff', borderColor: 'var(--color-border-subtle)' }}>
+      {gerando && (
+        <div className="h-[3px] rounded-full overflow-hidden mb-1.5" style={{ background: '#EDE6F5' }}>
+          <div className="h-full rounded-full animate-pulse" style={{ background: 'linear-gradient(90deg,#8B2FC9,#F04E3E)', width: '60%' }} />
+        </div>
+      )}
       <div className="flex items-center gap-2 px-3 py-2 rounded-xl border"
         style={{ borderColor: 'var(--color-border-subtle)', background: '#FDF8FF' }}>
         <span style={{ color: '#F04E3E', fontSize: 15 }}>✦</span>
@@ -205,10 +216,16 @@ function BriefBar({ onGerar, onRoteiro, onArtigo, gerando, canaisAtivos }: {
           className="flex-1 text-[13px] outline-none bg-transparent"
           disabled={gerando || gerandoRoteiro}
         />
+        {/* Contador de chars */}
+        {brief.length > 0 && brief.trim().length < MIN_CHARS && (
+          <span className="text-[10px] font-semibold flex-shrink-0" style={{ color: '#F04E3E' }}>
+            {MIN_CHARS - brief.trim().length}
+          </span>
+        )}
         {/* Botão artigo */}
         <button
           onClick={submitArtigo}
-          disabled={gerando || gerandoRoteiro || !brief.trim()}
+          disabled={gerando || gerandoRoteiro || !briefValido}
           title="Escrever artigo longo com pesquisa real"
           className="flex-shrink-0 px-2.5 py-1.5 rounded-xl text-[13px] font-semibold transition disabled:opacity-40 active:scale-95"
           style={{ background: '#E8F4FF', color: '#0A66C2' }}
@@ -218,7 +235,7 @@ function BriefBar({ onGerar, onRoteiro, onArtigo, gerando, canaisAtivos }: {
         {/* Botão roteiro */}
         <button
           onClick={submitRoteiro}
-          disabled={gerandoRoteiro || gerando || !brief.trim()}
+          disabled={gerandoRoteiro || gerando || !briefValido}
           title="Gerar roteiro de vídeo"
           className="flex-shrink-0 px-2.5 py-1.5 rounded-xl text-[13px] font-semibold transition disabled:opacity-40 active:scale-95"
           style={{ background: '#F0E8FA', color: '#8B2FC9' }}
@@ -228,7 +245,7 @@ function BriefBar({ onGerar, onRoteiro, onArtigo, gerando, canaisAtivos }: {
         {/* Botão posts */}
         <button
           onClick={submit}
-          disabled={gerando || gerandoRoteiro || !brief.trim()}
+          disabled={gerando || gerandoRoteiro || !briefValido}
           className="flex-shrink-0 px-3 py-1.5 rounded-xl text-white text-[13px] font-semibold transition disabled:opacity-40 active:scale-95"
           style={{ background: 'linear-gradient(135deg,#8B2FC9,#F04E3E)' }}
         >
@@ -267,8 +284,8 @@ function BriefBar({ onGerar, onRoteiro, onArtigo, gerando, canaisAtivos }: {
 
 // ─── Approval Card ─────────────────────────────────────────────────────────────
 
-function ApprovalCard({ post, onAprovar, onSkip }: {
-  post: PendingPost; onAprovar: () => void; onSkip: () => void;
+function ApprovalCard({ post, perfil, selected, onSelect, onAprovar, onSkip }: {
+  post: PendingPost; perfil?: Perfil; selected?: boolean; onSelect?: () => void; onAprovar: () => void; onSkip: () => void;
 }) {
   const grad = CANAL_GRAD[post.channel] ?? 'linear-gradient(135deg,#1A0A2E,#3D2070)';
   const [skipping, setSkipping] = useState(false);
@@ -282,6 +299,19 @@ function ApprovalCard({ post, onAprovar, onSkip }: {
     <div className={`bg-white rounded-2xl shadow-card mb-2 overflow-hidden transition-all ${skipping ? 'opacity-0 scale-95' : ''}`}>
       <div className="relative flex items-end p-2.5"
         style={{ height: 72, background: grad }}>
+        {/* Checkbox seleção em lote */}
+        <button
+          onClick={e => { e.stopPropagation(); onSelect?.(); }}
+          className="absolute top-0 right-0 w-11 h-11 flex items-center justify-center z-10"
+          aria-label="Selecionar post">
+          <span className="w-[22px] h-[22px] rounded-full border-2 flex items-center justify-center transition"
+            style={{
+              background: selected ? '#8B2FC9' : 'rgba(255,255,255,.3)',
+              borderColor: selected ? '#8B2FC9' : 'rgba(255,255,255,.6)',
+            }}>
+            {selected && <span className="text-white text-[10px] font-bold">✓</span>}
+          </span>
+        </button>
         {post.mediaUrl && (
           <>
             <img src={post.mediaUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
@@ -294,6 +324,13 @@ function ApprovalCard({ post, onAprovar, onSkip }: {
           {post.format === 'story' && <span>📱</span>}
           {post.channel}{post.format === 'story' ? ' · Story' : ''}
         </span>
+        {/* Badge da marca — com 3 perfis na mesma fila, o dono do post precisa estar visível */}
+        {perfil && (
+          <span className="absolute top-7 left-2 text-white text-[9px] font-bold px-2 py-0.5 rounded-full z-10"
+            style={{ background: perfil.avatarColor || '#8B2FC9' }}>
+            {perfil.displayName}
+          </span>
+        )}
         <p className="relative text-white font-semibold text-[12px] leading-snug line-clamp-2 z-10">
           {post.title}
         </p>
@@ -304,6 +341,11 @@ function ApprovalCard({ post, onAprovar, onSkip }: {
           style={{ background: 'linear-gradient(135deg,#8B2FC9,#F04E3E)' }}>
           ✓ Aprovar
         </button>
+        <Link href={`/studio?postId=${post.id}`}
+          className="flex-1 py-1.5 rounded-xl text-[11.5px] font-semibold transition active:scale-95 text-center"
+          style={{ background: 'var(--color-bg-tertiary)', color: '#8B2FC9' }}>
+          🖼
+        </Link>
         <button onClick={skip} disabled={skipping}
           className="flex-1 py-1.5 rounded-xl text-[11.5px] font-semibold transition active:scale-95"
           style={{ background: 'var(--color-bg-tertiary)', color: '#7B6B8A' }}>
@@ -374,16 +416,45 @@ function RadarCard({ item, perfilNome, canaisAtivos, onGerar }: {
 
 // ─── Column A ──────────────────────────────────────────────────────────────────
 
-function ColumnA({ posts, radarItems, perfilNome, canaisAtivos, onAprovar, onSkip, onGerarDoRadar, gerando }: {
+function ColumnA({ posts, approvedPosts, radarItems, perfis, perfilNome, canaisAtivos, onAprovar, onAprovarLote, onPublicar, onSkip, onGerarDoRadar, gerando, isFirstTime }: {
   posts: PendingPost[];
+  approvedPosts: PendingPost[];
   radarItems: RadarItem[];
+  perfis: Perfil[];
   perfilNome?: string;
   canaisAtivos: string[];
   onAprovar: (p: PendingPost) => void;
+  onAprovarLote: (ids: string[]) => Promise<void>;
+  onPublicar: (p: PendingPost) => void;
   onSkip: (id: string) => void;
   onGerarDoRadar: (id: string, canal: string) => Promise<void>;
   gerando: boolean;
+  isFirstTime?: boolean;
 }) {
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [aprovandoLote, setAprovandoLote] = useState(false);
+  const [loteMsg, setLoteMsg] = useState<string | null>(null);
+
+  function toggleSelect(id: string) {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  async function aprovarSelecionados() {
+    setAprovandoLote(true);
+    const n = selectedIds.size;
+    await onAprovarLote(Array.from(selectedIds));
+    setSelectedIds(new Set());
+    setAprovandoLote(false);
+    setLoteMsg(`${n} post${n > 1 ? 's' : ''} aprovado${n > 1 ? 's' : ''} ✓ — prontos para publicar abaixo`);
+    setTimeout(() => setLoteMsg(null), 5000);
+  }
+
+  const perfilDe = (id: string | null) => perfis.find(p => p.id === id);
+
   return (
     <div className="overflow-y-auto p-3.5 border-r no-scrollbar"
       style={{ borderColor: 'var(--color-border-subtle)', background: 'var(--color-bg-tertiary)' }}>
@@ -399,11 +470,33 @@ function ColumnA({ posts, radarItems, perfilNome, canaisAtivos, onAprovar, onSki
         )}
       </div>
 
+      {/* Barra de aprovação em lote */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-2 mb-2.5 px-3 py-2 rounded-2xl"
+          style={{ background: 'linear-gradient(135deg,#8B2FC9,#F04E3E)' }}>
+          <span className="text-white text-[12px] font-semibold flex-1">
+            {selectedIds.size} selecionado{selectedIds.size > 1 ? 's' : ''}
+          </span>
+          <button
+            onClick={() => setSelectedIds(new Set())}
+            className="text-white/70 text-[11px] underline">
+            Limpar
+          </button>
+          <button
+            onClick={aprovarSelecionados}
+            disabled={aprovandoLote}
+            className="px-3 py-1 rounded-xl text-[12px] font-bold transition active:scale-95 disabled:opacity-60"
+            style={{ background: 'rgba(255,255,255,.2)', color: '#fff' }}>
+            {aprovandoLote ? '…' : '✓ Aprovar todos'}
+          </button>
+        </div>
+      )}
+
       {gerando && (
         <p className="text-[12px] text-mut py-3 text-center animate-pulse">✦ Gerando posts…</p>
       )}
 
-      {!gerando && posts.length === 0 && (
+      {!gerando && posts.length === 0 && !isFirstTime && (
         <div className="text-center py-5 mb-3">
           <p className="text-[24px] mb-1">🎉</p>
           <p className="text-[12px] font-semibold text-ink">Fila zerada!</p>
@@ -411,14 +504,92 @@ function ColumnA({ posts, radarItems, perfilNome, canaisAtivos, onAprovar, onSki
         </div>
       )}
 
+      {/* Onboarding checklist — primeiro acesso */}
+      {!gerando && isFirstTime && (
+        <div className="rounded-2xl p-4 mb-3" style={{ background: '#FDF8FF', border: '1.5px solid #EDE6F5' }}>
+          <p className="text-[13px] font-bold text-ink mb-3">👋 Bem-vindo ao Meu CMO!</p>
+          <div className="space-y-2">
+            {[
+              { icon: '🎯', text: 'Configure seu cenário de marca', link: '/cenarios', cta: 'Configurar →' },
+              { icon: '📡', text: 'Adicione fontes ao Radar', link: '/configuracoes', cta: 'Adicionar →' },
+              { icon: '✦', text: 'Escreva um brief e gere seu primeiro post', link: null, cta: null },
+              { icon: '📱', text: 'Conecte seus canais sociais', link: '/canais', cta: 'Conectar →' },
+            ].map((item, i) => (
+              <div key={i} className="flex items-center gap-2.5">
+                <span className="text-[16px] flex-shrink-0">{item.icon}</span>
+                <span className="flex-1 text-[12px] text-ink leading-snug">{item.text}</span>
+                {item.link && (
+                  <Link href={item.link}
+                    className="text-[11px] font-semibold flex-shrink-0"
+                    style={{ color: '#8B2FC9' }}>
+                    {item.cta}
+                  </Link>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Toast de aprovação em lote */}
+      {loteMsg && (
+        <div className="flex items-center gap-2 mb-2.5 px-3 py-2.5 rounded-2xl text-[12px] font-semibold"
+          style={{ background: '#E1F5EE', color: '#0F6E56' }}>
+          {loteMsg}
+        </div>
+      )}
+
       {posts.map(p => (
         <ApprovalCard
           key={p.id}
           post={p}
+          perfil={perfilDe(p.profileId)}
+          selected={selectedIds.has(p.id)}
+          onSelect={() => toggleSelect(p.id)}
           onAprovar={() => onAprovar(p)}
           onSkip={() => onSkip(p.id)}
         />
       ))}
+
+      {/* Prontos para publicar — aprovados aguardando publicação/agendamento */}
+      {approvedPosts.length > 0 && (
+        <>
+          <div className="flex items-center gap-2 mb-2.5 mt-5">
+            <span className="text-[10.5px] font-semibold uppercase tracking-wide text-mut">Prontos para publicar</span>
+            <span className="text-[9.5px] font-bold px-1.5 py-0.5 rounded-full text-white"
+              style={{ background: '#1D9E75' }}>
+              {approvedPosts.length}
+            </span>
+          </div>
+          {approvedPosts.map(p => {
+            const pf = perfilDe(p.profileId);
+            return (
+              <div key={p.id} className="bg-white rounded-2xl shadow-card mb-2 px-3 py-2.5 flex items-center gap-2.5">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <span className="text-[9px] font-bold uppercase" style={{ color: CANAL_COR[p.channel] ?? '#7B6B8A' }}>
+                      {p.channel}
+                    </span>
+                    {pf && (
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full text-white"
+                        style={{ background: pf.avatarColor || '#8B2FC9' }}>
+                        {pf.displayName}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[12px] font-semibold text-ink leading-snug line-clamp-1">{p.title}</p>
+                </div>
+                <button
+                  onClick={() => onPublicar(p)}
+                  className="flex-shrink-0 min-h-[44px] px-3.5 rounded-xl text-white text-[12px] font-semibold transition active:scale-95"
+                  style={{ background: 'linear-gradient(135deg,#8B2FC9,#F04E3E)' }}>
+                  🚀 Publicar
+                </button>
+              </div>
+            );
+          })}
+        </>
+      )}
 
       {/* Radar pautas */}
       {radarItems.length > 0 && (
@@ -580,19 +751,19 @@ function ColumnB({ campaign, onDeletar }: {
             <div className="flex-1 pb-3 pt-0.5 min-w-0">
               <div className="flex items-center gap-1 mb-0.5 flex-wrap">
                 {p.stage && !isDelExt && (
-                  <span className="text-[8.5px] font-bold px-1.5 py-0.5 rounded-full"
+                  <span className="text-[10.5px] font-bold px-1.5 py-0.5 rounded-full"
                     style={{ background: stage.bg, color: stage.text }}>
                     {p.stage}
                   </span>
                 )}
                 {isDelExt && (
-                  <span className="text-[8.5px] font-semibold px-1.5 py-0.5 rounded-full"
+                  <span className="text-[10.5px] font-semibold px-1.5 py-0.5 rounded-full"
                     style={{ background: '#FEF8DC', color: '#854F0B' }}>
                     Removido no Instagram
                   </span>
                 )}
                 {!isDelExt && (
-                  <span className="text-[8.5px] font-semibold capitalize"
+                  <span className="text-[10.5px] font-semibold capitalize"
                     style={{ color: CANAL_COR[p.channel] ?? '#9CA3AF' }}>
                     {p.channel}
                   </span>
@@ -614,8 +785,8 @@ function ColumnB({ campaign, onDeletar }: {
                 onClick={() => handleDeletar(p.id, p.title)}
                 disabled={deletandoId === p.id}
                 title="Apagar publicação"
-                className="flex-shrink-0 mt-1 w-[22px] h-[22px] rounded-full flex items-center justify-center transition hover:bg-red-50 disabled:opacity-40"
-                style={{ color: '#D1D5DB', fontSize: 11 }}>
+                className="flex-shrink-0 w-11 h-11 -mr-2 rounded-full flex items-center justify-center transition hover:bg-red-50 disabled:opacity-40"
+                style={{ color: '#D1D5DB', fontSize: 12 }}>
                 {deletandoId === p.id ? '…' : '🗑'}
               </button>
             )}
@@ -1044,6 +1215,7 @@ function ColumnC({ stats }: { stats: PanelStats | null }) {
 
 export default function Hoje() {
   const [pendingPosts, setPendingPosts] = useState<PendingPost[]>([]);
+  const [approvedPosts, setApprovedPosts] = useState<PendingPost[]>([]);
   const [radarItems, setRadarItems] = useState<RadarItem[]>([]);
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [stats, setStats] = useState<PanelStats | null>(null);
@@ -1058,8 +1230,9 @@ export default function Hoje() {
 
   const fetchData = useCallback(async () => {
     // Fetch profiles + other data in parallel first
-    const [postsR, agendaR, painelR, perfisR, canaisR] = await Promise.allSettled([
+    const [postsR, aprovadosR, agendaR, painelR, perfisR, canaisR] = await Promise.allSettled([
       fetch('/api/posts?status=pending').then(r => r.ok ? r.json() : []),
+      fetch('/api/posts?status=approved').then(r => r.ok ? r.json() : []),
       fetch('/api/agenda').then(r => r.ok ? r.json() : null),
       fetch('/api/painel').then(r => r.ok ? r.json() : null),
       fetch('/api/perfis').then(r => r.ok ? r.json() : []),
@@ -1075,6 +1248,7 @@ export default function Hoje() {
     }
 
     if (postsR.status === 'fulfilled') setPendingPosts(postsR.value);
+    if (aprovadosR.status === 'fulfilled') setApprovedPosts(aprovadosR.value);
     if (agendaR.status === 'fulfilled' && agendaR.value?.campaigns?.[0]) {
       setCampaign(agendaR.value.campaigns[0]);
     }
@@ -1168,7 +1342,24 @@ export default function Hoje() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: post.id, action: 'approve' }),
     });
+    // Move da fila para "prontos para publicar" — se fechar o preview sem publicar, o post continua acessível
+    setPendingPosts(ps => ps.filter(p => p.id !== post.id));
+    setApprovedPosts(ps => [post, ...ps.filter(p => p.id !== post.id)]);
     setPreviewPost(post);
+  }
+
+  // Aprovação em lote: um PATCH por post, move para "prontos para publicar", sem abrir preview
+  async function aprovarLote(ids: string[]) {
+    await Promise.all(ids.map(id =>
+      fetch('/api/posts', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, action: 'approve' }),
+      })
+    ));
+    const aprovados = pendingPosts.filter(p => ids.includes(p.id));
+    setPendingPosts(ps => ps.filter(p => !ids.includes(p.id)));
+    setApprovedPosts(as => [...aprovados, ...as.filter(a => !ids.includes(a.id))]);
   }
 
   async function criarPostDoRoteiro(legenda: string, hashtags: string, canal: string) {
@@ -1240,29 +1431,44 @@ export default function Hoje() {
         >
           <ColumnA
             posts={pendingPosts}
+            approvedPosts={approvedPosts}
             radarItems={radarItems}
+            perfis={allPerfis}
             perfilNome={perfil?.displayName}
             canaisAtivos={canaisAtivos}
             onAprovar={aprovarPost}
+            onAprovarLote={aprovarLote}
+            onPublicar={p => setPreviewPost(p)}
             onSkip={skipPost}
             onGerarDoRadar={gerarDoRadar}
             gerando={gerando}
+            isFirstTime={!gerando && pendingPosts.length === 0 && approvedPosts.length === 0 && !campaign && !(stats?.totais?.publicados)}
           />
           <ColumnB campaign={campaign} onDeletar={deletarPublicado} />
           <ColumnC stats={stats} />
         </div>
       </div>
 
-      {previewPost && (
-        <PreviewModal
-          post={previewPost}
-          onClose={() => setPreviewPost(null)}
-          onDone={id => {
-            setPendingPosts(ps => ps.filter(p => p.id !== id));
-            setPreviewPost(null);
-          }}
-        />
-      )}
+      {previewPost && (() => {
+        // Identidade do mockup vem do perfil DO POST, não do perfil ativo —
+        // com 3 marcas na mesma fila, a prévia precisa mostrar onde o post vai sair de verdade
+        const perfilDoPost = allPerfis.find(p => p.id === previewPost.profileId) ?? perfil;
+        return (
+          <PreviewModal
+            post={previewPost}
+            profile={perfilDoPost ? {
+              handle: perfilDoPost.displayName.toLowerCase().replace(/\s+/g, '.'),
+              name: perfilDoPost.displayName,
+            } : undefined}
+            onClose={() => setPreviewPost(null)}
+            onDone={id => {
+              setPendingPosts(ps => ps.filter(p => p.id !== id));
+              setApprovedPosts(ps => ps.filter(p => p.id !== id));
+              setPreviewPost(null);
+            }}
+          />
+        );
+      })()}
 
       {roteiro && (
         <RoteiroModal

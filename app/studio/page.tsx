@@ -1,6 +1,7 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 type PexelsPhoto = {
   id: number;
@@ -27,7 +28,19 @@ async function salvarNoBanco(url: string, tags: string) {
 
 type Aba = 'buscar' | 'salvos';
 
-export default function Studio() {
+export default function StudioPage() {
+  return (
+    <Suspense>
+      <Studio />
+    </Suspense>
+  );
+}
+
+function Studio() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const postId = searchParams.get('postId');
+
   const [aba, setAba] = useState<Aba>('buscar');
   const [query, setQuery] = useState('');
   const [fotos, setFotos] = useState<PexelsPhoto[]>([]);
@@ -40,6 +53,7 @@ export default function Studio() {
   const [salvandoFoto, setSalvandoFoto] = useState<number | null>(null);
   const [salvoSucesso, setSalvoSucesso] = useState<number | null>(null);
   const [fotoPreview, setFotoPreview] = useState<PexelsPhoto | null>(null);
+  const [vinculando, setVinculando] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -82,9 +96,36 @@ export default function Studio() {
   async function salvarFoto(foto: PexelsPhoto) {
     setSalvandoFoto(foto.id);
     await salvarNoBanco(foto.src.large, foto.alt);
+    if (postId) {
+      await fetch('/api/posts', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: postId, action: 'updateMedia', mediaUrl: foto.src.large }),
+      });
+      setSalvandoFoto(null);
+      router.push('/');
+      return;
+    }
     setSalvandoFoto(null);
     setSalvoSucesso(foto.id);
     setTimeout(() => setSalvoSucesso(null), 2000);
+  }
+
+  // Vincula uma URL de imagem ao post de origem (fluxo ?postId=) e volta para a home
+  async function vincularAoPost(url: string) {
+    if (vinculando) return;
+    setVinculando(url);
+    try {
+      await fetch('/api/posts', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: postId, action: 'updateMedia', mediaUrl: url }),
+      });
+      router.push('/');
+    } catch {
+      setVinculando(null);
+      setErroUpload('Falha ao vincular a imagem. Tente novamente.');
+    }
   }
 
   async function fazerUpload(file: File) {
@@ -96,6 +137,11 @@ export default function Studio() {
       const r = await fetch('/api/imagens/upload', { method: 'POST', body: fd });
       const d = await r.json();
       if (!r.ok) { setErroUpload(d.error ?? 'Erro ao enviar'); return; }
+      // Se veio escolher imagem para um post, o upload já completa a tarefa
+      if (postId && d.url) {
+        await vincularAoPost(d.url);
+        return;
+      }
       // Refresh saved list
       if (aba === 'salvos') carregarSalvos();
       else {
@@ -150,6 +196,15 @@ export default function Studio() {
       </div>
     )}
     <main className="px-4">
+      {/* Banner de contexto — vinculação a post */}
+      {postId && (
+        <div className="flex items-center gap-2 mt-4 mb-1 px-4 py-2.5 rounded-2xl text-[12.5px] font-semibold"
+          style={{ background: '#F0E8FA', color: '#8B2FC9' }}>
+          <span>🖼</span>
+          <span className="flex-1">Escolha uma imagem para vincular ao post</span>
+          <Link href="/" className="text-[11px] underline opacity-70">Cancelar</Link>
+        </div>
+      )}
       {/* Header */}
       <header className="pt-6 pb-4 flex items-center justify-between">
         <div>
@@ -257,18 +312,21 @@ export default function Studio() {
                       className="w-full aspect-video object-cover"
                       loading="lazy"
                     />
-                    <button
-                      onClick={e => { e.stopPropagation(); salvarFoto(foto); }}
-                      disabled={salvando || salvo}
-                      className="absolute bottom-1.5 right-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full transition active:scale-95 disabled:opacity-70"
-                      style={{
-                        background: salvo ? '#17996B' : '#8B2FC9',
-                        color: '#fff',
-                      }}
-                    >
-                      {salvo ? '✓ Salvo' : salvando ? '…' : '+ Salvar'}
-                    </button>
-                    <p className="absolute bottom-1.5 left-1.5 text-[9px] text-white/70 leading-tight">
+                    <div className="absolute bottom-0 left-0 right-0">
+                      <button
+                        onClick={e => { e.stopPropagation(); salvarFoto(foto); }}
+                        disabled={salvando || salvo}
+                        className="w-full py-2.5 text-[12px] font-bold transition active:scale-[.98] disabled:opacity-70"
+                        style={{
+                          background: salvo ? 'rgba(23,153,107,.92)' : 'rgba(139,47,201,.92)',
+                          color: '#fff',
+                          backdropFilter: 'blur(4px)',
+                        }}
+                      >
+                        {salvo ? '✓ Salvo' : salvando ? '…' : '+ Salvar'}
+                      </button>
+                    </div>
+                    <p className="absolute top-1.5 left-1.5 text-[9px] text-white/70 leading-tight">
                       {foto.photographer}
                     </p>
                   </div>
@@ -314,6 +372,18 @@ export default function Studio() {
                     >
                       {asset.source}
                     </span>
+                    {postId && (
+                      <div className="absolute bottom-0 left-0 right-0">
+                        <button
+                          onClick={() => vincularAoPost(asset.url)}
+                          disabled={vinculando !== null}
+                          className="w-full py-2.5 text-[12px] font-bold transition active:scale-[.98] disabled:opacity-70"
+                          style={{ background: 'rgba(139,47,201,.92)', color: '#fff', backdropFilter: 'blur(4px)' }}
+                        >
+                          {vinculando === asset.url ? '⏳ Vinculando…' : '✓ Usar neste post'}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

@@ -1,4 +1,3 @@
-import sharp from 'sharp';
 import { uploadToStorage } from './storage';
 
 // ── Paletas ────────────────────────────────────────────────────────────────────
@@ -206,6 +205,7 @@ export async function comporImagemPost(opts: {
     const cta    = determinarCTA(stage);
     const svgBuf = gerarSVGOverlay(titulo, tag, cta, paleta);
 
+    const sharp = (await import('sharp')).default;
     const composed = await sharp(imgBuf)
       .resize(1080, 1350, { fit: 'cover', position: 'center' })
       .composite([{ input: svgBuf, top: 0, left: 0 }])

@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
+// Sem isso o Next pré-renderiza a rota no build (dados congelados + consulta ao banco em build time)
+export const dynamic = 'force-dynamic';
+
 // GET /api/stats — métricas públicas para o painel de login
 export async function GET() {
   const [postsHoje, canaisAtivos, totalPosts] = await Promise.all([

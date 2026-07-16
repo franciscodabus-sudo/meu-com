@@ -96,7 +96,7 @@ model User {
   id           String   @id @default(cuid())
   email        String   @unique
   name         String?
-  role         String   @default("admin")
+  role         String   @default("user")
   passwordHash String
   createdAt    DateTime @default(now())
 }
@@ -142,13 +142,14 @@ model Article {
   profile      BrandProfile? @relation(fields: [profileId], references: [id], onDelete: SetNull)
   profileId    String?
   brief        String
-  // generating | rascunho | aprovado | erro
+  // generating | pesquisado | planejado | aguardando_gancho | gerando_artigo | redigido | editado | rascunho | aprovado | erro
   status       String        @default("generating")
 
   // saída de cada agente (JSON)
   researchJson String?
   planJson     String?
-  copyJson     String?       // opções de título+gancho do Copywriter
+  copyJson       String?       // opções de título+gancho do Copywriter
+  opcaoEscolhida String?       // índice da opção escolhida ("0", "1", "2")
   draftJson    String?
   editJson     String?       // rascunho ajustado ao tom de voz pelo Editor
   qaJson       String?       // inclui retryCount + issues

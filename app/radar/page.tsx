@@ -216,6 +216,7 @@ export default function Radar() {
   const [sucesso, setSucesso]       = useState<string | null>(null);
   const [erroGerar, setErroGerar]   = useState<string | null>(null);
   const [gerarItem, setGerarItem]   = useState<RadarItem | null>(null);
+  const [lastSync, setLastSync]     = useState<Date | null>(null);
   const router = useRouter();
 
   // Derivados
@@ -232,7 +233,7 @@ export default function Radar() {
     try {
       // Carrega todos os itens (sem filtro de profileId)
       const r = await fetch('/api/radar');
-      if (r.ok) setTodosItens(await r.json());
+      if (r.ok) { setTodosItens(await r.json()); setLastSync(new Date()); }
     } finally {
       setCarregando(false);
       setAtualizando(false);
@@ -296,11 +297,18 @@ export default function Radar() {
             <h1 className="font-disp text-[23px] font-bold">Radar</h1>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => buscar(true)} disabled={atualizando}
-              className="text-[13px] font-semibold px-3.5 py-1.5 rounded-full transition active:scale-95"
-              style={{ background: '#F0E8FA', color: '#8B2FC9' }}>
-              {atualizando ? '…' : '↻ Atualizar'}
-            </button>
+            <div className="flex flex-col items-end gap-0.5">
+              <button onClick={() => buscar(true)} disabled={atualizando}
+                className="text-[13px] font-semibold px-3.5 py-1.5 rounded-full transition active:scale-95"
+                style={{ background: '#F0E8FA', color: '#8B2FC9' }}>
+                {atualizando ? '…' : '↻ Atualizar'}
+              </button>
+              {lastSync && (
+                <span className="text-[10px] text-soft">
+                  Atualizado {tempoAtras(lastSync.toISOString())}
+                </span>
+              )}
+            </div>
             <Link href="/configuracoes"
               className="w-9 h-9 flex items-center justify-center rounded-full text-mut hover:text-brand transition"
               style={{ background: '#F0F4F5' }} title="Configurações">
