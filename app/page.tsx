@@ -1118,14 +1118,15 @@ export default function Hoje() {
         body: JSON.stringify({ brief, canal }),
       });
       if (r.ok) {
-        const novos = await fetch('/api/posts?status=pending').then(r => r.json());
-        setPendingPosts(novos);
+        const novos = await fetch('/api/posts?status=pending').then(r => r.ok ? r.json() : []);
+        setPendingPosts(Array.isArray(novos) ? novos : []);
       } else {
-        const d = await r.json();
-        setErroGerar(d.error ?? 'Erro ao gerar posts.');
+        let errMsg = `Erro ${r.status}`;
+        try { const d = await r.json(); errMsg = d.error ?? errMsg; } catch { /* ignora */ }
+        setErroGerar(errMsg);
       }
-    } catch {
-      setErroGerar('Falha de conexão.');
+    } catch (err) {
+      setErroGerar(err instanceof Error ? err.message : 'Falha de conexão.');
     } finally {
       setGerando(false);
     }
@@ -1152,11 +1153,12 @@ export default function Hoje() {
         const data = await r.json();
         setRoteiro(data);
       } else {
-        const d = await r.json();
-        setErroGerar(d.error ?? 'Erro ao gerar roteiro.');
+        let errMsg = `Erro ${r.status}`;
+        try { const d = await r.json(); errMsg = d.error ?? errMsg; } catch { /* ignora */ }
+        setErroGerar(errMsg);
       }
-    } catch {
-      setErroGerar('Falha de conexão.');
+    } catch (err) {
+      setErroGerar(err instanceof Error ? err.message : 'Falha de conexão.');
     }
   }
 

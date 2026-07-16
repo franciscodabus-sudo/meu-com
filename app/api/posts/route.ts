@@ -4,13 +4,19 @@ import { deletarPublicacao } from '@/lib/ayrshare';
 
 // GET /api/posts?status=pending  (suporta vírgula: ?status=published,scheduled)
 export async function GET(req: Request) {
-  const statusParam = new URL(req.url).searchParams.get('status') ?? 'pending';
-  const statuses = statusParam.split(',').filter(Boolean);
-  const posts = await db.post.findMany({
-    where: { status: statuses.length === 1 ? statuses[0] : { in: statuses } },
-    orderBy: { createdAt: 'desc' }
-  });
-  return NextResponse.json(posts);
+  try {
+    const statusParam = new URL(req.url).searchParams.get('status') ?? 'pending';
+    const statuses = statusParam.split(',').filter(Boolean);
+    const posts = await db.post.findMany({
+      where: { status: statuses.length === 1 ? statuses[0] : { in: statuses } },
+      orderBy: { createdAt: 'desc' }
+    });
+    return NextResponse.json(posts);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Erro ao buscar posts';
+    console.error('[GET /api/posts]', msg);
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
 }
 
 // PATCH /api/posts  { id, action: 'approve' | 'skip' | 'caption' | 'updateMedia', caption?, mediaUrl? }
